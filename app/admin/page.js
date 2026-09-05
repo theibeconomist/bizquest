@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminTable from "@/components/AdminTable";
@@ -21,6 +22,9 @@ export default async function AdminPage() {
     <div className="min-h-screen px-4 py-10" style={{ backgroundColor: "#FAF8F5" }}>
       <SignOutButton />
       <div className="max-w-3xl mx-auto">
+        <Link href="/" className="inline-block mb-4 text-[13px] text-stone-500 hover:text-stone-700">
+          ← Back to app
+        </Link>
         <h1 className="text-[22px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>
           Student approvals
         </h1>
