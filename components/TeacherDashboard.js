@@ -54,6 +54,10 @@ const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SUBUNIT_QUESTION_COUNTS = {
   "1.1": { discover: 2, vocab: 7, structured: 3, essay: 0 },
   "1.2": { discover: 2, vocab: 14, structured: 3, essay: 1 },
+  "1.3": { discover: 2, vocab: 7, structured: 3, essay: 1 },
+  "1.4": { discover: 2, vocab: 7, structured: 4, essay: 1 },
+  "1.5": { discover: 2, vocab: 11, structured: 4, essay: 1 },
+  "1.6": { discover: 2, vocab: 7, structured: 4, essay: 1 },
 };
 const STAGE_ORDER = ["discover", "build", "apply", "master"];
 const STAGE_LABEL = { discover: "Discover", build: "Build", apply: "Apply", master: "Master" };

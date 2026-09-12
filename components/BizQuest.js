@@ -468,6 +468,227 @@ const QUESTIONS_1_2 = [
 // profile would then need its own cross-artifact solution too) — not
 // storage-based content loading, which cannot work here.
 // ============================================================
+// ============================================================
+// SUBUNIT 1.3 — Business objectives
+// ============================================================
+const VIDEO_1_3 = { id: "RAyfW7TQpa0", title: "Theranos: How Elizabeth Holmes Fooled The World", source: "How It Happened" };
+const COMPREHENSION_QUESTIONS_1_3 = [
+  { id: "c1", prompt: "According to the video, what did Theranos claim its technology could do?",
+    guidance: "Correct answer: that its device could detect diseases from a single drop of blood. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "What eventually happened to the company and its leadership?",
+    guidance: "Correct answer: the company was shut down in 2016 after an investigation found the technology was flawed and inaccurate; in 2018 its CEO and COO were charged with massive fraud. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+];
+const CASE_TEXT_1_3 = `Apple's long-standing mission statement is to deliver the best user experience to customers through innovative hardware, software and services. Apple's broader long-term vision has been summarized by its own leadership as building the best products on Earth while leaving the world better than they found it. Apple also publishes seven official corporate values: accessibility, education, environment, inclusion and diversity, privacy, racial equity and justice, and supplier responsibility.
+
+These statements sit alongside clear financial business objectives. In FY2025, Apple reported record revenue of $416.16 billion (up 6.4%) and record net income of $112.01 billion (up 19.5%). Apple invested $34.55 billion in research and development, a 10.1% increase on the prior year. Some of these goals operate at different time horizons: Apple's strategic objectives include long-term ambitions such as maintaining technological leadership and diversifying its manufacturing base away from overreliance on China, while its tactical objectives are shorter-term and more specific, such as growing Services revenue faster than hardware revenue in a given year.
+
+Apple's stated ethical and environmental objectives are an expression of corporate social responsibility (CSR) — the idea that businesses should consider their impact on society and the environment beyond their legal obligations. These objectives sit in ongoing tension with Apple's profit and shareholder-return objectives.`;
+const FLASHCARD_TERMS_1_3 = [
+  { term: "Vision statement", definition: "An outline of an organization's aspirations in the distant future — a broad, long-term view of where it ultimately wants to be." },
+  { term: "Mission statement", definition: "A declaration of an organization's underlying purpose and core values, focused on the medium-to-long term." },
+  { term: "Business objectives", definition: "The specific, quantifiable goals or targets an organization strives to achieve, set in line with its mission." },
+  { term: "SMART objectives", definition: "A framework for writing effective objectives: Specific, Measurable, Achievable, Relevant and Time-bound." },
+  { term: "Strategic objectives / strategies", definition: "Medium-to-long-term plans of action, specifically expressed, whose fulfilment lets an organization reach its objectives." },
+  { term: "Tactical objectives / tactics", definition: "Short-term methods used to enact a strategy, frequently generated to keep it on track." },
+  { term: "Ethics / business ethics", definition: "The moral principles that guide decision-making and strategy; the actions of people or organizations considered morally correct by society." },
+  { term: "Corporate social responsibility (CSR)", definition: "The view that businesses should govern themselves and act in a way that enhances society and businesses' stakeholders. Advocates of CSR believe that businesses should be held accountable for any of their actions that affect individuals, communities or the environment." },
+];
+const QUESTIONS_1_3 = [
+  { id: "v1", section: "vocab", label: "Vocabulary", num: 1, prompt: "Define the term vision statement.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "an outline of an organization's aspirations in the distant future — a broad, long-term view of where it ultimately wants to be."` },
+  { id: "v2", section: "vocab", label: "Vocabulary", num: 2, prompt: "Define the term mission statement.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a declaration of an organization's underlying purpose and core values, focused on the medium-to-long term."` },
+  { id: "v3", section: "vocab", label: "Vocabulary", num: 3, prompt: "Define the term business objectives.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the specific, quantifiable goals or targets an organization strives to achieve, set in line with its mission."` },
+  { id: "v4", section: "vocab", label: "Vocabulary", num: 4, prompt: "Define the term SMART objectives.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a framework for writing effective objectives: Specific, Measurable, Achievable, Relevant and Time-bound."` },
+  { id: "v5", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term strategic objectives.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "medium-to-long-term plans of action, specifically expressed, whose fulfilment lets an organization reach its objectives."` },
+  { id: "v6", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term tactical objectives.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "short-term methods used to enact a strategy, frequently generated to keep it on track."` },
+  { id: "v7", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term corporate social responsibility (CSR).", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the view that businesses should govern themselves and act in a way that enhances society and businesses' stakeholders; advocates believe businesses should be held accountable for any actions that affect individuals, communities or the environment."` },
+  { id: "s8", section: "structured", label: "Structured", num: 8, prompt: "State two of Apple's official corporate values.", marks: 2,
+    rubric: `Award 1 mark per correct value named (accessibility; education; environment; inclusion and diversity; privacy; racial equity and justice; supplier responsibility). No development needed.` },
+  { id: "s9", section: "structured", label: "Structured", num: 9, prompt: "Describe two of Apple's financial objectives for FY2025.", marks: 4,
+    rubric: `Mark as 2+2. For each objective, 1 mark identify (e.g. revenue growth; net income growth; R&D investment) and 1 mark develop with the case figure (e.g. revenue $416.16bn, up 6.4%; net income $112.01bn, up 19.5%; R&D $34.55bn, up 10.1%).` },
+  { id: "s10", section: "structured", label: "Structured", num: 10, prompt: "Explain two reasons why Apple's ethical objectives might conflict with its financial objectives.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. ethical/environmental commitments cost money; sourcing responsibly can raise input costs), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. weighed against record FY2025 net income of $112.01bn, up 19.5%).` },
+  { id: "e11", section: "essay", label: "Extended response", num: 11, prompt: "Evaluate the extent to which Apple's stated ethical and environmental objectives are compatible with its objective of maximizing shareholder returns.", marks: 10,
+    rubric: `Mark using the official IB markbands below. A strong answer weighs the case that ethics and shareholder returns are compatible (competitive advantage, brand loyalty, alongside record FY2025 profit) against the case that they conflict (real short-term compliance/CSR costs; no proven causal link in the case between Apple's ethics and its financial results), and reaches a balanced, well-substantiated judgment — ideally noting that the case doesn't isolate how much (if anything) Apple's ethical commitments cost or contributed directly. To reach 7–8, the answer must genuinely develop BOTH sides with reasoning, not just assert one side. To reach 9–10, the answer must explicitly name a specific limitation of the case study material provided. Any figures or claims not present in the case study context must not be credited as valid application, regardless of real-world accuracy.\n\nMARKBANDS:\n${MARKBANDS}` },
+];
+
+// ============================================================
+// SUBUNIT 1.4 — Stakeholders
+// ============================================================
+const VIDEO_1_4 = { id: "n7gHRcpahTU", title: "Uber, Lyft drivers respond to AB 5 and Prop 22 in California", source: "CBS 8 San Diego" };
+const COMPREHENSION_QUESTIONS_1_4 = [
+  { id: "c1", prompt: "According to the video, what employment entitlements were drivers seeking from Uber and Lyft?",
+    guidance: "Correct answer: entitlements such as minimum wage, healthcare and paid leave — benefits typically associated with employee status rather than independent contractor status. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "Why might Uber and Lyft resist classifying drivers as employees rather than independent contractors?",
+    guidance: "Correct answer: classifying drivers as employees would require Uber and Lyft to pay for these entitlements, increasing costs and reducing profit margins. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+];
+const CASE_TEXT_1_4 = `Apple's activities affect a wide range of stakeholders — individuals or groups with an interest in, or affected by, the business. Shareholders, an internal stakeholder, receive significant cash returns through dividends and share buy-backs — $29 billion was returned to shareholders in a single quarter of FY2025. Employees, also internal stakeholders, number roughly 164,000 worldwide.
+
+Suppliers and factory workers are external stakeholders. Apple does not own most of its manufacturing; production is contracted to partners such as Foxconn and Pegatron. These factories have been repeatedly investigated by independent labour-rights groups. China Labor Watch documented excessive overtime and improper use of temporary "dispatch" workers at a Foxconn plant in 2019, findings partly acknowledged by both Apple and Foxconn, and further violations in 2020 and 2023. A 2025 report found conditions largely unchanged since 2019.
+
+Environmental groups and NGOs, also external stakeholders, have engaged with Apple's pledge to be carbon neutral across its supply chain by 2030. By 2024, more than 320 suppliers had committed to 100% renewable energy for Apple production, though independent researchers have noted that some suppliers' actual emissions have fallen only slightly despite these pledges.
+
+Governments are another external stakeholder. In 2016 the European Commission ruled that Ireland had granted Apple illegal "state aid" through favourable tax rulings, worth up to €13 billion; after appeal, the EU's top court reinstated the original decision in 2024. Customers, the final external stakeholder considered here, show exceptionally high brand loyalty, supporting Apple's premium pricing.`;
+const FLASHCARD_TERMS_1_4 = [
+  { term: "Stakeholder", definition: "A person or organization that affects, or is affected by, a business. Stakeholders are often classified as internal versus external, market versus non-market, or primary versus secondary." },
+  { term: "Internal stakeholder", definition: "A stakeholder who is a member of the organization itself, such as an employee, manager, director or shareholder." },
+  { term: "External stakeholder", definition: "A stakeholder outside the organization who still has a direct interest in, or is affected by, its activities — such as a customer, supplier, financier, pressure group or competitor." },
+  { term: "Pressure group", definition: "Individuals with a common interest who organize to place demands on a business, seeking to influence a change in its behaviour." },
+  { term: "Financier", definition: "A financial institution or individual investor that provides a source of finance for a firm, typically earning money through interest." },
+  { term: "Stakeholder conflict", definition: "The inability of an organization to meet all of its stakeholder groups' objectives simultaneously, due to genuine differences in what each group needs." },
+  { term: "Stakeholder mapping", definition: "A tool that plots stakeholders by their level of interest and level of power, to help prioritize how a business manages each group." },
+];
+const QUESTIONS_1_4 = [
+  { id: "v1", section: "vocab", label: "Vocabulary", num: 1, prompt: "Define the term stakeholder.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a person or organization that affects, or is affected by, a business."` },
+  { id: "v2", section: "vocab", label: "Vocabulary", num: 2, prompt: "Define the term internal stakeholder.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a stakeholder who is a member of the organization itself, such as an employee, manager, director or shareholder."` },
+  { id: "v3", section: "vocab", label: "Vocabulary", num: 3, prompt: "Define the term external stakeholder.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a stakeholder outside the organization who still has a direct interest in, or is affected by, its activities — such as a customer, supplier, financier, pressure group or competitor."` },
+  { id: "v4", section: "vocab", label: "Vocabulary", num: 4, prompt: "Define the term pressure group.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "individuals with a common interest who organize to place demands on a business, seeking to influence a change in its behaviour."` },
+  { id: "v5", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term financier.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a financial institution or individual investor that provides a source of finance for a firm, typically earning money through interest."` },
+  { id: "v6", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term stakeholder conflict.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the inability of an organization to meet all of its stakeholder groups' objectives simultaneously, due to genuine differences in what each group needs."` },
+  { id: "v7", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term stakeholder mapping.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a tool that plots stakeholders by their level of interest and level of power, to help prioritize how a business manages each group."` },
+  { id: "s8", section: "structured", label: "Structured", num: 9, prompt: "State two external stakeholders of Apple mentioned in the case study.", marks: 2,
+    rubric: `Award 1 mark per correct external stakeholder named (e.g. suppliers/factory workers; environmental groups/NGOs; governments; customers). No development needed.` },
+  { id: "s9", section: "structured", label: "Structured", num: 10, prompt: "Describe one of Apple's internal stakeholders and one of Apple's external stakeholders.", marks: 4,
+    rubric: `Mark as 2+2. For each, 1 mark identify (e.g. shareholders; suppliers) and 1 mark develop with case detail (e.g. shareholders received $29bn in a single FY2025 quarter; suppliers include Foxconn and Pegatron, investigated by China Labor Watch).` },
+  { id: "s10", section: "structured", label: "Structured", num: 11, prompt: "Explain two reasons why shareholders and environmental groups might have conflicting interests in relation to Apple.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. environmental commitments cost money; shareholders want maximum returns), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. 320+ suppliers committed to renewable energy by 2024, weighed against shareholder dividends/buy-backs of $29bn in a single quarter).` },
+  { id: "s11", section: "structured", label: "Structured", num: 12, prompt: "Using stakeholder mapping, classify two of Apple's stakeholders from the case study by their likely level of interest and power, and justify your classification.", marks: 6,
+    rubric: `Mark as 3+3 per stakeholder: 1 mark correctly classify (e.g. shareholders = high interest, high power via voting rights and dividend exposure; suppliers/factory workers = high interest, lower power relative to Apple as the dominant buyer), 1 mark justify with reasoning, 1 mark apply accurately to the case. Accept any reasonable classification that is well justified — there is no single correct answer.` },
+  { id: "e12", section: "essay", label: "Extended response", num: 13, prompt: "Discuss whether Apple's various stakeholder conflicts suggest the company would better serve its stakeholders under a different business entity structure than a publicly held company.", marks: 10,
+    rubric: `Mark using the official IB markbands below. This is a synthesis question testing Unit 1.2's AO3 content (business entity structure) using this subunit's stakeholder evidence — strong answers draw explicitly on Unit 1.2 knowledge (features of privately held vs. publicly held companies, or alternative structures such as a for-profit social enterprise) and weigh it against this subunit's stakeholder evidence (labour-rights findings at supplier factories; the EU tax ruling; shareholder returns of $29bn in a single quarter). A good answer should recognize that no single structure change guarantees better stakeholder outcomes, and should note that much of the case's evidence about supplier conditions and emissions is self-reported or externally disputed — a genuine limitation.\n\nMARKBANDS:\n${MARKBANDS}` },
+];
+
+// ============================================================
+// SUBUNIT 1.5 — Growth and evolution
+// ============================================================
+const VIDEO_1_5 = { id: "31ZgQ8ugzPE", title: "How Apple Almost Went Bankrupt In The Mid-90s", source: "Real Stories" };
+const COMPREHENSION_QUESTIONS_1_5 = [
+  { id: "c1", prompt: "According to the video, roughly how close to bankruptcy was Apple when Jobs returned?",
+    guidance: "Correct answer: roughly 90 days from bankruptcy, according to widely reported accounts of the period. Accept any answer indicating Apple was weeks/months, not years, away. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "Why had Jobs originally left Apple, and what company did he found in the meantime?",
+    guidance: "Correct answer: he left after a power struggle with then-CEO John Sculley in 1985; he founded NeXT, the computer company Apple later acquired to bring him back. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+];
+const CASE_TEXT_1_5 = `Apple has grown through a combination of internal (organic) growth and external growth. Internally, the company expanded from a single computer product line into an ecosystem spanning Mac, iPhone, iPad, Apple Watch, AirPods and a rapidly growing Services division. Apple's enormous purchasing volumes allow it to negotiate lower component prices than smaller rivals — an example of internal economies of scale. Apple's contract manufacturers benefit from external economies of scale too: the clustering of suppliers, skilled labour and infrastructure around manufacturing hubs such as Shenzhen, China, lowers costs for every electronics company based there, not just Apple.
+
+Apple has not always managed growth smoothly. During the mid-1990s, before Steve Jobs' return, Apple sold dozens of overlapping Macintosh models, leading to confused customers, duplicated costs and slow decision-making — a commonly cited example of diseconomies of scale, where a business becomes so large or complex that average costs rise and efficiency falls. This contributed to heavy financial losses and brought Apple close to bankruptcy before its 1997 acquisition of NeXT and Jobs' return refocused the company.
+
+Externally, Apple has made more than 100 acquisitions (also called takeovers), almost always of small, specialist companies rather than rivals of comparable size. The largest to date is Beats Electronics (2014, approximately $3 billion). Other notable acquisitions include NeXT (1996-97, roughly $400-429 million) and Intel's smartphone modem business (2019, $1 billion). At a 2021 shareholder meeting, Tim Cook noted that Apple had acquired close to 100 companies over the previous six years — roughly one every two to three weeks — almost always to acquire talent and technology rather than market share.
+
+Apple's approach differs from other forms of external growth found elsewhere in the technology industry. It has never undertaken a merger — the combination of two similarly sized companies into one new entity, such as the 2020 merger of T-Mobile and Sprint. Nor has Apple relied on a joint venture, where two businesses jointly own a newly created company, as Sony and Ericsson did when they combined their mobile phone operations into Sony Ericsson between 2001 and 2012. Apple also does not use franchising for its retail stores — unlike McDonald's; every Apple Store is owned and operated directly by Apple. Apple has, however, entered a genuine strategic alliance: in 2014 it formed a global partnership with IBM under which the two companies remained fully independent but agreed to co-develop business apps for corporate customers.`;
+const FLASHCARD_TERMS_1_5 = [
+  { term: "Internal (organic) growth", definition: "This occurs when a business gets larger by using its own resources, that is, it reinvests its profits in new products, new sales channels or more stores, and so on, in order to increase sales." },
+  { term: "External growth", definition: "External growth occurs when a business expands by relying on external resources, typically by acquiring or forming some kind of relationship with another organization." },
+  { term: "Economy of scale", definition: "The reduction in per-unit production cost as a business grows." },
+  { term: "Internal economies of scale", definition: "Economies of scale that occur inside a firm and are within its own control, such as technical, financial or managerial economies." },
+  { term: "External economies of scale", definition: "Economies of scale that benefit every firm in an industry or location, arising from factors outside any single firm's control." },
+  { term: "Diseconomy of scale", definition: "The increase in per-unit production cost as a business grows." },
+  { term: "Merger and acquisition", definition: "A merger occurs when two companies legally consolidate into one company; an acquisition occurs when one company purchases the shares of another company. A legal distinction exists between the two, though in practice both aim to combine the resources of the two companies." },
+  { term: "Takeover", definition: "A takeover is a form of acquisition. With an acquisition, both parties agree to the transaction. With a takeover, the transaction is typically \"hostile\", meaning the company being acquired does not want to be taken over." },
+  { term: "Joint venture", definition: "When two businesses create, own and operate a third organization." },
+  { term: "Strategic alliance", definition: "This occurs when one or more businesses agree to some form of operational cooperation that enhances the value for all parties." },
+  { term: "Franchising", definition: "A type of business organization whereby a business (the franchisor) develops the product or service and its brand, then sells the right to use the brand and related product/service to other businesses (franchisees), who typically pay an initial fee plus a percentage of revenue and agree to comply with the franchisor's operating and quality specifications." },
+];
+const QUESTIONS_1_5 = [
+  { id: "v1", section: "vocab", label: "Vocabulary", num: 1, prompt: "Define the term internal (organic) growth.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business gets larger by using its own resources — reinvesting profits in new products, sales channels or stores — to increase sales."` },
+  { id: "v2", section: "vocab", label: "Vocabulary", num: 2, prompt: "Define the term external growth.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business expands by relying on external resources, typically by acquiring or forming a relationship with another organization."` },
+  { id: "v3", section: "vocab", label: "Vocabulary", num: 3, prompt: "Define the term economies of scale.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the reduction in per-unit production cost as a business grows."` },
+  { id: "v4", section: "vocab", label: "Vocabulary", num: 4, prompt: "Define the term internal economies of scale.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "economies of scale that occur inside a firm and are within its own control, such as technical, financial or managerial economies."` },
+  { id: "v5", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term external economies of scale.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "economies of scale that benefit every firm in an industry or location, arising from factors outside any single firm's control."` },
+  { id: "v6", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term diseconomies of scale.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the increase in per-unit production cost as a business grows."` },
+  { id: "v7", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term merger and acquisition.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a merger occurs when two companies legally consolidate into one; an acquisition occurs when one company purchases the shares of another — both aim to combine the resources of the two companies."` },
+  { id: "v8", section: "vocab", label: "Vocabulary", num: 8, prompt: "Define the term takeover.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a form of acquisition that is typically hostile — the company being acquired does not want to be taken over."` },
+  { id: "v9", section: "vocab", label: "Vocabulary", num: 9, prompt: "Define the term joint venture.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "when two businesses create, own and operate a third organization."` },
+  { id: "v10", section: "vocab", label: "Vocabulary", num: 10, prompt: "Define the term strategic alliance.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "one or more businesses agree to some form of operational cooperation that enhances the value for all parties."` },
+  { id: "v11", section: "vocab", label: "Vocabulary", num: 11, prompt: "Define the term franchising.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a franchisor develops a product/service and brand, then sells the right to use it to franchisees, who typically pay a fee plus a share of revenue and follow the franchisor's operating specifications."` },
+  { id: "s12", section: "structured", label: "Structured", num: 12, prompt: "State two methods of external growth that Apple has avoided using.", marks: 2,
+    rubric: `Award 1 mark per correct method named: merger; joint venture; franchising. No development needed.` },
+  { id: "s13", section: "structured", label: "Structured", num: 13, prompt: "Describe two of Apple's acquisitions, other than Beats Electronics.", marks: 4,
+    rubric: `Mark as 2+2. For each, 1 mark identify (e.g. NeXT; Intel's smartphone modem business) and 1 mark develop with case detail (e.g. NeXT, 1996-97, ~$400-429 million, returned Steve Jobs to the company; Intel modem business, 2019, $1 billion).` },
+  { id: "s14", section: "structured", label: "Structured", num: 14, prompt: "Explain two reasons why Apple's expansion of overlapping Macintosh models in the mid-1990s illustrates the concept of diseconomies of scale.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. confused customers; duplicated costs; slow decision-making), 1 mark explain the mechanism (too many overlapping product lines made the business harder to manage efficiently), 1 mark apply accurately to the case (contributed to heavy financial losses and brought Apple close to bankruptcy before the 1997 NeXT acquisition).` },
+  { id: "s15", section: "structured", label: "Structured", num: 15, prompt: "At a 2021 shareholder meeting, Tim Cook stated that Apple had acquired close to 100 companies over the previous six years — roughly one every two to three weeks. Calculate the minimum and maximum number of companies Apple could have acquired over six years at this rate (show all your working).", marks: 4,
+    rubric: `6 years ≈ 312 weeks. Minimum (one every 3 weeks): 312 ÷ 3 ≈ 104 acquisitions. Maximum (one every 2 weeks): 312 ÷ 2 = 156 acquisitions. Award 2 marks for each correct calculation with working shown (1 mark for correct method, 1 mark for correct final figure).` },
+  { id: "e16", section: "essay", label: "Extended response", num: 16, prompt: "To what extent has Apple's growth strategy of pursuing small, technology-focused acquisitions been effective?", marks: 10,
+    rubric: `Mark using the official IB markbands below. A strong answer weighs the case for effectiveness (control retained; lower risk of culture clash than a merger or JV; talent and technology gained quickly and repeatedly — nearly 100 acquisitions in six years per Cook's 2021 statement; Beats Electronics alone added ~$3 billion in brand and streaming technology) against the case for limitations (the case doesn't show whether this was actually cheaper or faster than alternative growth methods; relying solely on small acquisitions may leave gaps a merger or JV could fill, e.g. entering markets requiring a large-scale local partner) — and reaches a balanced, substantiated judgement that explicitly notes what the case study doesn't establish.\n\nMARKBANDS:\n${MARKBANDS}` },
+];
+
+// ============================================================
+// SUBUNIT 1.6 — Multinational companies
+// ============================================================
+const VIDEO_1_6 = { id: "3353NctLld4", title: "Apple To Shifts iPhone Manufacturing To India", source: "World Business Watch, WION" };
+const COMPREHENSION_QUESTIONS_1_6 = [
+  { id: "c1", prompt: "According to the video, why is Apple shifting iPhone assembly toward India?",
+    guidance: "Correct answer: tariffs and broader geopolitical/trade tensions between the US and China make Chinese-made iPhones costlier and riskier to rely on, so Apple is diversifying toward India. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, by when is Apple aiming to assemble all US-bound iPhones in India?",
+    guidance: "Correct answer: reports cited in the video suggest Apple aims to assemble all US-bound iPhones in India as early as 2026. Accept any answer indicating 'within a year or two' of the video's 2025 report date. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+];
+const CASE_TEXT_1_6 = `Apple is a clear example of a multinational company (MNC): it is headquartered in the United States but designs, manufactures, distributes and sells its products in host countries across the world. For decades, the vast majority of Apple's hardware was assembled in China through contract manufacturers such as Foxconn and Pegatron.
+
+Since around 2022, Apple has pursued a "China+1" diversification strategy in response to geopolitical risk and US-China trade tariffs. India's share of iPhone production rose from roughly 5-7% in 2022 to about 25% by 2026, with new Tata Electronics and Foxconn plants opened in Hosur (Tamil Nadu) and Bengaluru (Karnataka); by mid-2025, India had overtaken China as the leading source of smartphones imported into the United States. Vietnam's share of US smartphone imports rose to roughly 30% by mid-2025, up from 24% the year before, and Vietnam has become the primary production base for iPad, Mac, Apple Watch and AirPods.
+
+Meanwhile, Foxconn's Zhengzhou plant in China — known locally as "iPhone City" and once home to as many as 300,000 workers — has reportedly been hiring less as Apple's production diversifies elsewhere. The shift accelerated after worker unrest at the Zhengzhou plant in late 2022, during a Covid-19 outbreak and strict lockdown there, which highlighted the risk of relying so heavily on a single production site. China continues to host the majority of Apple's overall manufacturing today, so this is a gradual diversification rather than a withdrawal.
+
+This relocation illustrates both sides of an MNC's impact on host countries: India and Vietnam gain manufacturing jobs, technology transfer and export revenue, while China — the long-standing host country — experiences some loss of manufacturing employment and investment, and new questions about job security at its largest production site, as production diversifies elsewhere.`;
+const FLASHCARD_TERMS_1_6 = [
+  { term: "Multinational company (MNC)", definition: "A business that owns or controls operations — such as factories, offices or subsidiaries — in two or more countries: a home country, where it is headquartered, and one or more host countries, where it operates." },
+  { term: "Host country", definition: "Any nation that allows a multinational company to set up in its country." },
+  { term: "Home country", definition: "The nation where a multinational company is headquartered." },
+  { term: "Offshoring", definition: "Offshoring occurs when a business moves some, or virtually all, of its business operations to another country." },
+  { term: "Reshoring", definition: "Reshoring occurs when a business chooses to have a function or operation that is performed in another country brought back to the company's home country." },
+  { term: "Repatriation of profits", definition: "The practice of an MNC transferring profits earned in a host country back to its home country, rather than reinvesting them locally." },
+  { term: "Protectionism", definition: "Government policies, such as tariffs or import quotas, designed to restrict imports and protect domestic industries from foreign competition." },
+];
+const QUESTIONS_1_6 = [
+  { id: "v1", section: "vocab", label: "Vocabulary", num: 1, prompt: "Define the term multinational company (MNC).", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business that owns or controls operations in two or more countries: a home country, where it is headquartered, and one or more host countries, where it operates."` },
+  { id: "v2", section: "vocab", label: "Vocabulary", num: 2, prompt: "Define the term host country.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "any nation that allows a multinational company to set up in its country."` },
+  { id: "v3", section: "vocab", label: "Vocabulary", num: 3, prompt: "Define the term home country.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the nation where a multinational company is headquartered."` },
+  { id: "v4", section: "vocab", label: "Vocabulary", num: 4, prompt: "Define the term offshoring.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "occurs when a business moves some, or virtually all, of its business operations to another country."` },
+  { id: "v5", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term reshoring.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "occurs when a business chooses to have a function or operation performed in another country brought back to the company's home country."` },
+  { id: "v6", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term repatriation of profits.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "an MNC transferring profits earned in a host country back to its home country, rather than reinvesting them locally."` },
+  { id: "v7", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term protectionism.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "government policies, such as tariffs or import quotas, designed to restrict imports and protect domestic industries from foreign competition."` },
+  { id: "s8", section: "structured", label: "Structured", num: 8, prompt: "State two host countries, other than the United States, mentioned in the case study.", marks: 2,
+    rubric: `Award 1 mark per correct host country named: India; Vietnam; China. No development needed.` },
+  { id: "s9", section: "structured", label: "Structured", num: 9, prompt: "Describe one potential benefit and one potential drawback for China, as a host country, resulting from Apple's manufacturing decisions.", marks: 4,
+    rubric: `Mark as 2+2. Benefit: 1 mark identify (e.g. China continues to host the majority of Apple's manufacturing for now), 1 mark develop. Drawback: 1 mark identify (e.g. loss of manufacturing jobs/investment and reduced hiring at Zhengzhou as production diversifies to India and Vietnam), 1 mark develop.` },
+  { id: "s10", section: "structured", label: "Structured", num: 10, prompt: "Explain two reasons why Apple has diversified its manufacturing base away from China.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. geopolitical risk; US-China trade tariffs; supply chain concentration risk exposed by the 2022 Zhengzhou unrest), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. India's iPhone production share rising from 5-7% in 2022 to ~25% by 2026; the new Tata Electronics and Foxconn plants in Tamil Nadu and Karnataka).` },
+  { id: "s11", section: "structured", label: "Structured", num: 11, prompt: "Using the case study, calculate the percentage point increase in India's share of global iPhone production between 2022 (5–7%) and late 2024 (15%).", marks: 4,
+    rubric: `Using the lower bound: 15% − 5% = 10 percentage points. Using the upper bound: 15% − 7% = 8 percentage points. Award marks for correct method and correct subtraction using either or both bounds, with working shown; accept an answer expressed as a range (8–10 percentage points).` },
+  { id: "e12", section: "essay", label: "Extended response", num: 12, prompt: "Evaluate the impact of Apple's shift of manufacturing away from China and toward India on stakeholders in each country.", marks: 10,
+    rubric: `Mark using the official IB markbands below. A strong answer evaluates both host-country perspectives in depth: India (job creation, technology transfer, the new Tata Electronics/Foxconn plants in Tamil Nadu and Karnataka, rising production share from ~5-7% to ~25%) as a likely net beneficiary, against China (loss of manufacturing employment and investment, and reduced hiring at its largest single site, Zhengzhou's "iPhone City", as production diversifies elsewhere — though China retains the majority of Apple's production for now). A strong answer should explicitly note what the case study doesn't establish — for example, exact job numbers gained in India or lost in China, or how individual workers (rather than governments or corporations) are affected.\n\nMARKBANDS:\n${MARKBANDS}` },
+];
+
 const SUBUNIT_REGISTRY = {
   "1.1": {
     title: "What is a business?",
@@ -484,6 +705,38 @@ const SUBUNIT_REGISTRY = {
     caseText: CASE_TEXT_1_2,
     questions: QUESTIONS_1_2,
     flashcardTerms: FLASHCARD_TERMS_1_2,
+  },
+  "1.3": {
+    title: "Business objectives",
+    video: VIDEO_1_3,
+    comprehensionQuestions: COMPREHENSION_QUESTIONS_1_3,
+    caseText: CASE_TEXT_1_3,
+    questions: QUESTIONS_1_3,
+    flashcardTerms: FLASHCARD_TERMS_1_3,
+  },
+  "1.4": {
+    title: "Stakeholders",
+    video: VIDEO_1_4,
+    comprehensionQuestions: COMPREHENSION_QUESTIONS_1_4,
+    caseText: CASE_TEXT_1_4,
+    questions: QUESTIONS_1_4,
+    flashcardTerms: FLASHCARD_TERMS_1_4,
+  },
+  "1.5": {
+    title: "Growth and evolution",
+    video: VIDEO_1_5,
+    comprehensionQuestions: COMPREHENSION_QUESTIONS_1_5,
+    caseText: CASE_TEXT_1_5,
+    questions: QUESTIONS_1_5,
+    flashcardTerms: FLASHCARD_TERMS_1_5,
+  },
+  "1.6": {
+    title: "Multinational companies",
+    video: VIDEO_1_6,
+    comprehensionQuestions: COMPREHENSION_QUESTIONS_1_6,
+    caseText: CASE_TEXT_1_6,
+    questions: QUESTIONS_1_6,
+    flashcardTerms: FLASHCARD_TERMS_1_6,
   },
 };
 const SUBUNIT_TITLES = Object.fromEntries(Object.entries(SUBUNIT_REGISTRY).map(([id, s]) => [id, s.title]));
@@ -1273,7 +1526,7 @@ function CompletionCard({ stats, profile, levelInfo }) {
           </div>
         </div>
         <p className="mt-3 text-[13px] text-stone-500">
-          More subunits (1.3–1.6) are coming soon — your level and badges will carry over automatically.
+          Head back to the Unit Map to keep going — your level and badges carry over automatically.
         </p>
       </div>
     </FadeIn>
@@ -1403,7 +1656,7 @@ const STUDY_LIGHT = "#F7ECEE";
 
 // ============================================================
 // UNIT MAP — top-level, game-style path of subunits + a final Revision node.
-// Only 1.1 has real content built so far; the rest are locked "coming soon" nodes.
+// All six subunits (1.1–1.6) now have real content; only the Revision node remains locked "coming soon".
 // ============================================================
 const UNIT_SUBUNITS = [
   { id: "1.1", title: "What is a business?", unlocked: true },
@@ -1428,9 +1681,38 @@ const STUDY_SECTION_META_1_2 = [
   { key: "coop-ngo", title: "Cooperatives & NGOs", Icon: Award },
   { key: "entity-choice", title: "Choosing the right structure", Icon: Pencil },
 ];
+const STUDY_SECTION_META_1_3 = [
+  { key: "vision-mission", title: "Vision vs. mission statements", Icon: Lightbulb },
+  { key: "smart", title: "SMART objectives", Icon: TrendingUp },
+  { key: "strategic-tactical", title: "Strategic vs. tactical objectives", Icon: Building2 },
+  { key: "ethics-csr", title: "Ethics & CSR", Icon: Award },
+];
+const STUDY_SECTION_META_1_4 = [
+  { key: "stakeholder-types", title: "Internal stakeholders and their wants", Icon: Building2 },
+  { key: "uber-brainstorm", title: "Mapping a real business's stakeholders", Icon: Factory },
+  { key: "stakeholder-mapping", title: "Stakeholder mapping", Icon: TrendingUp },
+  { key: "conflict-examples", title: "Real stakeholder conflicts", Icon: Award },
+];
+const STUDY_SECTION_META_1_5 = [
+  { key: "internal-economies", title: "Types of internal economies of scale", Icon: Factory },
+  { key: "scale-type", title: "Internal vs. external economies of scale", Icon: Building2 },
+  { key: "growth-type", title: "Internal vs. external growth", Icon: TrendingUp },
+  { key: "grow-stay-small", title: "Reasons to grow — or stay small", Icon: Lightbulb },
+  { key: "growth-methods", title: "Methods of external growth", Icon: Award },
+];
+const STUDY_SECTION_META_1_6 = [
+  { key: "why-mnc", title: "Why do businesses become MNCs?", Icon: Lightbulb },
+  { key: "positive-impacts", title: "Positive impacts on host countries", Icon: TrendingUp },
+  { key: "negative-impacts", title: "Negative impacts and risks", Icon: Factory },
+  { key: "apple-impact", title: "Apple's own impact: India vs. China", Icon: Award },
+];
 const STUDY_SECTION_META_BY_SUBUNIT = {
   "1.1": STUDY_SECTION_META_1_1,
   "1.2": STUDY_SECTION_META_1_2,
+  "1.3": STUDY_SECTION_META_1_3,
+  "1.4": STUDY_SECTION_META_1_4,
+  "1.5": STUDY_SECTION_META_1_5,
+  "1.6": STUDY_SECTION_META_1_6,
 };
 
 const STUDY_PROGRESS_KEY = "bm-apple-1.1:study-progress";
@@ -1891,6 +2173,23 @@ const SECTION_REQUIRED_KEYS = {
   "forprofit-social": ["forprofit-social"],
   "coop-ngo": ["coop-ngo"],
   "entity-choice": ["entity-choice"],
+  "vision-mission": ["vision-mission"],
+  smart: ["smart"],
+  "strategic-tactical": ["strategic-tactical"],
+  "ethics-csr": ["ethics-sort", "csr-examples"],
+  "stakeholder-types": ["stakeholder-types"],
+  "uber-brainstorm": ["uber-brainstorm"],
+  "stakeholder-mapping": ["stakeholder-mapping"],
+  "conflict-examples": ["conflict-examples"],
+  "internal-economies": ["internal-economies"],
+  "scale-type": ["scale-type"],
+  "growth-type": ["growth-type"],
+  "grow-stay-small": ["grow-stay-small"],
+  "growth-methods": ["growth-methods"],
+  "why-mnc": ["why-mnc"],
+  "positive-impacts": ["positive-impacts"],
+  "negative-impacts": ["negative-impacts"],
+  "apple-impact": ["apple-impact"],
 };
 function isSectionComplete(sectionKey, completed) {
   return (SECTION_REQUIRED_KEYS[sectionKey] || []).every((k) => completed[k]);
@@ -2092,9 +2391,271 @@ const STUDY_SECTIONS_1_2 = [
   },
 ];
 
+// ============================================================
+// SUBUNIT 1.3 — Study Guide data
+// ============================================================
+const STUDY_VIDEOS_1_3 = {
+  ikea: { id: "mQeDwqiq2CA", title: "IKEA increases incentive for people recycling…", channel: "7NEWS Australia", length: "1:30" },
+  fairWork: { id: "Ytz62ecp-gE", title: "Fair Work launches legal action…", channel: "ABC News Australia", length: "2:00" },
+  nissan: { id: "hn1sGvvdK9Q", title: "Nissan and Habitat Build 500th Home", channel: "Nissan", length: "1:45" },
+  hm: { id: "KaJX0WLo2zc", title: "H&M Group explores new circular business models", channel: "H&M Group", length: "1:53" },
+  naturalLabels: { id: "xnPwwQWddLQ", title: "How 'Natural' Food Labels Are Misleading Consumers", channel: "NBC News", length: "2:30" },
+};
+const VISION_MISSION_ITEMS = [
+  { label: "Aspirational, big-picture language", bucket: "vision" },
+  { label: "Very long-term, infrequently updated", bucket: "vision" },
+  { label: "About some day in the future", bucket: "vision" },
+  { label: "Declaration of purpose and values", bucket: "mission" },
+  { label: "Updated more frequently, concrete targets", bucket: "mission" },
+  { label: "Outlines guiding principles for today", bucket: "mission" },
+];
+const VISION_MISSION_BUCKETS = [
+  { key: "vision", label: "Vision statement" },
+  { key: "mission", label: "Mission statement" },
+];
+const SMART_ITEMS = [
+  { label: "Increase Services revenue by 10% within 12 months", bucket: "yes" },
+  { label: "Become a better company", bucket: "no" },
+  { label: "Reduce complaint response time from 48hr to 24hr by end of Q3", bucket: "yes" },
+  { label: "Try to be more sustainable soon", bucket: "no" },
+];
+const SMART_BUCKETS = [
+  { key: "yes", label: "SMART" },
+  { key: "no", label: "Not SMART" },
+];
+const STRATEGIC_TACTICAL_ITEMS = [
+  { label: "Building reputation over a decade", bucket: "strategic" },
+  { label: "Growing market share over five years", bucket: "strategic" },
+  { label: "Expanding into new markets by 2030", bucket: "strategic" },
+  { label: "Switching to takeaway-only for 3 months", bucket: "tactical" },
+  { label: "Discounting stock 30% this month", bucket: "tactical" },
+];
+const STRATEGIC_TACTICAL_BUCKETS = [
+  { key: "strategic", label: "Strategic" },
+  { key: "tactical", label: "Tactical" },
+];
+const ETHICS_ADV_DISADV_ITEMS = [
+  { label: "Improved corporate image", bucket: "adv" },
+  { label: "Increased customer loyalty", bucket: "adv" },
+  { label: "Improved staff morale", bucket: "adv" },
+  { label: "Compliance costs", bucket: "disadv" },
+  { label: "Lower profits", bucket: "disadv" },
+  { label: "Stakeholder conflict", bucket: "disadv" },
+];
+const ETHICS_ADV_DISADV_BUCKETS = [
+  { key: "adv", label: "Advantage" },
+  { key: "disadv", label: "Disadvantage" },
+];
+const CSR_EXAMPLES = [
+  { clues: ["A Swedish furniture retailer.", "Offers customers incentives to bring back old furniture and packaging for recycling.", "Part of a broader push toward a circular, less wasteful business model."],
+    name: "IKEA", business: "IKEA's recycling incentive scheme is a real CSR initiative — it responds to environmental stakeholder pressure and reduces waste, even though it also carries a real cost to run." },
+  { clues: ["A Japanese car manufacturer.", "Partners with a housing charity to build homes for families in need.", "Marked a symbolic milestone by completing its 500th home built this way."],
+    name: "Nissan", business: "Nissan's partnership with Habitat for Humanity is a CSR initiative that builds genuine community goodwill, though critics of CSR note it can also serve as a low-cost way to improve corporate image." },
+  { clues: ["A Swedish clothing retailer.", "Explores 'circular' business models — renting, reselling and recycling clothing rather than only selling new items.", "A response to growing pressure over fast fashion's environmental impact."],
+    name: "H&M Group", business: "H&M's circular business experiments are a genuine attempt at CSR, but they sit in tension with a fast-fashion business model built on high sales volume and frequent new collections." },
+];
+
+const STUDY_SECTIONS_1_3 = [
+  { key: "vision-mission", title: "Vision vs. mission statements", intro: "A vision statement outlines an organization's aspirations in the distant future — broad and rarely updated. A mission statement declares its underlying purpose and values, updated more often with more concrete detail. Sort each description into the right one:" },
+  { key: "smart", title: "SMART objectives", intro: "Business objectives are far more useful when they're SMART — Specific, Measurable, Achievable, Relevant and Time-bound. Decide whether each example objective meets that bar:" },
+  { key: "strategic-tactical", title: "Strategic vs. tactical objectives", intro: "Strategic objectives are medium-to-long-term plans of action; tactical objectives are the short-term methods used to keep a strategy on track. Sort each example:" },
+  { key: "ethics-csr", title: "Ethics & corporate social responsibility", intro: "Corporate social responsibility (CSR) is the view that businesses should act in ways that benefit society, not just their shareholders — but it comes with real trade-offs. First sort these consequences of taking an ethical stance, then meet three real companies putting CSR into practice:" },
+];
+
+// ============================================================
+// SUBUNIT 1.4 — Study Guide data
+// ============================================================
+const STAKEHOLDER_WANT_ITEMS = [
+  { label: "Job security and promotion", bucket: "employees" },
+  { label: "Safe, fair working conditions", bucket: "employees" },
+  { label: "Rising share price and dividends", bucket: "shareholders" },
+  { label: "Voting rights and influence over decisions", bucket: "shareholders" },
+  { label: "Profit and the company's long-term financial health", bucket: "managers" },
+];
+const STAKEHOLDER_WANT_BUCKETS = [
+  { key: "employees", label: "Employees" },
+  { key: "shareholders", label: "Shareholders" },
+  { key: "managers", label: "Managers/directors" },
+];
+const UBER_STAKEHOLDER_ITEMS = [
+  { label: "Employees", bucket: "internal" },
+  { label: "Managers and directors", bucket: "internal" },
+  { label: "Shareholders", bucket: "internal" },
+  { label: "Independent driver-contractors", bucket: "external" },
+  { label: "Riders (customers)", bucket: "external" },
+  { label: "Traditional taxi operators (pressure group)", bucket: "external" },
+  { label: "Competitors (Lyft, Grab, DiDi)", bucket: "external" },
+  { label: "Government regulators", bucket: "external" },
+];
+const UBER_STAKEHOLDER_BUCKETS = [
+  { key: "internal", label: "Internal" },
+  { key: "external", label: "External" },
+];
+const STAKEHOLDER_MAP_ITEMS = [
+  { label: "Shareholders (high interest, high power via dividends)", bucket: "maximum" },
+  { label: "Customers wanting uninterrupted service", bucket: "satisfied" },
+  { label: "Employees not directly affected by a decision", bucket: "informed" },
+  { label: "Competitors merely watching from a distance", bucket: "minimum" },
+];
+const STAKEHOLDER_MAP_BUCKETS = [
+  { key: "maximum", label: "Manage closely" },
+  { key: "satisfied", label: "Keep satisfied" },
+  { key: "informed", label: "Keep informed" },
+  { key: "minimum", label: "Minimum effort" },
+];
+const STAKEHOLDER_CONFLICT_EXAMPLES = [
+  { clues: ["Starbucks employees at multiple US stores.", "Organized around pay, staffing levels and working conditions.", "Took collective action against store management."],
+    name: "Starbucks worker strikes", business: "This is a classic employee-vs-management/shareholder conflict: workers want better pay and conditions, while cost pressure works against shareholder return goals." },
+  { clues: ["A major professional-services and auditing firm.", "Faced serious allegations over the quality of its audit work.", "Public trust in its independence was called into question."],
+    name: "KPMG audit scandal", business: "This illustrates conflict between a firm's shareholders/managers (who want to protect profit and reputation) and the wider public/regulators (who want honest, reliable auditing regardless of cost)." },
+  { clues: ["Protesters opposing an oil pipeline route.", "Concerned about land rights and potential environmental damage.", "Drew sustained national and international attention."],
+    name: "Dakota Access Pipeline protests", business: "A clear case of a pressure group (protesters, environmental/indigenous-rights groups) in conflict with a business's shareholders and financiers, who prioritize the project's completion and returns." },
+  { clues: ["A private space technology company.", "Rumoured to be considering going public via an IPO.", "Would give many more outside shareholders a stake and a say."],
+    name: "SpaceX IPO speculation", business: "Illustrates how a shift toward more shareholders can change a company's stakeholder balance — existing owners weigh the benefits of new capital against a potential loss of control." },
+];
+
+const STUDY_SECTIONS_1_4 = [
+  { key: "stakeholder-types", title: "Internal stakeholders and their wants", intro: "Internal stakeholders — employees, managers/directors and shareholders — are all part of the organization itself, but each wants something different from it. Sort each want into the right group:" },
+  { key: "uber-brainstorm", title: "Mapping a real business's stakeholders", intro: "A ride-hailing company like Uber has a wide web of stakeholders. Sort each one into internal or external:" },
+  { key: "stakeholder-mapping", title: "Stakeholder mapping", intro: "Stakeholder mapping plots stakeholders by their level of interest and power, to help a business prioritize how it manages each group. Sort each stakeholder into the right response:" },
+  { key: "conflict-examples", title: "Real stakeholder conflicts", intro: "Stakeholder conflict happens when a business can't fully satisfy every group at once. Meet four real examples of stakeholder conflict in action:" },
+];
+
+// ============================================================
+// SUBUNIT 1.5 — Study Guide data
+// ============================================================
+const STUDY_VIDEOS_1_5 = {
+  benAndJerrys: { id: "1qlrRmRTbVY", title: "How Ben & Jerry's Makes Nearly One Million Pints A Day", channel: "Business Insider", length: "10:41" },
+};
+const INTERNAL_ECONOMIES_ITEMS = [
+  { label: "Lower interest rate for being a large, trusted borrower", bucket: "financial" },
+  { label: "A worker specializes in one stage of production", bucket: "specialisation" },
+  { label: "A weak year in one division offset by a strong year in another", bucket: "risk" },
+  { label: "Dedicated HR, finance and marketing managers", bucket: "managerial" },
+];
+const INTERNAL_ECONOMIES_BUCKETS = [
+  { key: "financial", label: "Financial" },
+  { key: "specialisation", label: "Specialisation" },
+  { key: "risk", label: "Risk-bearing" },
+  { key: "managerial", label: "Managerial" },
+];
+const SCALE_TYPE_ITEMS = [
+  { label: "Bulk-purchasing discount from suppliers", bucket: "internal" },
+  { label: "Cheaper borrowing because of the firm's own size", bucket: "internal" },
+  { label: "Shenzhen's electronics-manufacturing cluster", bucket: "external" },
+  { label: "Country-wide port and rail improvements", bucket: "external" },
+];
+const SCALE_TYPE_BUCKETS = [
+  { key: "internal", label: "Internal economies" },
+  { key: "external", label: "External economies" },
+];
+const GROWTH_TYPE_ITEMS = [
+  { label: "Reinvesting retained profit into a new factory", bucket: "internal" },
+  { label: "Launching a product with the company's own R&D team", bucket: "internal" },
+  { label: "Buying a controlling stake in a rival company", bucket: "external" },
+  { label: "Two firms combining into a new, single entity", bucket: "external" },
+];
+const GROWTH_TYPE_BUCKETS = [
+  { key: "internal", label: "Internal growth" },
+  { key: "external", label: "External growth" },
+];
+const GROW_STAY_SMALL_ITEMS = [
+  { label: "Lower prices via economies of scale", bucket: "grow" },
+  { label: "Stronger brand recognition", bucket: "grow" },
+  { label: "Deeper customer loyalty", bucket: "grow" },
+  { label: "Greater flexibility to respond to change", bucket: "small" },
+  { label: "A comfortable local monopoly in a small niche", bucket: "small" },
+  { label: "Access to government aid schemes for small firms", bucket: "small" },
+];
+const GROW_STAY_SMALL_BUCKETS = [
+  { key: "grow", label: "Reason to grow" },
+  { key: "small", label: "Reason to stay small" },
+];
+const GROWTH_METHOD_EXAMPLES = [
+  { clues: ["Two large gaming/technology companies.", "Boards on both sides formally agreed to combine.", "One of the biggest deals in gaming industry history."],
+    name: "Microsoft / Activision Blizzard", business: "A merger and acquisition — Microsoft's purchase of Activision Blizzard was agreed by both companies' boards, giving Microsoft major gaming franchises and talent in one move." },
+  { clues: ["A social media company and a billionaire entrepreneur.", "The offer was made directly to shareholders, not first agreed with the board.", "Eventually resulted in a change of ownership and structure."],
+    name: "Musk / Twitter", business: "A takeover — the approach to shareholders directly, over the board's initial resistance, is the hallmark of an unsolicited (and here, ultimately successful) takeover attempt." },
+  { clues: ["A Japanese electronics company and a Japanese car manufacturer.", "Jointly created a brand-new, separately owned company.", "Focused on developing electric vehicles together."],
+    name: "Sony / Honda", business: "A joint venture — Sony and Honda didn't merge or acquire each other; they jointly created and co-own a new company (Sony Honda Mobility) to pursue EVs together." },
+  { clues: ["A well-known brand with thousands of locations worldwide.", "Individual local owners run each location under the brand's name.", "Owners pay fees and follow strict operating standards set centrally."],
+    name: "Franchising (e.g. McDonald's)", business: "This is franchising — the franchisor (the parent brand) licenses its name, systems and support to independent franchisees, who invest their own capital and share revenue back to the franchisor." },
+];
+
+const STUDY_SECTIONS_1_5 = [
+  { key: "internal-economies", title: "Types of internal economies of scale", intro: "Internal economies of scale happen inside a firm and are within its own control. Sort each example into the right category:" },
+  { key: "scale-type", title: "Internal vs. external economies of scale", intro: "Internal economies benefit only the firm itself; external economies benefit every firm in an industry or location. Sort each example:" },
+  { key: "growth-type", title: "Internal vs. external growth", intro: "Internal (organic) growth uses a firm's own resources; external growth relies on other organizations. Sort each example:" },
+  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growth brings real advantages, but staying small can be a deliberate strategic choice too. Sort each reason into the right column:" },
+  { key: "growth-methods", title: "Methods of external growth", intro: "Mergers, takeovers, joint ventures and franchising are all external growth methods, but they work very differently. Match each real example to its method:" },
+];
+
+// ============================================================
+// SUBUNIT 1.6 — Study Guide data
+// ============================================================
+const STUDY_VIDEOS_1_6 = {
+  tesla: { id: "rHO-ctMgygc", title: "Why Tesla Is Betting Big in China With a New Factory", channel: "Bloomberg", length: "3:33" },
+  samsung: { id: "sdZIKnE8SJg", title: "Why Samsung is Making Vietnam a Powerhouse", channel: "CNBC", length: "7:23" },
+};
+const WHY_MNC_ITEMS = [
+  { label: "Building a factory inside a high-tariff market", bucket: "protectionism" },
+  { label: "Moving production to a lower-wage country", bucket: "cheaper" },
+  { label: "Operating in ten countries to spread risk", bucket: "risk" },
+  { label: "Expanding into new countries to reach new customers", bucket: "customers" },
+];
+const WHY_MNC_BUCKETS = [
+  { key: "protectionism", label: "Avoid protectionism" },
+  { key: "cheaper", label: "Cheaper production" },
+  { key: "risk", label: "Spread risk" },
+  { key: "customers", label: "Bigger customer base" },
+];
+const MNC_POSITIVE_ITEMS = [
+  { label: "A local supplier learns advanced manufacturing techniques", bucket: "knowledge" },
+  { label: "A new factory hires 2,000 local workers", bucket: "jobs" },
+  { label: "Local firms improve just to keep up and compete", bucket: "competition" },
+  { label: "Local tax revenue rises", bucket: "income" },
+];
+const MNC_POSITIVE_BUCKETS = [
+  { key: "knowledge", label: "Knowledge/tech transfer" },
+  { key: "jobs", label: "Job creation" },
+  { key: "competition", label: "Increased competition" },
+  { key: "income", label: "Higher national income" },
+];
+const MNC_NEGATIVE_ITEMS = [
+  { label: "Profits sent back to shareholders in the home country", bucket: "repatriation" },
+  { label: "A local retailer closes because it can't match MNC prices", bucket: "competitive" },
+  { label: "A town's economy collapses after the MNC leaves", bucket: "vulnerability" },
+  { label: "Workplace safety standards fall short of the home country's", bucket: "social" },
+  { label: "Layoffs follow automation or relocation elsewhere", bucket: "joblosses" },
+];
+const MNC_NEGATIVE_BUCKETS = [
+  { key: "repatriation", label: "Repatriation of profits" },
+  { key: "competitive", label: "Competitive pressure" },
+  { key: "vulnerability", label: "Vulnerability" },
+  { key: "social", label: "Social responsibilities" },
+  { key: "joblosses", label: "Job losses" },
+];
+const APPLE_MNC_IMPACT_EXAMPLES = [
+  { clues: ["A South Asian host country gaining Apple production.", "New Tata Electronics and Foxconn plants opened here.", "Its share of iPhone production has risen sharply since 2022."],
+    name: "India", business: "Largely a positive story so far: new manufacturing jobs, technology transfer from experienced partners, and a fast-rising share of global iPhone production — though the case doesn't establish exact job numbers gained." },
+  { clues: ["The long-standing host country for most Apple production.", "Home to Foxconn's giant Zhengzhou plant, once called 'iPhone City'.", "Still hosts the majority of Apple's manufacturing today."],
+    name: "China", business: "A mixed and evolving story: China retains deep manufacturing expertise and the bulk of production for now, but faces reduced hiring at its largest site and the risk of further job/investment losses as diversification continues." },
+];
+
+const STUDY_SECTIONS_1_6 = [
+  { key: "why-mnc", title: "Why do businesses become MNCs?", intro: "Businesses expand across borders for several common reasons. Sort each scenario into the reason it best illustrates:" },
+  { key: "positive-impacts", title: "Positive impacts on host countries", intro: "A multinational company can bring real benefits to the countries it operates in. Sort each example:" },
+  { key: "negative-impacts", title: "Negative impacts and risks for host countries", intro: "MNCs can also bring real costs and risks to a host country. Sort each example:" },
+  { key: "apple-impact", title: "Apple's own impact: India vs. China", intro: "Apple's manufacturing shift illustrates both sides of MNC impact at once. Compare the two host countries:" },
+];
+
 const STUDY_SECTIONS_BY_SUBUNIT = {
   "1.1": STUDY_SECTIONS_1_1,
   "1.2": STUDY_SECTIONS_1_2,
+  "1.3": STUDY_SECTIONS_1_3,
+  "1.4": STUDY_SECTIONS_1_4,
+  "1.5": STUDY_SECTIONS_1_5,
+  "1.6": STUDY_SECTIONS_1_6,
 };
 
 function StudyCompletionCard({ xpEarned, badgeEarned }) {
@@ -2292,6 +2853,87 @@ function StudyView({ onBack, subunitId }) {
           )}
           {current.key === "entity-choice" && (
             <EntrepreneurGrid items={ENTITY_CHOICE_SCENARIOS} onComplete={() => markComplete("entity-choice")} />
+          )}
+
+          {/* ---- 1.3 Business objectives ---- */}
+          {current.key === "vision-mission" && (
+            <SortGame items={VISION_MISSION_ITEMS} buckets={VISION_MISSION_BUCKETS} onComplete={() => markComplete("vision-mission")} />
+          )}
+          {current.key === "smart" && (
+            <SortGame items={SMART_ITEMS} buckets={SMART_BUCKETS} onComplete={() => markComplete("smart")} />
+          )}
+          {current.key === "strategic-tactical" && (
+            <SortGame items={STRATEGIC_TACTICAL_ITEMS} buckets={STRATEGIC_TACTICAL_BUCKETS} onComplete={() => markComplete("strategic-tactical")} />
+          )}
+          {current.key === "ethics-csr" && (
+            <>
+              <SortGame items={ETHICS_ADV_DISADV_ITEMS} buckets={ETHICS_ADV_DISADV_BUCKETS} onComplete={() => markComplete("ethics-sort")} />
+              <div className="mt-6 pt-5 border-t" style={{ borderColor: "#e7e2d8" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  <StudyVideoLink video={STUDY_VIDEOS_1_3.ikea} />
+                  <StudyVideoLink video={STUDY_VIDEOS_1_3.nissan} />
+                  <StudyVideoLink video={STUDY_VIDEOS_1_3.hm} />
+                </div>
+                <div className="text-[13.5px] font-semibold text-stone-700 mb-3">Real companies putting CSR into practice:</div>
+                <EntrepreneurGrid items={CSR_EXAMPLES} onComplete={() => markComplete("csr-examples")} />
+              </div>
+            </>
+          )}
+
+          {/* ---- 1.4 Stakeholders ---- */}
+          {current.key === "stakeholder-types" && (
+            <SortGame items={STAKEHOLDER_WANT_ITEMS} buckets={STAKEHOLDER_WANT_BUCKETS} onComplete={() => markComplete("stakeholder-types")} />
+          )}
+          {current.key === "uber-brainstorm" && (
+            <SortGame items={UBER_STAKEHOLDER_ITEMS} buckets={UBER_STAKEHOLDER_BUCKETS} onComplete={() => markComplete("uber-brainstorm")} />
+          )}
+          {current.key === "stakeholder-mapping" && (
+            <SortGame items={STAKEHOLDER_MAP_ITEMS} buckets={STAKEHOLDER_MAP_BUCKETS} onComplete={() => markComplete("stakeholder-mapping")} />
+          )}
+          {current.key === "conflict-examples" && (
+            <EntrepreneurGrid items={STAKEHOLDER_CONFLICT_EXAMPLES} onComplete={() => markComplete("conflict-examples")} />
+          )}
+
+          {/* ---- 1.5 Growth and evolution ---- */}
+          {current.key === "internal-economies" && (
+            <SortGame items={INTERNAL_ECONOMIES_ITEMS} buckets={INTERNAL_ECONOMIES_BUCKETS} onComplete={() => markComplete("internal-economies")} />
+          )}
+          {current.key === "scale-type" && (
+            <SortGame items={SCALE_TYPE_ITEMS} buckets={SCALE_TYPE_BUCKETS} onComplete={() => markComplete("scale-type")} />
+          )}
+          {current.key === "growth-type" && (
+            <SortGame items={GROWTH_TYPE_ITEMS} buckets={GROWTH_TYPE_BUCKETS} onComplete={() => markComplete("growth-type")} />
+          )}
+          {current.key === "grow-stay-small" && (
+            <>
+              <div className="mb-4">
+                <StudyVideoLink video={STUDY_VIDEOS_1_5.benAndJerrys} />
+              </div>
+              <SortGame items={GROW_STAY_SMALL_ITEMS} buckets={GROW_STAY_SMALL_BUCKETS} onComplete={() => markComplete("grow-stay-small")} />
+            </>
+          )}
+          {current.key === "growth-methods" && (
+            <EntrepreneurGrid items={GROWTH_METHOD_EXAMPLES} onComplete={() => markComplete("growth-methods")} />
+          )}
+
+          {/* ---- 1.6 Multinational companies ---- */}
+          {current.key === "why-mnc" && (
+            <SortGame items={WHY_MNC_ITEMS} buckets={WHY_MNC_BUCKETS} onComplete={() => markComplete("why-mnc")} />
+          )}
+          {current.key === "positive-impacts" && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <StudyVideoLink video={STUDY_VIDEOS_1_6.tesla} />
+                <StudyVideoLink video={STUDY_VIDEOS_1_6.samsung} />
+              </div>
+              <SortGame items={MNC_POSITIVE_ITEMS} buckets={MNC_POSITIVE_BUCKETS} onComplete={() => markComplete("positive-impacts")} />
+            </>
+          )}
+          {current.key === "negative-impacts" && (
+            <SortGame items={MNC_NEGATIVE_ITEMS} buckets={MNC_NEGATIVE_BUCKETS} onComplete={() => markComplete("negative-impacts")} />
+          )}
+          {current.key === "apple-impact" && (
+            <EntrepreneurGrid items={APPLE_MNC_IMPACT_EXAMPLES} onComplete={() => markComplete("apple-impact")} />
           )}
 
           <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: "#e7e2d8" }}>
