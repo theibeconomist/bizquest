@@ -36,7 +36,7 @@ export default async function TeacherPage() {
           Create a class, share its join code with your students, then track how they are doing.
         </p>
         <TeacherDashboard initialClasses={classes || []} />
-        <FeedbackTile page="teacher-dashboard" />
+        <FeedbackTile page="Teacher dashboard" />
       </div>
     </div>
   );

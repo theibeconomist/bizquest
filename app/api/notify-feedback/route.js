@@ -19,6 +19,8 @@ export async function POST(request) {
 
   const message = (body?.message || "").toString().slice(0, 4000);
   const page = (body?.page || "unknown page").toString().slice(0, 200);
+  const role = (body?.role || "student").toString().slice(0, 20);
+  const displayName = (body?.displayName || "").toString().slice(0, 200);
   if (!message.trim()) {
     return Response.json({ error: "Feedback message is empty." }, { status: 400 });
   }
@@ -39,7 +41,7 @@ export async function POST(request) {
         from: "BizQuest <onboarding@resend.dev>",
         to: [process.env.ADMIN_EMAIL],
         subject: `New BizQuest feedback (${page})`,
-        text: `From: ${user.email || "(unknown)"}\nPage: ${page}\n\n${message}`,
+        text: `From: ${displayName ? displayName + " " : ""}${user.email ? `<${user.email}>` : "(unknown)"} — ${role}\nPage: ${page}\n\n${message}`,
       }),
     });
   } catch {

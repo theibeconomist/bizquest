@@ -2182,7 +2182,7 @@ function StudyView({ onBack, subunitId }) {
         subunitTitle={subunitTitle}
       />
 
-      <div className="mx-auto max-w-2xl px-5 py-6">
+      <div className="mx-auto max-w-4xl px-5 py-6">
         <div className="text-center mb-5">
           <h1 className="text-[20px] font-semibold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Study Guide</h1>
           <p className="text-[13px] text-stone-500 mt-1">A guided walkthrough of the core ideas, with a quick activity in each section.</p>
@@ -2428,7 +2428,7 @@ function FlashcardsView({ onBack, subunitId }) {
         subunitTitle={subunitTitle}
       />
 
-      <div className="mx-auto max-w-2xl px-5 py-8">
+      <div className="mx-auto max-w-4xl px-5 py-8">
         <div className="text-center mb-5">
           <h1 className="text-[20px] font-semibold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Key Terms</h1>
           <p className="text-[13px] text-stone-500 mt-1">Flip each card, then mark yourself honestly — cards you get wrong come back around for another try.</p>
@@ -2908,7 +2908,7 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
     <div className="min-h-full w-full" style={{ backgroundColor: "#F2EEE4" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Fraunces:ital,wght@1,600;1,700&display=swap');`}</style>
       <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
-        <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 27, lineHeight: 1.15 }}>
               BizQuest
@@ -2934,13 +2934,13 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
       </div>
 
       {role === "student" && (
-        <div className="mx-auto max-w-2xl px-5 pt-4">
+        <div className="mx-auto max-w-4xl px-5 pt-4">
           <ClassMembershipInfo classInfo={classInfo} onJoined={onJoinedClass} />
         </div>
       )}
 
       <div
-        className="mx-auto max-w-2xl relative overflow-hidden"
+        className="mx-auto max-w-4xl relative overflow-hidden"
         style={{
           height: totalHeight,
           backgroundImage: "radial-gradient(circle, #e2dccc 1px, transparent 1.4px)",
@@ -2989,7 +2989,7 @@ function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine
   return (
     <div className="sticky top-0 z-10" style={{ backgroundColor: themeColor }}>
       <div className="px-5 py-4">
-        <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1 min-w-0">
             <button
               onClick={onBack}
@@ -3088,7 +3088,7 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId }) {
     <div className="min-h-full w-full" style={{ backgroundColor: "#FAF8F5" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Fraunces:ital,wght@1,600;1,700&display=swap');`}</style>
       <div className="px-5 py-5" style={{ backgroundColor: "#2D4A3E" }}>
-        <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1 min-w-0">
             <button
               onClick={onBackToMap}
@@ -3117,7 +3117,7 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId }) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-5 py-8">
+      <div className="mx-auto max-w-4xl px-5 py-8">
         <p className="text-[13px] text-stone-500 mb-5">Choose how you'd like to work through this subunit.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <HubTile
@@ -3579,18 +3579,18 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
             teacherEmail: result ? result.teacherEmail : prev.teacherEmail,
           }))}
         />
-        <FeedbackTile page="unitmap" />
+        <FeedbackTile page="Unit map" />
       </FadeIn>
     );
   }
   if (view === "hub") {
-    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /><FeedbackTile page={`hub-${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /><FeedbackTile page={`Subunit hub — ${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "terms") {
-    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`terms-${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`Flashcards — ${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "study") {
-    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`study-${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`Study guide — ${currentSubunitId}`} /></FadeIn>;
   }
 
   return (
@@ -3765,7 +3765,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         <div className="text-center text-[12px] text-stone-400 pt-2 pb-2">
           Feedback is generated by AI using the same marking criteria as the print workbook — treat it as practice guidance, not an official grade.
         </div>
-        <FeedbackTile page={`practice-${currentSubunitId}`} />
+        <FeedbackTile page={`Practice — ${currentSubunitId} — ${currentStage.charAt(0).toUpperCase()}${currentStage.slice(1)}`} />
       </div>
 
       <LevelUpToast levelName={levelUpToast} />

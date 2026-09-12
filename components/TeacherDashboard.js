@@ -2,16 +2,17 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import {
   Loader2, Copy, Check, ChevronRight, ChevronDown, Users, Clock, Target, BookOpen,
-  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2,
+  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
   createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers,
-  loadComprehensionAttemptsForUsers, removeStudentFromClass,
+  loadComprehensionAttemptsForUsers, removeStudentFromClass, generateStudentSummary,
 } from "@/lib/db";
 import Avatar from "@/components/Avatar";
+import { questionText } from "@/lib/question-bank";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -293,6 +294,47 @@ function printStudentReport(student, subunitProgressList) {
   setTimeout(() => w.print(), 300);
 }
 
+// Per-question breakdown for one subunit: attempt count, best/latest score (or, for
+// Discover comprehension checks, the latest verdict), used when a teacher expands a
+// specific subunit in a student's detail panel.
+function buildQuestionBreakdown(subunitId, myAttempts, myCompAttempts) {
+  const rows = [];
+  const compByQuestion = {};
+  for (const a of myCompAttempts) {
+    if (a.subunit_id !== subunitId) continue;
+    compByQuestion[a.question_id] = compByQuestion[a.question_id] || [];
+    compByQuestion[a.question_id].push(a);
+  }
+  for (const [questionId, list] of Object.entries(compByQuestion)) {
+    list.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at));
+    rows.push({
+      questionId, section: "discover", stageLabel: "Discover",
+      attempts: list.length, latestVerdict: list.at(-1).verdict, lastAttemptDate: list.at(-1).submitted_at,
+    });
+  }
+  const gradedByQuestion = {};
+  for (const a of myAttempts) {
+    if (a.subunit_id !== subunitId) continue;
+    gradedByQuestion[a.question_id] = gradedByQuestion[a.question_id] || [];
+    gradedByQuestion[a.question_id].push(a);
+  }
+  for (const [questionId, list] of Object.entries(gradedByQuestion)) {
+    list.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at));
+    const best = list.reduce((m, a) => (a.marks_earned > m.marks_earned ? a : m), list[0]);
+    const latest = list.at(-1);
+    rows.push({
+      questionId, section: latest.section,
+      stageLabel: latest.section === "vocab" ? "Build" : latest.section === "structured" ? "Apply" : "Master",
+      attempts: list.length,
+      bestScore: best.marks_earned, bestPossible: best.marks_possible,
+      latestScore: latest.marks_earned, latestPossible: latest.marks_possible,
+      lastAttemptDate: latest.submitted_at,
+    });
+  }
+  const stageOrder = { Discover: 0, Build: 1, Apply: 2, Master: 3 };
+  return rows.sort((a, b) => stageOrder[a.stageLabel] - stageOrder[b.stageLabel] || a.questionId.localeCompare(b.questionId));
+}
+
 function CopyableCode({ code }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -492,7 +534,10 @@ function HardestQuestionsList({ questions }) {
             <tr key={`${q.subunitId}-${q.questionId}`} className="border-b border-stone-100 last:border-0">
               <td className="px-3 py-1.5 text-stone-600">{SUBUNIT_LABELS[q.subunitId] || q.subunitId}</td>
               <td className="px-3 py-1.5 text-stone-600">{SECTION_LABELS[q.section] || q.section}</td>
-              <td className="px-3 py-1.5 text-stone-500 font-mono">{q.questionId}</td>
+              <td className="px-3 py-1.5 text-stone-700 max-w-[280px]">
+                {questionText(q.subunitId, q.questionId)}
+                <span className="text-stone-400 font-mono text-[10.5px]"> ({q.questionId})</span>
+              </td>
               <td className="px-3 py-1.5 font-medium" style={{ color: q.accuracy >= 70 ? GREEN : q.accuracy >= 50 ? GOLD : RED }}>{q.accuracy}%</td>
               <td className="px-3 py-1.5 text-stone-400">{q.attempts}</td>
             </tr>
@@ -587,9 +632,11 @@ function NeedsAttentionBanner({ students, onSelect }) {
   );
 }
 
-function StudentDetailPanel({ student, attempts, activity, subunitProgressList, onRemove, persistence }) {
+function StudentDetailPanel({ student, attempts, activity, compAttempts, subunitProgressList, onRemove, persistence }) {
+  const [expandedSubunit, setExpandedSubunit] = useState(null);
   const myAttempts = useMemo(() => attempts.filter((a) => a.user_id === student.id), [attempts, student.id]);
   const myActivity = useMemo(() => activity.filter((a) => a.user_id === student.id), [activity, student.id]);
+  const myCompAttempts = useMemo(() => compAttempts.filter((a) => a.user_id === student.id), [compAttempts, student.id]);
 
   const subunitAccuracyData = useMemo(() => {
     const bySubunit = {};
@@ -611,6 +658,62 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
   }, [myActivity]);
 
   const trendData = useMemo(() => weeklyAccuracyTrend(myAttempts), [myAttempts]);
+
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+
+  const myHardestQuestions = useMemo(() => {
+    const byQ = {};
+    for (const a of myAttempts) {
+      const key = `${a.subunit_id}:${a.question_id}`;
+      byQ[key] = byQ[key] || { subunitId: a.subunit_id, questionId: a.question_id, section: a.section, earned: 0, possible: 0 };
+      byQ[key].earned += a.marks_earned || 0;
+      byQ[key].possible += a.marks_possible || 0;
+    }
+    return Object.values(byQ)
+      .filter((q) => q.possible > 0)
+      .map((q) => ({ ...q, accuracy: pct(q.earned, q.possible) }))
+      .sort((a, b) => a.accuracy - b.accuracy)
+      .slice(0, 3);
+  }, [myAttempts]);
+
+  const onGenerateSummary = async () => {
+    setSummaryLoading(true);
+    setSummaryError("");
+    try {
+      const stats = {
+        name: student.label,
+        accuracyOnGradedQuestions: student.accuracy,
+        gradedAttemptsCount: student.attemptCount,
+        comprehensionCheckPerformance: student.comprehension,
+        currentStreakDays: student.streak,
+        daysSinceLastActive: student.daysSinceActive,
+        timeSpentThisWeekMinutes: Math.round(student.weekly / 60),
+        timeSpentThisMonthMinutes: Math.round(student.monthly / 60),
+        accuracyBySubunit: subunitAccuracyData,
+        accuracyByQuestionType: Object.entries(student.bySection).map(([k, v]) => ({ type: SECTION_LABELS[k] || k, accuracy: pct(v.earned, v.possible) })),
+        subunitStageProgress: subunitProgressList.map((sp) => ({
+          subunit: sp.label, currentStage: sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage], progress: sp.doneCounts, totals: sp.totals,
+        })),
+        persistence: persistence && persistence.totalQuestions > 0
+          ? { avgTriesPerQuestion: +(persistence.totalAttempts / persistence.totalQuestions).toFixed(2), questionsRetried: persistence.retriedQuestions, totalQuestionsAttempted: persistence.totalQuestions }
+          : null,
+        lowestScoringQuestions: myHardestQuestions.map((q) => ({
+          subunit: SUBUNIT_LABELS[q.subunitId] || q.subunitId,
+          type: SECTION_LABELS[q.section] || q.section,
+          question: questionText(q.subunitId, q.questionId),
+          accuracy: q.accuracy,
+        })),
+      };
+      const text = await generateStudentSummary(stats);
+      setSummary(text);
+    } catch (err) {
+      setSummaryError(err.message || "Could not generate summary.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const recentAttempts = useMemo(
     () => [...myAttempts].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)).slice(0, 15),
@@ -656,6 +759,32 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
         </div>
       </div>
 
+      <div className="rounded-md border border-stone-200 bg-white px-3.5 py-3">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-stone-700">
+            <Sparkles size={13} style={{ color: GOLD }} /> AI performance summary
+          </div>
+          <button
+            onClick={onGenerateSummary}
+            disabled={summaryLoading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1 text-[11.5px] font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
+          >
+            {summaryLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {summary ? "Regenerate" : summaryLoading ? "Generating…" : "Generate"}
+          </button>
+        </div>
+        {summaryError && <p className="text-[12px] text-red-600">{summaryError}</p>}
+        {summary ? (
+          <p className="text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap">{summary}</p>
+        ) : (
+          !summaryLoading && !summaryError && (
+            <p className="text-[12px] text-stone-400">
+              Generates a short, teacher-facing summary of where this student stands and what to focus on next, based on their actual stats above.
+            </p>
+          )
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-[12px] font-semibold text-stone-600">Subunit progress</div>
         <div className="flex gap-2">
@@ -675,17 +804,74 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
       </div>
 
       <div className="space-y-2.5">
-        {subunitProgressList.map((sp) => (
-          <div key={sp.subunitId}>
-            <div className="flex items-center justify-between text-[12px] mb-1">
-              <span className="text-stone-600">{sp.label}</span>
-              <span className="font-medium" style={{ color: sp.isComplete ? GREEN : STAGE_COLOR[sp.currentStage] }}>
-                {sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage]}
-              </span>
+        {subunitProgressList.map((sp) => {
+          const isExpanded = expandedSubunit === sp.subunitId;
+          const breakdown = isExpanded ? buildQuestionBreakdown(sp.subunitId, myAttempts, myCompAttempts) : [];
+          return (
+            <div key={sp.subunitId}>
+              <button
+                onClick={() => setExpandedSubunit(isExpanded ? null : sp.subunitId)}
+                className="w-full text-left"
+              >
+                <div className="flex items-center justify-between text-[12px] mb-1">
+                  <span className="text-stone-600 inline-flex items-center gap-1">
+                    {isExpanded ? <ChevronDown size={12} className="text-stone-400" /> : <ChevronRight size={12} className="text-stone-400" />}
+                    {sp.label}
+                  </span>
+                  <span className="font-medium" style={{ color: sp.isComplete ? GREEN : STAGE_COLOR[sp.currentStage] }}>
+                    {sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage]}
+                  </span>
+                </div>
+                <StageMiniBar progress={sp} />
+              </button>
+              {isExpanded && (
+                <div className="mt-2 overflow-x-auto rounded-md border border-stone-200 bg-white">
+                  {breakdown.length === 0 ? (
+                    <div className="px-3 py-3 text-[12px] text-stone-400">No activity in this subunit yet.</div>
+                  ) : (
+                    <table className="w-full text-[12px]">
+                      <thead>
+                        <tr className="border-b border-stone-200 text-left text-stone-500 bg-stone-50">
+                          <th className="px-3 py-1.5 font-medium">Stage</th>
+                          <th className="px-3 py-1.5 font-medium">Question</th>
+                          <th className="px-3 py-1.5 font-medium">Tries</th>
+                          <th className="px-3 py-1.5 font-medium">Best</th>
+                          <th className="px-3 py-1.5 font-medium">Latest</th>
+                          <th className="px-3 py-1.5 font-medium">Last tried</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {breakdown.map((row) => (
+                          <tr key={row.questionId} className="border-b border-stone-100 last:border-0">
+                            <td className="px-3 py-1.5 text-stone-500">{row.stageLabel}</td>
+                            <td className="px-3 py-1.5 text-stone-700 max-w-[260px]">
+                              {questionText(sp.subunitId, row.questionId)}
+                              <span className="text-stone-400 font-mono text-[10px]"> ({row.questionId})</span>
+                            </td>
+                            <td className="px-3 py-1.5 text-stone-600">{row.attempts}</td>
+                            {row.section === "discover" ? (
+                              <>
+                                <td className="px-3 py-1.5 text-stone-400" colSpan={2}>
+                                  Verdict: <span className="font-medium text-stone-600 capitalize">{row.latestVerdict}</span>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-3 py-1.5 text-stone-600">{row.bestScore}/{row.bestPossible}</td>
+                                <td className="px-3 py-1.5 text-stone-600">{row.latestScore}/{row.latestPossible}</td>
+                              </>
+                            )}
+                            <td className="px-3 py-1.5 text-stone-500">{new Date(row.lastAttemptDate).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
             </div>
-            <StageMiniBar progress={sp} />
-          </div>
-        ))}
+          );
+        })}
         {subunitProgressList.length === 0 && (
           <div className="text-[12.5px] text-stone-400">No subunit activity yet.</div>
         )}
@@ -728,7 +914,10 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
                   <tr key={`${a.id}-${i}`} className="border-b border-stone-100 last:border-0">
                     <td className="px-3 py-1.5 text-stone-600">{SUBUNIT_LABELS[a.subunit_id] || a.subunit_id}</td>
                     <td className="px-3 py-1.5 text-stone-600">{SECTION_LABELS[a.section] || a.section}</td>
-                    <td className="px-3 py-1.5 text-stone-500 font-mono">{a.question_id}</td>
+                    <td className="px-3 py-1.5 text-stone-700 max-w-[240px]">
+                      {questionText(a.subunit_id, a.question_id)}
+                      <span className="text-stone-400 font-mono text-[10px]"> ({a.question_id})</span>
+                    </td>
                     <td className="px-3 py-1.5 text-stone-600">{a.marks_earned}/{a.marks_possible}</td>
                     <td className="px-3 py-1.5 text-stone-500">{new Date(a.submitted_at).toLocaleDateString()}</td>
                   </tr>
@@ -1268,6 +1457,7 @@ export default function TeacherDashboard({ initialClasses }) {
                                   student={s}
                                   attempts={attempts}
                                   activity={activity}
+                                  compAttempts={compAttempts}
                                   subunitProgressList={subunitProgressListFor(s)}
                                   onRemove={setRemoving}
                                   persistence={persistence.perUser[s.id]}

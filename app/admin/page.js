@@ -5,6 +5,7 @@ import AdminTable from "@/components/AdminTable";
 import SignOutButton from "@/components/SignOutButton";
 import ProfileButton from "@/components/ProfileButton";
 import FeedbackTile from "@/components/FeedbackTile";
+import FeedbackInbox from "@/components/FeedbackInbox";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -37,7 +38,8 @@ export default async function AdminPage() {
           their own students) or admin.
         </p>
         <AdminTable initialStudents={students || []} currentUserId={user.id} />
-        <FeedbackTile page="admin" />
+        <FeedbackInbox />
+        <FeedbackTile page="Admin" />
       </div>
     </div>
   );
