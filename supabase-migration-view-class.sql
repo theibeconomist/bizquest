@@ -24,6 +24,10 @@ create policy "Students can view their own class" on classes for select
   using (id = my_class_id());
 
 -- join_class() now also hands back the teacher's email so the client can show it immediately.
+-- Must be dropped first: Postgres won't let CREATE OR REPLACE change a function's return
+-- columns (we're adding teacher_email to what it returns), only its body.
+drop function if exists join_class(text);
+
 create or replace function join_class(p_code text)
 returns table(class_id uuid, class_name text, teacher_email text) as $$
 declare

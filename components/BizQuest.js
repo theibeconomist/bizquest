@@ -18,7 +18,11 @@ import {
   logQuestionAttempt,
   logComprehensionAttempt,
   recordActivitySeconds,
+  loadMyProfileDetails,
 } from "@/lib/db";
+import Avatar from "@/components/Avatar";
+import ProfileModal from "@/components/ProfileModal";
+import FeedbackTile from "@/components/FeedbackTile";
 
 // ============================================================
 // ⚠️ TEMPORARY TESTING FLAG — set back to false before real students use this.
@@ -2688,6 +2692,50 @@ function MapBackground({ totalHeight }) {
   );
 }
 
+// Avatar + display name, styled to sit next to the XP pill in the navy header — a soft
+// gradient background gives it a bit more presence than a flat pill. Opens the same
+// profile modal used by ProfileButton (photo, display name, role-specific detail).
+function ProfileChip({ role }) {
+  const [info, setInfo] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await loadMyProfileDetails();
+        if (!cancelled) setInfo(data);
+      } catch {
+        // fall back to the initials placeholder — not worth surfacing an error for this
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const name = info?.display_name || "";
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1.5 hover:brightness-110 transition"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))" }}
+        title="Your profile"
+      >
+        <Avatar url={info?.avatar_url} name={name} size={30} ringColor="rgba(255,255,255,0.35)" />
+        <span className="text-[12px] font-medium text-white max-w-[110px] truncate">{name || "Add your name"}</span>
+      </button>
+      {open && (
+        <ProfileModal
+          role={role}
+          onClose={() => setOpen(false)}
+          onSaved={(saved) => setInfo((prev) => ({ ...prev, display_name: saved.displayName, extra_detail: saved.extraDetail, avatar_url: saved.avatarUrl }))}
+        />
+      )}
+    </>
+  );
+}
+
 function JoinClassBanner({ onJoined }) {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState("idle"); // "idle" | "loading" | "error"
@@ -2869,13 +2917,16 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
             <h1 className="text-white text-[19px] font-semibold mt-0.5" style={{ fontFamily: "'Lora', serif" }}>Unit 1: Introduction to Business Management</h1>
           </div>
           {loaded && (
-            <div className="self-center flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5 sm:shrink-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: GOLD }}>
-                <Trophy size={16} />
-              </div>
-              <div className="leading-tight">
-                <div className="text-[12px] font-semibold text-white">{getLevelInfo(profile.xp || 0).name}</div>
-                <div className="text-[10.5px] text-white/70">{profile.xp || 0} XP total</div>
+            <div className="self-center flex items-center gap-2 sm:shrink-0">
+              <ProfileChip role={role} />
+              <div className="flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: GOLD }}>
+                  <Trophy size={16} />
+                </div>
+                <div className="leading-tight">
+                  <div className="text-[12px] font-semibold text-white">{getLevelInfo(profile.xp || 0).name}</div>
+                  <div className="text-[10.5px] text-white/70">{profile.xp || 0} XP total</div>
+                </div>
               </div>
             </div>
           )}
@@ -3528,17 +3579,18 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
             teacherEmail: result ? result.teacherEmail : prev.teacherEmail,
           }))}
         />
+        <FeedbackTile page="unitmap" />
       </FadeIn>
     );
   }
   if (view === "hub") {
-    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /></FadeIn>;
+    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /><FeedbackTile page={`hub-${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "terms") {
-    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} /></FadeIn>;
+    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`terms-${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "study") {
-    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} /></FadeIn>;
+    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`study-${currentSubunitId}`} /></FadeIn>;
   }
 
   return (
@@ -3710,9 +3762,10 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
           </FadeIn>
         )}
 
-        <div className="text-center text-[12px] text-stone-400 pt-2 pb-8">
+        <div className="text-center text-[12px] text-stone-400 pt-2 pb-2">
           Feedback is generated by AI using the same marking criteria as the print workbook — treat it as practice guidance, not an official grade.
         </div>
+        <FeedbackTile page={`practice-${currentSubunitId}`} />
       </div>
 
       <LevelUpToast levelName={levelUpToast} />

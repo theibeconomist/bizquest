@@ -65,8 +65,16 @@ export default function AdminTable({ initialStudents, currentUserId }) {
             return (
               <tr key={s.id} className="border-b border-stone-100 last:border-0">
                 <td className="px-4 py-2.5">
-                  {s.email || <span className="text-stone-400">(no email on file)</span>}
-                  {s.is_admin && <span className="ml-2 text-[11px] text-stone-400">(admin)</span>}
+                  <div className="font-medium text-stone-700">
+                    {s.display_name || s.email || <span className="text-stone-400 font-normal">(no name or email on file)</span>}
+                  </div>
+                  {s.display_name && s.email && <div className="text-[11px] text-stone-400">{s.email}</div>}
+                  {s.is_admin && <span className="text-[11px] text-stone-400">(admin)</span>}
+                  {!s.approved && s.requested_role === "teacher" && (
+                    <span className="ml-1.5 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-medium text-amber-700">
+                      Signed up as: Teacher
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2.5">
                   {s.approved ? (

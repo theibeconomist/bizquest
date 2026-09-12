@@ -3,24 +3,27 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminTable from "@/components/AdminTable";
 import SignOutButton from "@/components/SignOutButton";
+import ProfileButton from "@/components/ProfileButton";
+import FeedbackTile from "@/components/FeedbackTile";
 
 export default async function AdminPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  const { data: me } = await supabase.from("profiles").select("is_admin, role").eq("id", user.id).maybeSingle();
   if (!me?.is_admin) redirect("/");
 
   const { data: students } = await supabase
     .from("profiles")
-    .select("id, email, approved, is_admin, role, xp, updated_at")
+    .select("id, email, approved, is_admin, role, xp, updated_at, display_name, requested_role")
     .order("approved", { ascending: true })
     .order("updated_at", { ascending: false });
 
   return (
     <div className="min-h-screen px-4 py-10" style={{ backgroundColor: "#FAF8F5" }}>
       <SignOutButton />
+      <ProfileButton role={me.role || "admin"} className="fixed top-2.5 right-[104px] z-50" fixed={false} />
       <div className="max-w-3xl mx-auto">
         <Link href="/" className="inline-block mb-4 text-[13px] text-stone-500 hover:text-stone-700">
           ← Back to app
@@ -34,6 +37,7 @@ export default async function AdminPage() {
           their own students) or admin.
         </p>
         <AdminTable initialStudents={students || []} currentUserId={user.id} />
+        <FeedbackTile page="admin" />
       </div>
     </div>
   );

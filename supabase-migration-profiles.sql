@@ -10,19 +10,25 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+-- storage.objects already has row-level security enabled by default in every Supabase
+-- project, and only Supabase's internal role owns that table — so there's nothing to
+-- enable here, just policies to add.
 
 -- Public read (avatars are meant to be visible to classmates/teachers), but a user can
 -- only insert/update/delete objects inside their own folder (avatars/{their user id}/...).
+drop policy if exists "Avatar images are publicly readable" on storage.objects;
 create policy "Avatar images are publicly readable" on storage.objects for select
   using (bucket_id = 'avatars');
 
+drop policy if exists "Users can upload their own avatar" on storage.objects;
 create policy "Users can upload their own avatar" on storage.objects for insert
   with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
+drop policy if exists "Users can update their own avatar" on storage.objects;
 create policy "Users can update their own avatar" on storage.objects for update
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
+drop policy if exists "Users can delete their own avatar" on storage.objects;
 create policy "Users can delete their own avatar" on storage.objects for delete
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 

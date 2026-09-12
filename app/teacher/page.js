@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import TeacherDashboard from "@/components/TeacherDashboard";
 import SignOutButton from "@/components/SignOutButton";
 import ProfileButton from "@/components/ProfileButton";
+import FeedbackTile from "@/components/FeedbackTile";
 
 export default async function TeacherPage() {
   const supabase = await createClient();
@@ -35,6 +36,7 @@ export default async function TeacherPage() {
           Create a class, share its join code with your students, then track how they are doing.
         </p>
         <TeacherDashboard initialClasses={classes || []} />
+        <FeedbackTile page="teacher-dashboard" />
       </div>
     </div>
   );
