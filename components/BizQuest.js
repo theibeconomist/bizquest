@@ -148,7 +148,7 @@ const SECTOR_SORT_ITEMS = [
 
 const STUDY_VIDEOS = {
   sectors: { id: "tFhj9fwAOzw", title: "The Sectors of the Economy", channel: "Quickonomics", length: "2:49" },
-  chocolate: { id: "ZtMfiWDQHT8", title: "Milk Chocolate, From Scratch | How It's Made", channel: "Science Channel", length: "4:13" },
+  chocolate: { id: "SLI0LeBkwb8", title: "How 21 Sweets Get To The Grocery Store | Big Business Marathon", channel: "Business Insider", length: "38:00" },
   gymshark: { id: "MpftE7RwQnM", title: "How I Started The UK's Fastest Growing Company — Ben Francis", channel: "Ben Francis", length: "13:46" },
 };
 
@@ -377,15 +377,15 @@ const QUESTIONS = [
   // subunit's content includes AO3 (or AO3+AO4) — check this before adding one elsewhere.
 ];
 const VIDEO_1_2 = {
-  id: "ksdAC8CYF7A",
-  title: "Why Should I Incorporate",
-  source: "The Company Corporation",
+  id: "Sssmh4PDOoE",
+  title: "The Secret Behind the Success of Blue Ribbon Sports: Nike's Humble Beginnings",
+  source: "YouTube",
 };
 const COMPREHENSION_QUESTIONS_1_2 = [
-  { id: "c1", prompt: "According to the video, what can happen to a business owner's personal assets under unlimited liability if the business can't pay its debts?",
-    guidance: "Correct answer: personal assets (e.g. house, car, savings) can be seized/used to pay off the business's debts, since owner and business are treated as the same legal entity under unlimited liability. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "In one sentence, what does 'limited liability' mean for a business owner?",
-    guidance: "Correct answer: the owner's liability for business debts is limited to the amount they invested in the business — their personal assets beyond that are protected. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, how did Phil Knight and Bill Bowerman start their business, and what was it originally called?",
+    guidance: "Correct answer: they agreed to a handshake deal, each putting in $500, and started the business as Blue Ribbon Sports (later renamed Nike). Accept any answer capturing the handshake agreement and/or the original name. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, what did Blue Ribbon Sports do in its earliest days, before it made its own shoes?",
+    guidance: "Correct answer: it imported and distributed Japanese-made running shoes (Onitsuka Tiger) in the United States. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT_1_2 = `Apple was founded as a general partnership. Jobs and Wozniak each held a 45% stake; Wayne, the eldest of the three and the only one with meaningful personal assets, took the remaining 10% and drafted the founding partnership agreement. Just twelve days later, Wayne sold his 10% stake back to Jobs and Wozniak for $800. His stated reason illustrates a key disadvantage of the partnership form of business entity: under a general partnership, each partner has unlimited liability for the business's debts, and Wayne — who had already been through one bankruptcy from an earlier venture — feared his house, car and savings could be seized if Apple failed to pay a supplier or a loan.
 
@@ -1540,7 +1540,10 @@ function SectionChips({ stats, currentStage, onSelectStage, role }) {
     { key: "build", label: "Build", Icon: BookOpen, color: SECTION_THEME.vocab.color, done: stats.bySection?.vocab.done ?? 0, total: stats.bySection?.vocab.total ?? 0 },
     { key: "apply", label: "Apply", Icon: Pencil, color: SECTION_THEME.structured.color, done: stats.bySection?.structured.done ?? 0, total: stats.bySection?.structured.total ?? 0 },
     { key: "master", label: "Master", Icon: Send, color: SECTION_THEME.essay.color, done: stats.bySection?.essay.done ?? 0, total: stats.bySection?.essay.total ?? 0 },
-  ];
+    // A stage with 0 total questions (e.g. 1.1's Master, since it has no essay question
+    // per the workbook's AO1/AO2-only content) isn't "trivially complete" — it just
+    // doesn't exist for this subunit, so it shouldn't show as a tile at all.
+  ].filter((c) => c.key === "discover" || c.total > 0);
   // Teachers/admins get full, unrestricted access to every stage — same reasoning as the
   // subunit-level unlock bypass in UnitMapView: they shouldn't have to "complete" Build
   // before checking what's in Master.
@@ -1844,11 +1847,22 @@ function StudyIllustration({ variant }) {
       </svg>
     );
   }
+  if (variant === "reasons") {
+    return (
+      <svg {...common}>
+        <path d="M20 75 L20 40 L45 55 L45 25 L70 45" fill="none" stroke={STUDY_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M60 45 L70 45 L70 55" fill="none" stroke={STUDY_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <text x="130" y="52" textAnchor="middle" fontSize="26" fontWeight="bold" fill={STUDY_COLOR} fontFamily="Lora, serif">GET CASH</text>
+      </svg>
+    );
+  }
+  // Neutral generic fallback for any section without its own bespoke illustration —
+  // deliberately plain (not the GET CASH graphic above, which is specific to 1.1's
+  // "reasons" section and was previously used as the fallback by mistake).
   return (
     <svg {...common}>
-      <path d="M20 75 L20 40 L45 55 L45 25 L70 45" fill="none" stroke={STUDY_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M60 45 L70 45 L70 55" fill="none" stroke={STUDY_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <text x="130" y="52" textAnchor="middle" fontSize="26" fontWeight="bold" fill={STUDY_COLOR} fontFamily="Lora, serif">GET CASH</text>
+      <circle cx="100" cy="45" r="30" fill="none" stroke={STUDY_COLOR} strokeWidth="2" opacity="0.5" />
+      <circle cx="100" cy="45" r="6" fill={STUDY_COLOR} />
     </svg>
   );
 }
@@ -2091,9 +2105,12 @@ function EntrepreneurCard({ data, onReveal }) {
           </button>
         </div>
       ) : (
-        <div className="rounded-md px-3 py-2" style={{ backgroundColor: STUDY_LIGHT }}>
-          <div className="text-[14px] font-semibold" style={{ color: STUDY_COLOR }}>{data.name}</div>
-          <div className="text-[12.5px] text-stone-600">{data.business}</div>
+        <div className="space-y-2.5">
+          <div className="rounded-md px-3 py-2" style={{ backgroundColor: STUDY_LIGHT }}>
+            <div className="text-[14px] font-semibold" style={{ color: STUDY_COLOR }}>{data.name}</div>
+            <div className="text-[12.5px] text-stone-600">{data.business}</div>
+          </div>
+          {data.video && <StudyVideoLink video={data.video} />}
         </div>
       )}
     </div>
@@ -2263,6 +2280,7 @@ const FORPROFIT_SOCIAL_EXAMPLES = [
     ],
     name: "This Saves Lives",
     business: "Private sector for-profit social enterprise (aims to end severe acute malnutrition in children)",
+    video: { id: "VQt6XuXYOsU", title: "Kristen Bell and the Founders of This Saves Lives Talk Building a Brand With a Mission", channel: "Entrepreneur", length: "3:30" },
   },
   {
     clues: [
@@ -2272,6 +2290,7 @@ const FORPROFIT_SOCIAL_EXAMPLES = [
     ],
     name: "Niagara Parks Commission",
     business: "Public sector for-profit social enterprise",
+    video: { id: "fJIPwRc4juI", title: "Experience Niagara Parks: Journey Behind The Falls", channel: "Niagara Parks", length: "1:30" },
   },
 ];
 
@@ -2284,6 +2303,7 @@ const COOP_NGO_EXAMPLES = [
     ],
     name: "GlenWyvis Distillery",
     business: "Cooperative",
+    video: { id: "DfdoKZco27E", title: "\"We've created a distillery — what can YOUR community create?\"", channel: "Co-operatives UK", length: "3:21" },
   },
   {
     clues: [
@@ -2293,6 +2313,7 @@ const COOP_NGO_EXAMPLES = [
     ],
     name: "UNICEF",
     business: "Non-governmental organization (NGO) / non-profit social enterprise",
+    video: { id: "E1xkXZs0cAQ", title: "UNICEF | For every child", channel: "UNICEF", length: "1:30" },
   },
 ];
 
@@ -2328,12 +2349,6 @@ const ENTITY_CHOICE_SCENARIOS = [
     business: "A democratic, member-owned structure directly matches their goal of shared control and fair profit-sharing among all 200 farmers. Trade-off: decision-making across 200 members can be slower than in a company with a small board, and raising large amounts of external capital is harder than for a publicly held company.",
   },
 ];
-
-const STUDY_VIDEOS_1_2 = {
-  thisSavesLives: { id: "NowJS17j0S4", title: "This Saves Lives | Co-Founder Kristen Bell Shares Our Story", channel: "This Saves Lives", length: "0:47" },
-  glenWyvis: { id: "DfdoKZco27E", title: "\u201cWe've created a distillery \u2014 what can YOUR community create?\u201d", channel: "Co-operatives UK", length: "3:21" },
-  unicef: { id: "E1xkXZs0cAQ", title: "UNICEF | For every child", channel: "UNICEF", length: "1:30" },
-};
 
 const STUDY_SECTIONS_1_1 = [
   {
@@ -2394,13 +2409,6 @@ const STUDY_SECTIONS_1_2 = [
 // ============================================================
 // SUBUNIT 1.3 — Study Guide data
 // ============================================================
-const STUDY_VIDEOS_1_3 = {
-  ikea: { id: "mQeDwqiq2CA", title: "IKEA increases incentive for people recycling…", channel: "7NEWS Australia", length: "1:30" },
-  fairWork: { id: "Ytz62ecp-gE", title: "Fair Work launches legal action…", channel: "ABC News Australia", length: "2:00" },
-  nissan: { id: "hn1sGvvdK9Q", title: "Nissan and Habitat Build 500th Home", channel: "Nissan", length: "1:45" },
-  hm: { id: "KaJX0WLo2zc", title: "H&M Group explores new circular business models", channel: "H&M Group", length: "1:53" },
-  naturalLabels: { id: "xnPwwQWddLQ", title: "How 'Natural' Food Labels Are Misleading Consumers", channel: "NBC News", length: "2:30" },
-};
 const VISION_MISSION_ITEMS = [
   { label: "Aspirational, big-picture language", bucket: "vision" },
   { label: "Very long-term, infrequently updated", bucket: "vision" },
@@ -2448,18 +2456,27 @@ const ETHICS_ADV_DISADV_BUCKETS = [
 ];
 const CSR_EXAMPLES = [
   { clues: ["A Swedish furniture retailer.", "Offers customers incentives to bring back old furniture and packaging for recycling.", "Part of a broader push toward a circular, less wasteful business model."],
-    name: "IKEA", business: "IKEA's recycling incentive scheme is a real CSR initiative — it responds to environmental stakeholder pressure and reduces waste, even though it also carries a real cost to run." },
+    name: "IKEA", business: "IKEA's recycling incentive scheme is a real CSR initiative — it responds to environmental stakeholder pressure and reduces waste, even though it also carries a real cost to run.",
+    video: { id: "mQeDwqiq2CA", title: "IKEA increases incentive for people recycling…", channel: "7NEWS Australia", length: "1:30" } },
   { clues: ["A Japanese car manufacturer.", "Partners with a housing charity to build homes for families in need.", "Marked a symbolic milestone by completing its 500th home built this way."],
-    name: "Nissan", business: "Nissan's partnership with Habitat for Humanity is a CSR initiative that builds genuine community goodwill, though critics of CSR note it can also serve as a low-cost way to improve corporate image." },
-  { clues: ["A Swedish clothing retailer.", "Explores 'circular' business models — renting, reselling and recycling clothing rather than only selling new items.", "A response to growing pressure over fast fashion's environmental impact."],
-    name: "H&M Group", business: "H&M's circular business experiments are a genuine attempt at CSR, but they sit in tension with a fast-fashion business model built on high sales volume and frequent new collections." },
+    name: "Nissan", business: "Nissan's partnership with Habitat for Humanity is a CSR initiative that builds genuine community goodwill, though critics of CSR note it can also serve as a low-cost way to improve corporate image.",
+    video: { id: "hn1sGvvdK9Q", title: "Nissan and Habitat Build 500th Home", channel: "Nissan", length: "1:45" } },
+  { clues: ["A Swedish clothing retailer.", "Runs an in-house team exploring 'circular' fashion — designing clothes to be reused, repaired or recycled rather than thrown away.", "A response to growing pressure over fast fashion's environmental impact."],
+    name: "H&M", business: "H&M's own circular-design content is a genuine attempt at CSR, but it sits in tension with a fast-fashion business model built on high sales volume and frequent new collections.",
+    video: { id: "a9mVRQBiD-c", title: "What Does Circular Fashion Actually Mean?", channel: "H&M", length: "3:12" } },
+  { clues: ["A food/beverage business taken to court by a workplace regulator.", "Accused of systematically underpaying its workers.", "Shows what happens when a business ignores its ethical obligations to employees."],
+    name: "Fair Work legal action", business: "This is the other side of CSR — a business that failed its ethical obligations. Ethical objectives aren't just a marketing choice: ignoring them can mean real legal and reputational consequences, not just a missed opportunity for good PR.",
+    video: { id: "Ytz62ecp-gE", title: "Fair Work launches legal action…", channel: "ABC News Australia", length: "2:00" } },
+  { clues: ["Food companies use words like 'natural' prominently on packaging.", "Consumers often assume this means healthier or less processed.", "Investigators found the term is only loosely regulated."],
+    name: "'Natural' food labels", business: "This is an example of an ethics grey area rather than an outright violation: technically legal marketing that can still mislead consumers — a reminder that 'ethical' and 'legal' aren't always the same thing.",
+    video: { id: "xnPwwQWddLQ", title: "How 'Natural' Food Labels Are Misleading Consumers", channel: "NBC News", length: "2:30" } },
 ];
 
 const STUDY_SECTIONS_1_3 = [
-  { key: "vision-mission", title: "Vision vs. mission statements", intro: "A vision statement outlines an organization's aspirations in the distant future — broad and rarely updated. A mission statement declares its underlying purpose and values, updated more often with more concrete detail. Sort each description into the right one:" },
-  { key: "smart", title: "SMART objectives", intro: "Business objectives are far more useful when they're SMART — Specific, Measurable, Achievable, Relevant and Time-bound. Decide whether each example objective meets that bar:" },
-  { key: "strategic-tactical", title: "Strategic vs. tactical objectives", intro: "Strategic objectives are medium-to-long-term plans of action; tactical objectives are the short-term methods used to keep a strategy on track. Sort each example:" },
-  { key: "ethics-csr", title: "Ethics & corporate social responsibility", intro: "Corporate social responsibility (CSR) is the view that businesses should act in ways that benefit society, not just their shareholders — but it comes with real trade-offs. First sort these consequences of taking an ethical stance, then meet three real companies putting CSR into practice:" },
+  { key: "vision-mission", title: "Vision vs. mission statements", intro: "A vision statement outlines an organization's aspirations in the distant future — a broad view of where it ultimately wants to be. Vision statements are very long-term, rarely updated, and don't specify concrete targets; they're about \"some day.\" A mission statement, by contrast, is a simple declaration of an organization's underlying purpose and core values — more concrete, updated more frequently, and about the present rather than a distant future. Apple's mission is to deliver the best user experience through innovative hardware, software and services; its broader vision — building the best products on Earth while leaving the world better than it found it — sits above that mission as the long-term aspiration it ultimately serves. Sort each feature into the right one:" },
+  { key: "smart", title: "SMART objectives", intro: "Objectives are the specific, quantifiable goals an organization strives to achieve, set in line with its mission — and IB Business Management judges how well an objective is written using one recurring framework: SMART. A well-set objective should be Specific (clearly defined, not vague), Measurable (progress can be tracked with a number or a clear yes/no), Achievable (realistic given the firm's resources), Relevant (it actually serves the mission), and Time-bound (it has a deadline). \"Grow the business\" is not SMART; \"grow Services revenue by 10% within the next fiscal year\" is. Decide whether each example objective meets that bar:" },
+  { key: "strategic-tactical", title: "Strategic vs. tactical objectives", intro: "Strategies are medium-to-long-term plans of action, specifically expressed, whose fulfilment lets an organization reach its objectives — common examples include building market standing, image and reputation, or market share. Tactics are the shorter-term methods used to enact a strategy, frequently generated to keep it on track; many businesses had to rewrite their tactics almost overnight during the COVID-19 pandemic, as cafés temporarily pivoted to selling groceries just to keep trading, even though that was never part of their original strategy. Crucially, a tactic doesn't automatically support the strategy it's meant to serve — under pressure, it can just as easily undermine it, so good decision-making means checking any proposed tactic against the strategy it's supposed to serve, not just asking \"will this work right now?\" Sort each example:" },
+  { key: "ethics-csr", title: "Ethics & corporate social responsibility", intro: "Corporate social responsibility (CSR) is the view that businesses should govern themselves in a way that enhances society and their stakeholders, and should be held accountable for any actions that affect individuals, communities or the environment. Ethical objectives are easiest to understand through what happens when they fail: in 2003, Theranos claimed to have invented a device that could detect diseases from a single drop of blood; in 2016 the company was shut down after an investigation found the technology flawed and inaccurate, and in 2018 its CEO and COO were charged with massive fraud. CSR done well can strengthen stakeholder relationships, help attract loyal employees, and build a genuine competitive advantage — but it's never a free decision: it's often expensive in the short term, depends on customers being willing to pay more, and its success can depend on factors outside a firm's control, like government policy. First sort these consequences of taking an ethical stance, then meet three real companies putting CSR into practice (and one cautionary tale):" },
 ];
 
 // ============================================================
@@ -2505,20 +2522,24 @@ const STAKEHOLDER_MAP_BUCKETS = [
 ];
 const STAKEHOLDER_CONFLICT_EXAMPLES = [
   { clues: ["Starbucks employees at multiple US stores.", "Organized around pay, staffing levels and working conditions.", "Took collective action against store management."],
-    name: "Starbucks worker strikes", business: "This is a classic employee-vs-management/shareholder conflict: workers want better pay and conditions, while cost pressure works against shareholder return goals." },
+    name: "Starbucks worker strikes", business: "This is a classic employee-vs-management/shareholder conflict: workers want better pay and conditions, while cost pressure works against shareholder return goals.",
+    video: { id: "yHNKM7M-610", title: "Union Starbucks workers launch strikes on Red Cup Day", channel: "News", length: "1:30" } },
   { clues: ["A major professional-services and auditing firm.", "Faced serious allegations over the quality of its audit work.", "Public trust in its independence was called into question."],
-    name: "KPMG audit scandal", business: "This illustrates conflict between a firm's shareholders/managers (who want to protect profit and reputation) and the wider public/regulators (who want honest, reliable auditing regardless of cost)." },
+    name: "KPMG audit scandal", business: "This illustrates conflict between a firm's shareholders/managers (who want to protect profit and reputation) and the wider public/regulators (who want honest, reliable auditing regardless of cost).",
+    video: { id: "d_ZjqGoUDzo", title: "KPMG faces day of reckoning over audit scandal", channel: "News", length: "2:00" } },
   { clues: ["Protesters opposing an oil pipeline route.", "Concerned about land rights and potential environmental damage.", "Drew sustained national and international attention."],
-    name: "Dakota Access Pipeline protests", business: "A clear case of a pressure group (protesters, environmental/indigenous-rights groups) in conflict with a business's shareholders and financiers, who prioritize the project's completion and returns." },
+    name: "Dakota Access Pipeline protests", business: "A clear case of a pressure group (protesters, environmental/indigenous-rights groups) in conflict with a business's shareholders and financiers, who prioritize the project's completion and returns.",
+    video: { id: "15YAD0Us4N4", title: "Dakota Access Pipeline Protesters: 'The World Is Watching'", channel: "News", length: "3:00" } },
   { clues: ["A private space technology company.", "Rumoured to be considering going public via an IPO.", "Would give many more outside shareholders a stake and a say."],
-    name: "SpaceX IPO speculation", business: "Illustrates how a shift toward more shareholders can change a company's stakeholder balance — existing owners weigh the benefits of new capital against a potential loss of control." },
+    name: "SpaceX IPO speculation", business: "Illustrates how a shift toward more shareholders can change a company's stakeholder balance — existing owners weigh the benefits of new capital against a potential loss of control.",
+    video: { id: "BX4Yr-yHvCg", title: "SpaceX IPO: Is the Elon Musk-owned company preparing to go public?", channel: "News", length: "2:30" } },
 ];
 
 const STUDY_SECTIONS_1_4 = [
-  { key: "stakeholder-types", title: "Internal stakeholders and their wants", intro: "Internal stakeholders — employees, managers/directors and shareholders — are all part of the organization itself, but each wants something different from it. Sort each want into the right group:" },
-  { key: "uber-brainstorm", title: "Mapping a real business's stakeholders", intro: "A ride-hailing company like Uber has a wide web of stakeholders. Sort each one into internal or external:" },
-  { key: "stakeholder-mapping", title: "Stakeholder mapping", intro: "Stakeholder mapping plots stakeholders by their level of interest and power, to help a business prioritize how it manages each group. Sort each stakeholder into the right response:" },
-  { key: "conflict-examples", title: "Real stakeholder conflicts", intro: "Stakeholder conflict happens when a business can't fully satisfy every group at once. Meet four real examples of stakeholder conflict in action:" },
+  { key: "stakeholder-types", title: "Internal stakeholders and their wants", intro: "A stakeholder is a person or organization that affects, or is affected by, a business. Internal stakeholders are part of the organization itself — mainly employees, managers/directors and shareholders — and each group tends to want something different from the same business: employees want better pay, good conditions, job security and career progression; managers and directors focus on profit, their own job security, and the firm's long-term financial health; shareholders want rising dividends and share value, backed by real power since shares typically carry voting rights. Sort each want into the right group:" },
+  { key: "uber-brainstorm", title: "Mapping a real business's stakeholders", intro: "External stakeholders don't work inside the organization but still have a direct interest in it — typically customers (who want quality and value for money), suppliers (who want reliable, paying clients), financiers (who want assurance their loans will be repaid), pressure groups (individuals organizing to demand a change in behaviour), and competitors (who benchmark themselves against the firm). A ride-hailing company like Uber is a good test case: as a business that engages drivers as independent contractors, it has an unusually wide stakeholder list. Sort each one into internal or external:" },
+  { key: "stakeholder-mapping", title: "Stakeholder mapping", intro: "Stakeholder conflict is the inability of an organization to meet all of its stakeholder groups' objectives at once, because their needs genuinely differ — resolving it depends on the type of organization, its aims, and how much power each side actually holds. Stakeholder mapping is a tool that plots each stakeholder by their level of interest and power, then recommends a strategy: high interest + high power means manage them closely; high interest + low power means keep them informed; low interest + high power means keep them satisfied; low interest + low power gets minimum effort. (A genuine limitation: judging \"interest\" and \"power\" is inherently subjective, and the map ignores whether a relationship is easy to replace or likely to change over time.) Sort each stakeholder into the right response:" },
+  { key: "conflict-examples", title: "Real stakeholder conflicts", intro: "Stakeholder conflict takes different shapes depending on which groups are involved — a company against its own workforce, against a whistleblower inside the firm, or against an outside community or pressure group entirely. Notice the pattern in each of the examples below: resolving the conflict always comes down to the same three factors — the type of organization, its aims and objectives, and how much power each side actually holds. Reveal each to see the story (and a short video):" },
 ];
 
 // ============================================================
@@ -2583,11 +2604,11 @@ const GROWTH_METHOD_EXAMPLES = [
 ];
 
 const STUDY_SECTIONS_1_5 = [
-  { key: "internal-economies", title: "Types of internal economies of scale", intro: "Internal economies of scale happen inside a firm and are within its own control. Sort each example into the right category:" },
-  { key: "scale-type", title: "Internal vs. external economies of scale", intro: "Internal economies benefit only the firm itself; external economies benefit every firm in an industry or location. Sort each example:" },
-  { key: "growth-type", title: "Internal vs. external growth", intro: "Internal (organic) growth uses a firm's own resources; external growth relies on other organizations. Sort each example:" },
-  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growth brings real advantages, but staying small can be a deliberate strategic choice too. Sort each reason into the right column:" },
-  { key: "growth-methods", title: "Methods of external growth", intro: "Mergers, takeovers, joint ventures and franchising are all external growth methods, but they work very differently. Match each real example to its method:" },
+  { key: "internal-economies", title: "Types of internal economies of scale", intro: "Economies of scale are the cost-reducing benefits a firm enjoys as its output grows toward an optimum level, due to greater efficiency — average costs fall as output rises. Internal economies happen inside the firm and are within its own control: technical (using sophisticated machinery to mass-produce), financial (borrowing large sums more cheaply, since large firms are seen as less risky), managerial (affording specialist managers for each function instead of one person doing everything), specialisation (workers focusing on one part of the process), marketing (spreading an ad campaign's cost across a bigger customer base), purchasing (bulk-buying discounts), and risk-bearing (a conglomerate's weak year in one division offset by a strong year in another). Sort each example into the right category:" },
+  { key: "scale-type", title: "Internal vs. external economies of scale", intro: "Push past a firm's optimum size, though, and it can become too big or complex to manage efficiently — costs rise again, a pattern called diseconomies of scale. Internal economies benefit only the firm itself; external economies benefit every firm in an industry or location at once, arising from factors outside any single firm's control — technological progress (like the internet enabling e-commerce from cheaper locations), improved transport networks (globalized shipping making distant sourcing cheaper), an abundance of skilled labour in a location with strong training systems, or regional specialisation (a location building a reputation for one specific good or service). Sort each example:" },
+  { key: "growth-type", title: "Internal vs. external growth", intro: "Internal (organic) growth happens when a business grows using its own resources — reinvesting profit to increase the scale of its own operations. External growth happens through dealing with other organizations entirely, usually via mergers, acquisitions, joint ventures, strategic alliances or franchising. Internal growth generally means better control, an easier-to-maintain culture, and lower cost and risk — but it's typically slower and can suffer from the diseconomies of scale above. External growth is quicker and can bring synergies and instant economies of scale — but it's more expensive, riskier, and can produce a culture clash between the combining firms. Sort each scenario:" },
+  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growing bigger brings real generic benefits: economies of scale, the ability to charge lower prices, stronger brand recognition, and deeper customer loyalty. But plenty of firms choose to stay small deliberately — for tighter cost control, lower financial risk, easier access to small-business government aid, local monopoly power in a niche too small to attract big competitors, and greater flexibility to adapt quickly. Sort each reason into the right column:" },
+  { key: "growth-methods", title: "Methods of external growth", intro: "External growth takes several distinct legal forms. A merger is when two firms agree to combine into an entirely new company; an acquisition is when one firm buys a controlling interest in another with its board's agreement — a takeover is the same thing done without the target's agreement, usually by appealing directly to shareholders. A joint venture is when two or more firms create a new, separate legal entity to share a project's costs, risks and rewards; a strategic alliance is looser cooperation where the firms stay fully independent. Franchising lets an entrepreneur (the franchisee) buy a licence to trade under an established firm's (the franchisor's) name and systems, typically paying a fee plus a share of revenue. Match each real example to its method:" },
 ];
 
 // ============================================================
@@ -2643,10 +2664,10 @@ const APPLE_MNC_IMPACT_EXAMPLES = [
 ];
 
 const STUDY_SECTIONS_1_6 = [
-  { key: "why-mnc", title: "Why do businesses become MNCs?", intro: "Businesses expand across borders for several common reasons. Sort each scenario into the reason it best illustrates:" },
-  { key: "positive-impacts", title: "Positive impacts on host countries", intro: "A multinational company can bring real benefits to the countries it operates in. Sort each example:" },
-  { key: "negative-impacts", title: "Negative impacts and risks for host countries", intro: "MNCs can also bring real costs and risks to a host country. Sort each example:" },
-  { key: "apple-impact", title: "Apple's own impact: India vs. China", intro: "Apple's manufacturing shift illustrates both sides of MNC impact at once. Compare the two host countries:" },
+  { key: "why-mnc", title: "Why do businesses become MNCs?", intro: "A multinational company (MNC) owns or controls operations — factories, offices or subsidiaries — in two or more countries: a home country, where it's headquartered, and one or more host countries, where it operates. Businesses become MNCs for several common reasons: to reach a bigger customer base, to access cheaper production costs (especially labour), to capture economies of scale, to build brand value across markets, to avoid protectionist policies like import tariffs, and to spread risk across multiple economies rather than relying on just one. Tesla's Shanghai Gigafactory (its first factory outside the US, opened 2018) is a real example — watch the clip, then sort each scenario into the reason it best illustrates:" },
+  { key: "positive-impacts", title: "Positive impacts on host countries", intro: "When an MNC sets up in a host country, the effects can be beneficial or harmful, often both at once. On the positive side, MNCs typically bring job creation (new factories and offices need local workers), higher national income (through wages and taxes), knowledge and technology transfer (as local workers and suppliers learn advanced methods from the MNC), and increased competition (which pushes local firms to become more efficient). Samsung — Vietnam's single largest foreign investor — is a real example of this in action. Sort each example into the right impact:" },
+  { key: "negative-impacts", title: "Negative impacts and risks", intro: "On the negative side, MNCs can just as easily cause job losses if a factory closes or relocates once costs rise or a cheaper location is found. Repatriation of profits is a common concern — rather than reinvesting locally, an MNC may send profits back to its home country, so the host economy sees less lasting benefit than the headline revenue suggests. Host countries can become vulnerable if their economy grows too dependent on one or two large MNCs, especially if that MNC later leaves; MNCs are sometimes criticized for social responsibilities (like workplace or environmental standards they wouldn't accept at home); and local firms can face competitive pressures they're not equipped to survive. The 2022 unrest at Foxconn's Zhengzhou plant — the world's largest iPhone factory, employing roughly 200,000 workers — illustrates exactly this vulnerability risk. Sort each example into the right impact:" },
+  { key: "apple-impact", title: "Apple's own impact: India vs. China", intro: "Apple's own manufacturing shift illustrates both sides of MNC impact on host countries at once — India and Vietnam gaining jobs and technology transfer as production diversifies toward them, while China (the long-standing host) experiences some loss of manufacturing employment and investment. Compare the two host countries:" },
 ];
 
 const STUDY_SECTIONS_BY_SUBUNIT = {
@@ -2821,13 +2842,16 @@ function StudyView({ onBack, subunitId, role }) {
           {current.key === "entity-liability" && (
             <>
               <div className="mb-4">
-                <StudyVideoLink video={STUDY_VIDEO_1_2_LIABILITY} />
+                <StudyVideoLink video={{ id: "Sssmh4PDOoE", title: "The Secret Behind the Success of Blue Ribbon Sports: Nike's Humble Beginnings", channel: "YouTube", length: "8:12" }} />
               </div>
               <SortGame items={ENTITY_LIABILITY_ITEMS} buckets={ENTITY_LIABILITY_BUCKETS} onComplete={() => markComplete("entity-liability")} />
             </>
           )}
           {current.key === "companies" && (
             <>
+              <div className="mb-4">
+                <StudyVideoLink video={STUDY_VIDEO_1_2_LIABILITY} />
+              </div>
               <SortGame items={COMPANY_SPLIT_ITEMS} buckets={COMPANY_SPLIT_BUCKETS} onComplete={() => markComplete("companies-sort")} />
               <div className="mt-6 pt-5 border-t" style={{ borderColor: "#e7e2d8" }}>
                 <div className="text-[13.5px] font-semibold text-stone-700 mb-3">Now, the advantages and disadvantages of incorporating:</div>
@@ -2836,21 +2860,10 @@ function StudyView({ onBack, subunitId, role }) {
             </>
           )}
           {current.key === "forprofit-social" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <StudyVideoLink video={STUDY_VIDEOS_1_2.thisSavesLives} />
-              </div>
-              <EntrepreneurGrid items={FORPROFIT_SOCIAL_EXAMPLES} onComplete={() => markComplete("forprofit-social")} />
-            </>
+            <EntrepreneurGrid items={FORPROFIT_SOCIAL_EXAMPLES} onComplete={() => markComplete("forprofit-social")} />
           )}
           {current.key === "coop-ngo" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <StudyVideoLink video={STUDY_VIDEOS_1_2.glenWyvis} />
-                <StudyVideoLink video={STUDY_VIDEOS_1_2.unicef} />
-              </div>
-              <EntrepreneurGrid items={COOP_NGO_EXAMPLES} onComplete={() => markComplete("coop-ngo")} />
-            </>
+            <EntrepreneurGrid items={COOP_NGO_EXAMPLES} onComplete={() => markComplete("coop-ngo")} />
           )}
           {current.key === "entity-choice" && (
             <EntrepreneurGrid items={ENTITY_CHOICE_SCENARIOS} onComplete={() => markComplete("entity-choice")} />
@@ -2870,12 +2883,7 @@ function StudyView({ onBack, subunitId, role }) {
             <>
               <SortGame items={ETHICS_ADV_DISADV_ITEMS} buckets={ETHICS_ADV_DISADV_BUCKETS} onComplete={() => markComplete("ethics-sort")} />
               <div className="mt-6 pt-5 border-t" style={{ borderColor: "#e7e2d8" }}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                  <StudyVideoLink video={STUDY_VIDEOS_1_3.ikea} />
-                  <StudyVideoLink video={STUDY_VIDEOS_1_3.nissan} />
-                  <StudyVideoLink video={STUDY_VIDEOS_1_3.hm} />
-                </div>
-                <div className="text-[13.5px] font-semibold text-stone-700 mb-3">Real companies putting CSR into practice:</div>
+                <div className="text-[13.5px] font-semibold text-stone-700 mb-3">Real companies putting CSR into practice — reveal each to see the story (and a short video):</div>
                 <EntrepreneurGrid items={CSR_EXAMPLES} onComplete={() => markComplete("csr-examples")} />
               </div>
             </>
@@ -2886,10 +2894,20 @@ function StudyView({ onBack, subunitId, role }) {
             <SortGame items={STAKEHOLDER_WANT_ITEMS} buckets={STAKEHOLDER_WANT_BUCKETS} onComplete={() => markComplete("stakeholder-types")} />
           )}
           {current.key === "uber-brainstorm" && (
-            <SortGame items={UBER_STAKEHOLDER_ITEMS} buckets={UBER_STAKEHOLDER_BUCKETS} onComplete={() => markComplete("uber-brainstorm")} />
+            <>
+              <div className="mb-4">
+                <StudyVideoLink video={{ id: "BX4Yr-yHvCg", title: "SpaceX IPO: Is the Elon Musk-owned company going public?", channel: "Kalkine Media", length: "2:31" }} />
+              </div>
+              <SortGame items={UBER_STAKEHOLDER_ITEMS} buckets={UBER_STAKEHOLDER_BUCKETS} onComplete={() => markComplete("uber-brainstorm")} />
+            </>
           )}
           {current.key === "stakeholder-mapping" && (
-            <SortGame items={STAKEHOLDER_MAP_ITEMS} buckets={STAKEHOLDER_MAP_BUCKETS} onComplete={() => markComplete("stakeholder-mapping")} />
+            <>
+              <div className="mb-4">
+                <StudyVideoLink video={{ id: "iFGDVLqSl2c", title: "COVID's new jobs threat — overseas outsourcing", channel: "The Business, ABC News Australia", length: "5:12" }} />
+              </div>
+              <SortGame items={STAKEHOLDER_MAP_ITEMS} buckets={STAKEHOLDER_MAP_BUCKETS} onComplete={() => markComplete("stakeholder-mapping")} />
+            </>
           )}
           {current.key === "conflict-examples" && (
             <EntrepreneurGrid items={STAKEHOLDER_CONFLICT_EXAMPLES} onComplete={() => markComplete("conflict-examples")} />
@@ -2903,15 +2921,15 @@ function StudyView({ onBack, subunitId, role }) {
             <SortGame items={SCALE_TYPE_ITEMS} buckets={SCALE_TYPE_BUCKETS} onComplete={() => markComplete("scale-type")} />
           )}
           {current.key === "growth-type" && (
-            <SortGame items={GROWTH_TYPE_ITEMS} buckets={GROWTH_TYPE_BUCKETS} onComplete={() => markComplete("growth-type")} />
-          )}
-          {current.key === "grow-stay-small" && (
             <>
               <div className="mb-4">
                 <StudyVideoLink video={STUDY_VIDEOS_1_5.benAndJerrys} />
               </div>
-              <SortGame items={GROW_STAY_SMALL_ITEMS} buckets={GROW_STAY_SMALL_BUCKETS} onComplete={() => markComplete("grow-stay-small")} />
+              <SortGame items={GROWTH_TYPE_ITEMS} buckets={GROWTH_TYPE_BUCKETS} onComplete={() => markComplete("growth-type")} />
             </>
+          )}
+          {current.key === "grow-stay-small" && (
+            <SortGame items={GROW_STAY_SMALL_ITEMS} buckets={GROW_STAY_SMALL_BUCKETS} onComplete={() => markComplete("grow-stay-small")} />
           )}
           {current.key === "growth-methods" && (
             <EntrepreneurGrid items={GROWTH_METHOD_EXAMPLES} onComplete={() => markComplete("growth-methods")} />
@@ -2919,19 +2937,28 @@ function StudyView({ onBack, subunitId, role }) {
 
           {/* ---- 1.6 Multinational companies ---- */}
           {current.key === "why-mnc" && (
-            <SortGame items={WHY_MNC_ITEMS} buckets={WHY_MNC_BUCKETS} onComplete={() => markComplete("why-mnc")} />
+            <>
+              <div className="mb-4">
+                <StudyVideoLink video={STUDY_VIDEOS_1_6.tesla} />
+              </div>
+              <SortGame items={WHY_MNC_ITEMS} buckets={WHY_MNC_BUCKETS} onComplete={() => markComplete("why-mnc")} />
+            </>
           )}
           {current.key === "positive-impacts" && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <StudyVideoLink video={STUDY_VIDEOS_1_6.tesla} />
+              <div className="mb-4">
                 <StudyVideoLink video={STUDY_VIDEOS_1_6.samsung} />
               </div>
               <SortGame items={MNC_POSITIVE_ITEMS} buckets={MNC_POSITIVE_BUCKETS} onComplete={() => markComplete("positive-impacts")} />
             </>
           )}
           {current.key === "negative-impacts" && (
-            <SortGame items={MNC_NEGATIVE_ITEMS} buckets={MNC_NEGATIVE_BUCKETS} onComplete={() => markComplete("negative-impacts")} />
+            <>
+              <div className="mb-4">
+                <StudyVideoLink video={{ id: "8zXP1AjpYgc", title: "Behind the Foxconn unrest: lockdowns and mistrust", channel: "Reuters", length: "2:30" }} />
+              </div>
+              <SortGame items={MNC_NEGATIVE_ITEMS} buckets={MNC_NEGATIVE_BUCKETS} onComplete={() => markComplete("negative-impacts")} />
+            </>
           )}
           {current.key === "apple-impact" && (
             <EntrepreneurGrid items={APPLE_MNC_IMPACT_EXAMPLES} onComplete={() => markComplete("apple-impact")} />
