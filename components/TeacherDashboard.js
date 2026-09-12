@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import {
   Loader2, Copy, Check, ChevronRight, ChevronDown, Users, Clock, Target, BookOpen,
-  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles,
+  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles, Send, Mail,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -10,6 +10,7 @@ import {
 import {
   createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers,
   loadComprehensionAttemptsForUsers, removeStudentFromClass, generateStudentSummary,
+  sendClassMessage, loadClassMessages,
 } from "@/lib/db";
 import Avatar from "@/components/Avatar";
 import { questionText } from "@/lib/question-bank";
@@ -335,6 +336,92 @@ function buildQuestionBreakdown(subunitId, myAttempts, myCompAttempts) {
   return rows.sort((a, b) => stageOrder[a.stageLabel] - stageOrder[b.stageLabel] || a.questionId.localeCompare(b.questionId));
 }
 
+// Builds the compact stats payload sent to the AI summary endpoint — shared by both the
+// single-student "Generate" button and the class-wide bulk-generate loop, so the two
+// paths can never drift out of sync with each other.
+function buildSummaryStats(student, myAttempts, subunitProgressList, persistenceForUser) {
+  const bySubunit = {};
+  for (const a of myAttempts) {
+    if (!bySubunit[a.subunit_id]) bySubunit[a.subunit_id] = { earned: 0, possible: 0 };
+    bySubunit[a.subunit_id].earned += a.marks_earned || 0;
+    bySubunit[a.subunit_id].possible += a.marks_possible || 0;
+  }
+  const accuracyBySubunit = Object.entries(bySubunit)
+    .map(([id, v]) => ({ label: SUBUNIT_LABELS[id] || id, value: pct(v.earned, v.possible) ?? 0 }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const byQ = {};
+  for (const a of myAttempts) {
+    const key = `${a.subunit_id}:${a.question_id}`;
+    byQ[key] = byQ[key] || { subunitId: a.subunit_id, questionId: a.question_id, section: a.section, earned: 0, possible: 0 };
+    byQ[key].earned += a.marks_earned || 0;
+    byQ[key].possible += a.marks_possible || 0;
+  }
+  const lowestScoringQuestions = Object.values(byQ)
+    .filter((q) => q.possible > 0)
+    .map((q) => ({ ...q, accuracy: pct(q.earned, q.possible) }))
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 3)
+    .map((q) => ({
+      subunit: SUBUNIT_LABELS[q.subunitId] || q.subunitId,
+      type: SECTION_LABELS[q.section] || q.section,
+      question: questionText(q.subunitId, q.questionId),
+      accuracy: q.accuracy,
+    }));
+
+  return {
+    name: student.label,
+    accuracyOnGradedQuestions: student.accuracy,
+    accuracyVsClassAverage: student.accuracyDelta,
+    gradedAttemptsCount: student.attemptCount,
+    comprehensionCheckPerformance: student.comprehension,
+    currentStreakDays: student.streak,
+    daysSinceLastActive: student.daysSinceActive,
+    timeSpentThisWeekMinutes: Math.round(student.weekly / 60),
+    timeSpentThisMonthMinutes: Math.round(student.monthly / 60),
+    accuracyBySubunit,
+    accuracyByQuestionType: Object.entries(student.bySection).map(([k, v]) => ({ type: SECTION_LABELS[k] || k, accuracy: pct(v.earned, v.possible) })),
+    subunitStageProgress: subunitProgressList.map((sp) => ({
+      subunit: sp.label, currentStage: sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage], progress: sp.doneCounts, totals: sp.totals,
+    })),
+    persistence: persistenceForUser && persistenceForUser.totalQuestions > 0
+      ? { avgTriesPerQuestion: +(persistenceForUser.totalAttempts / persistenceForUser.totalQuestions).toFixed(2), questionsRetried: persistenceForUser.retriedQuestions, totalQuestionsAttempted: persistenceForUser.totalQuestions }
+      : null,
+    lowestScoringQuestions,
+  };
+}
+
+function printClassSummaryReport(className, entries) {
+  const w = window.open("", "_blank", "width=800,height=900");
+  if (!w) return;
+  const sections = entries.map((e) => `
+    <div class="student">
+      <h2>${e.name}</h2>
+      <p>${e.summary.replace(/\n/g, "<br/>")}</p>
+    </div>`).join("");
+  w.document.write(`
+    <html>
+      <head>
+        <title>Class summary — ${className}</title>
+        <style>
+          body { font-family: -apple-system, Arial, sans-serif; padding: 32px; color: #1c1917; }
+          h1 { font-size: 20px; margin-bottom: 20px; }
+          .student { border-bottom: 1px solid #e7e2d8; padding: 14px 0; }
+          .student h2 { font-size: 14px; margin: 0 0 6px 0; }
+          .student p { font-size: 13px; line-height: 1.5; margin: 0; }
+        </style>
+      </head>
+      <body>
+        <h1>${className} — AI performance summaries</h1>
+        ${sections}
+      </body>
+    </html>
+  `);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
+}
+
 function CopyableCode({ code }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -632,7 +719,7 @@ function NeedsAttentionBanner({ students, onSelect }) {
   );
 }
 
-function StudentDetailPanel({ student, attempts, activity, compAttempts, subunitProgressList, onRemove, persistence }) {
+function StudentDetailPanel({ student, attempts, activity, compAttempts, subunitProgressList, onRemove, persistence, summaryState, onGenerateSummary }) {
   const [expandedSubunit, setExpandedSubunit] = useState(null);
   const myAttempts = useMemo(() => attempts.filter((a) => a.user_id === student.id), [attempts, student.id]);
   const myActivity = useMemo(() => activity.filter((a) => a.user_id === student.id), [activity, student.id]);
@@ -658,62 +745,6 @@ function StudentDetailPanel({ student, attempts, activity, compAttempts, subunit
   }, [myActivity]);
 
   const trendData = useMemo(() => weeklyAccuracyTrend(myAttempts), [myAttempts]);
-
-  const [summary, setSummary] = useState(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState("");
-
-  const myHardestQuestions = useMemo(() => {
-    const byQ = {};
-    for (const a of myAttempts) {
-      const key = `${a.subunit_id}:${a.question_id}`;
-      byQ[key] = byQ[key] || { subunitId: a.subunit_id, questionId: a.question_id, section: a.section, earned: 0, possible: 0 };
-      byQ[key].earned += a.marks_earned || 0;
-      byQ[key].possible += a.marks_possible || 0;
-    }
-    return Object.values(byQ)
-      .filter((q) => q.possible > 0)
-      .map((q) => ({ ...q, accuracy: pct(q.earned, q.possible) }))
-      .sort((a, b) => a.accuracy - b.accuracy)
-      .slice(0, 3);
-  }, [myAttempts]);
-
-  const onGenerateSummary = async () => {
-    setSummaryLoading(true);
-    setSummaryError("");
-    try {
-      const stats = {
-        name: student.label,
-        accuracyOnGradedQuestions: student.accuracy,
-        gradedAttemptsCount: student.attemptCount,
-        comprehensionCheckPerformance: student.comprehension,
-        currentStreakDays: student.streak,
-        daysSinceLastActive: student.daysSinceActive,
-        timeSpentThisWeekMinutes: Math.round(student.weekly / 60),
-        timeSpentThisMonthMinutes: Math.round(student.monthly / 60),
-        accuracyBySubunit: subunitAccuracyData,
-        accuracyByQuestionType: Object.entries(student.bySection).map(([k, v]) => ({ type: SECTION_LABELS[k] || k, accuracy: pct(v.earned, v.possible) })),
-        subunitStageProgress: subunitProgressList.map((sp) => ({
-          subunit: sp.label, currentStage: sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage], progress: sp.doneCounts, totals: sp.totals,
-        })),
-        persistence: persistence && persistence.totalQuestions > 0
-          ? { avgTriesPerQuestion: +(persistence.totalAttempts / persistence.totalQuestions).toFixed(2), questionsRetried: persistence.retriedQuestions, totalQuestionsAttempted: persistence.totalQuestions }
-          : null,
-        lowestScoringQuestions: myHardestQuestions.map((q) => ({
-          subunit: SUBUNIT_LABELS[q.subunitId] || q.subunitId,
-          type: SECTION_LABELS[q.section] || q.section,
-          question: questionText(q.subunitId, q.questionId),
-          accuracy: q.accuracy,
-        })),
-      };
-      const text = await generateStudentSummary(stats);
-      setSummary(text);
-    } catch (err) {
-      setSummaryError(err.message || "Could not generate summary.");
-    } finally {
-      setSummaryLoading(false);
-    }
-  };
 
   const recentAttempts = useMemo(
     () => [...myAttempts].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)).slice(0, 15),
@@ -766,18 +797,18 @@ function StudentDetailPanel({ student, attempts, activity, compAttempts, subunit
           </div>
           <button
             onClick={onGenerateSummary}
-            disabled={summaryLoading}
+            disabled={summaryState?.loading}
             className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1 text-[11.5px] font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
           >
-            {summaryLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            {summary ? "Regenerate" : summaryLoading ? "Generating…" : "Generate"}
+            {summaryState?.loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {summaryState?.text ? "Regenerate" : summaryState?.loading ? "Generating…" : "Generate"}
           </button>
         </div>
-        {summaryError && <p className="text-[12px] text-red-600">{summaryError}</p>}
-        {summary ? (
-          <p className="text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap">{summary}</p>
+        {summaryState?.error && <p className="text-[12px] text-red-600">{summaryState.error}</p>}
+        {summaryState?.text ? (
+          <p className="text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap">{summaryState.text}</p>
         ) : (
-          !summaryLoading && !summaryError && (
+          !summaryState?.loading && !summaryState?.error && (
             <p className="text-[12px] text-stone-400">
               Generates a short, teacher-facing summary of where this student stands and what to focus on next, based on their actual stats above.
             </p>
@@ -931,6 +962,122 @@ function StudentDetailPanel({ student, attempts, activity, compAttempts, subunit
   );
 }
 
+function MessagesPanel({ classId, roster }) {
+  const [target, setTarget] = useState(""); // "" = whole class
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const data = await loadClassMessages(classId);
+      setMessages(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await loadClassMessages(classId);
+        if (!cancelled) setMessages(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [classId]);
+
+  const onSend = async (e) => {
+    e.preventDefault();
+    if (!text.trim() || sending) return;
+    setSending(true);
+    setError("");
+    try {
+      await sendClassMessage({ classId, studentId: target || null, message: text.trim() });
+      setText("");
+      await refresh();
+    } catch (err) {
+      setError(err.message || "Could not send message.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-stone-200 p-3.5 mb-5">
+      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-stone-600 mb-2.5">
+        <Mail size={13} className="text-stone-400" /> Message your class
+      </div>
+
+      <form onSubmit={onSend} className="space-y-2 mb-4">
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            className="rounded-md border border-stone-300 px-2 py-1.5 text-[12.5px]"
+          >
+            <option value="">Whole class</option>
+            {roster.map((s) => (
+              <option key={s.id} value={s.id}>{s.display_name || s.email || s.id}</option>
+            ))}
+          </select>
+        </div>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={target ? "Write a note to this student…" : "Write an announcement to the whole class…"}
+          rows={2}
+          className="w-full rounded-md border border-stone-300 px-2.5 py-2 text-[13px] focus:outline-none focus:ring-2"
+          style={{ "--tw-ring-color": NAVY }}
+        />
+        {error && <p className="text-[12px] text-red-600">{error}</p>}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={sending}
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-60"
+            style={{ backgroundColor: NAVY }}
+          >
+            {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Send
+          </button>
+        </div>
+      </form>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-stone-500 text-[12.5px] py-3 justify-center">
+          <Loader2 size={13} className="animate-spin" /> Loading messages…
+        </div>
+      ) : messages.length === 0 ? (
+        <p className="text-[12px] text-stone-400">No messages sent yet.</p>
+      ) : (
+        <div className="space-y-1.5 max-h-56 overflow-y-auto">
+          {messages.map((m) => {
+            const recipient = m.student_id ? (roster.find((s) => s.id === m.student_id)?.display_name || roster.find((s) => s.id === m.student_id)?.email || "a student") : "Whole class";
+            const audienceSize = m.student_id ? 1 : roster.length;
+            return (
+              <div key={m.id} className="rounded-md bg-stone-50 border border-stone-200 px-2.5 py-2">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-stone-400 mb-0.5">
+                  <span className="font-medium text-stone-500">To: {recipient}</span>
+                  <span>{new Date(m.created_at).toLocaleString()}</span>
+                  <span className="ml-auto">Read {m.readCount}/{audienceSize}</span>
+                </div>
+                <p className="text-[12.5px] text-stone-700 whitespace-pre-wrap">{m.message}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SORT_OPTIONS = [
   { key: "email", label: "Name" },
   { key: "xp", label: "XP" },
@@ -958,6 +1105,9 @@ export default function TeacherDashboard({ initialClasses }) {
   const [sortKey, setSortKey] = useState("email");
   const [sortDir, setSortDir] = useState("asc");
   const [removing, setRemoving] = useState(null); // student pending removal confirmation
+  const [summaries, setSummaries] = useState({}); // studentId -> { text, loading, error }
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(null); // { done, total }
 
   const selectedClass = classes.find((c) => c.id === selectedClassId) || null;
 
@@ -1017,7 +1167,7 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const today = todayISODate();
 
-  const studentStats = useMemo(() => {
+  const baseStudentStats = useMemo(() => {
     const weekAgo = isoDaysAgo(7);
     const monthAgo = isoDaysAgo(30);
     return roster.map((s) => {
@@ -1057,11 +1207,6 @@ export default function TeacherDashboard({ initialClasses }) {
 
       const comprehension = summarizeComprehension(myCompAttempts);
 
-      const reasons = [];
-      if (accuracy !== null && myAttempts.length >= 3 && accuracy < 60) reasons.push(`Low accuracy (${accuracy}%)`);
-      if (lastActiveDate !== null && daysSinceActive >= 3) reasons.push(`Inactive ${daysSinceActive}d`);
-      const needsAttention = reasons.length > 0;
-
       const label = s.display_name || s.email || "(no name or email on file)";
 
       return {
@@ -1072,21 +1217,36 @@ export default function TeacherDashboard({ initialClasses }) {
         completedCount: (s.completed_subunits || []).length,
         lastActiveDate, daysSinceActive, streak,
         bySubunit, bySection, subunitProgress,
-        comprehension,
-        needsAttention, reasons, label,
+        comprehension, label,
       };
     });
   }, [roster, activity, attempts, compAttempts, today]);
 
   const classSummary = useMemo(() => {
-    if (studentStats.length === 0) return null;
-    const withAccuracy = studentStats.filter((s) => s.accuracy !== null);
+    if (baseStudentStats.length === 0) return null;
+    const withAccuracy = baseStudentStats.filter((s) => s.accuracy !== null);
     const avgAccuracy = withAccuracy.length
       ? Math.round(withAccuracy.reduce((sum, s) => sum + s.accuracy, 0) / withAccuracy.length)
       : null;
-    const avgWeekly = Math.round(studentStats.reduce((sum, s) => sum + s.weekly, 0) / studentStats.length);
-    return { avgAccuracy, avgWeekly, count: studentStats.length };
-  }, [studentStats]);
+    const avgWeekly = Math.round(baseStudentStats.reduce((sum, s) => sum + s.weekly, 0) / baseStudentStats.length);
+    return { avgAccuracy, avgWeekly, count: baseStudentStats.length };
+  }, [baseStudentStats]);
+
+  // Second pass: now that we know the class average, flag students either in absolute
+  // terms (below a fixed floor) OR relative to their classmates (meaningfully below
+  // average) — these are different signals. A student at 55% in a class averaging 58%
+  // is probably fine; a student at 55% in a class averaging 85% is the one to check on.
+  const studentStats = useMemo(() => {
+    const avg = classSummary?.avgAccuracy ?? null;
+    return baseStudentStats.map((s) => {
+      const accuracyDelta = (s.accuracy !== null && avg !== null) ? s.accuracy - avg : null;
+      const reasons = [];
+      if (s.accuracy !== null && s.attemptCount >= 3 && s.accuracy < 60) reasons.push(`Low accuracy (${s.accuracy}%)`);
+      if (accuracyDelta !== null && s.attemptCount >= 3 && accuracyDelta <= -15) reasons.push(`${Math.abs(Math.round(accuracyDelta))}% below class average`);
+      if (s.lastActiveDate !== null && s.daysSinceActive >= 3) reasons.push(`Inactive ${s.daysSinceActive}d`);
+      return { ...s, accuracyDelta, needsAttention: reasons.length > 0, reasons };
+    });
+  }, [baseStudentStats, classSummary]);
 
   const needsAttentionList = useMemo(() => studentStats.filter((s) => s.needsAttention), [studentStats]);
 
@@ -1169,6 +1329,48 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const subunitProgressListFor = (student) =>
     Object.entries(student.subunitProgress).map(([subunitId, sp]) => ({ subunitId, label: SUBUNIT_LABELS[subunitId] || subunitId, ...sp }));
+
+  const generateSummaryForStudent = async (student) => {
+    setSummaries((prev) => ({ ...prev, [student.id]: { ...(prev[student.id] || {}), loading: true, error: "" } }));
+    try {
+      const myAttempts = attempts.filter((a) => a.user_id === student.id);
+      const stats = buildSummaryStats(student, myAttempts, subunitProgressListFor(student), persistence.perUser[student.id]);
+      const text = await generateStudentSummary(stats);
+      setSummaries((prev) => ({ ...prev, [student.id]: { text, loading: false, error: "" } }));
+    } catch (err) {
+      setSummaries((prev) => ({ ...prev, [student.id]: { ...(prev[student.id] || {}), loading: false, error: err.message || "Could not generate summary." } }));
+    }
+  };
+
+  // Generates for every student with at least some graded/comprehension activity, a few
+  // at a time (not all at once) so this doesn't hammer the API with 30 simultaneous calls.
+  const generateAllSummaries = async () => {
+    const targets = studentStats.filter((s) => s.attemptCount > 0 || s.comprehension.total > 0);
+    if (targets.length === 0) return;
+    setBulkGenerating(true);
+    setBulkProgress({ done: 0, total: targets.length });
+    const concurrency = 3;
+    let cursor = 0;
+    let done = 0;
+    const worker = async () => {
+      while (cursor < targets.length) {
+        const student = targets[cursor++];
+        await generateSummaryForStudent(student);
+        done++;
+        setBulkProgress({ done, total: targets.length });
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, targets.length) }, worker));
+    setBulkGenerating(false);
+  };
+
+  const onPrintClassSummaries = () => {
+    const entries = studentStats
+      .filter((s) => summaries[s.id]?.text)
+      .map((s) => ({ name: s.label, summary: summaries[s.id].text }));
+    if (entries.length === 0) return;
+    printClassSummaryReport(selectedClass?.name || "Class", entries);
+  };
 
   const exportRosterCSV = () => {
     const header = [
@@ -1281,6 +1483,7 @@ export default function TeacherDashboard({ initialClasses }) {
 
           {!loadingClass && roster.length > 0 && (
             <>
+              <MessagesPanel classId={selectedClassId} roster={roster} />
               <NeedsAttentionBanner students={needsAttentionList} onSelect={setExpandedStudentId} />
 
               {/* Class-wide charts */}
@@ -1376,6 +1579,22 @@ export default function TeacherDashboard({ initialClasses }) {
                 >
                   <Download size={13} /> Export CSV
                 </button>
+                <button
+                  onClick={generateAllSummaries}
+                  disabled={bulkGenerating}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
+                >
+                  {bulkGenerating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                  {bulkGenerating ? `Generating ${bulkProgress?.done ?? 0}/${bulkProgress?.total ?? 0}…` : "Generate all AI summaries"}
+                </button>
+                {Object.values(summaries).some((s) => s?.text) && (
+                  <button
+                    onClick={onPrintClassSummaries}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-50"
+                  >
+                    <Printer size={13} /> Print class summaries
+                  </button>
+                )}
               </div>
 
               {/* Roster table */}
@@ -1422,6 +1641,11 @@ export default function TeacherDashboard({ initialClasses }) {
                             </td>
                             <td className="px-3 py-2 text-stone-600">
                               {s.accuracy !== null ? `${s.accuracy}%` : "—"} <span className="text-stone-400 text-[11px]">({s.attemptCount})</span>
+                              {s.accuracyDelta !== null && Math.abs(s.accuracyDelta) >= 5 && (
+                                <span className="ml-1 text-[10.5px] font-medium" style={{ color: s.accuracyDelta < 0 ? RED : GREEN }}>
+                                  {s.accuracyDelta < 0 ? "▼" : "▲"}{Math.abs(Math.round(s.accuracyDelta))}
+                                </span>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-stone-600">
                               {s.comprehension.total > 0 ? `${s.comprehension.score}%` : "—"} <span className="text-stone-400 text-[11px]">({s.comprehension.total})</span>
@@ -1461,6 +1685,8 @@ export default function TeacherDashboard({ initialClasses }) {
                                   subunitProgressList={subunitProgressListFor(s)}
                                   onRemove={setRemoving}
                                   persistence={persistence.perUser[s.id]}
+                                  summaryState={summaries[s.id]}
+                                  onGenerateSummary={() => generateSummaryForStudent(s)}
                                 />
                               </td>
                             </tr>
