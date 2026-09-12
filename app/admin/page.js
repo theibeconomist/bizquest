@@ -14,7 +14,7 @@ export default async function AdminPage() {
 
   const { data: students } = await supabase
     .from("profiles")
-    .select("id, email, approved, is_admin, xp, updated_at")
+    .select("id, email, approved, is_admin, role, xp, updated_at")
     .order("approved", { ascending: true })
     .order("updated_at", { ascending: false });
 
@@ -30,6 +30,8 @@ export default async function AdminPage() {
         </h1>
         <p className="text-[13px] text-stone-500 mb-6">
           New sign-ups need approval before they can access BizQuest. Pending students are listed first.
+          Use the role dropdown to promote someone to teacher (full unlocked access, plus a dashboard for
+          their own students) or admin.
         </p>
         <AdminTable initialStudents={students || []} currentUserId={user.id} />
       </div>

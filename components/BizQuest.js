@@ -13,6 +13,10 @@ import {
   saveStudyProgress,
   loadTermsReviewed,
   saveTermsReviewed,
+  loadRoleInfo,
+  joinClassByCode,
+  logQuestionAttempt,
+  recordActivitySeconds,
 } from "@/lib/db";
 
 // ============================================================
@@ -1276,7 +1280,7 @@ function CompletionCard({ stats, profile, levelInfo }) {
           </div>
         </div>
         <p className="mt-3 text-[13px] text-stone-500">
-          More subunits (1.2–1.6) are coming soon — your level and badges will carry over automatically.
+          More subunits (1.3–1.6) are coming soon — your level and badges will carry over automatically.
         </p>
       </div>
     </FadeIn>
@@ -2683,7 +2687,56 @@ function MapBackground({ totalHeight }) {
   );
 }
 
-function UnitMapView({ onSelectSubunit }) {
+function JoinClassBanner({ onJoined }) {
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState("idle"); // "idle" | "loading" | "error"
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!code.trim() || status === "loading") return;
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const result = await joinClassByCode(code.trim());
+      setStatus("idle");
+      setCode("");
+      onJoined(result);
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg(err.message || "Invalid class code.");
+    }
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
+      style={{ borderColor: "#e7e2d8", backgroundColor: "#FBF9F4" }}
+    >
+      <span className="text-[12.5px] text-stone-600">Have a class code from your teacher?</span>
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="e.g. 7F3KQZ"
+        maxLength={8}
+        className="rounded-md border border-stone-300 px-2 py-1 text-[13px] font-mono uppercase tracking-wide w-28 focus:outline-none focus:ring-2"
+        style={{ "--tw-ring-color": "#15396B" }}
+      />
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="rounded-md px-3 py-1 text-[12.5px] font-semibold text-white disabled:opacity-60"
+        style={{ backgroundColor: "#15396B" }}
+      >
+        {status === "loading" ? "Joining…" : "Join class"}
+      </button>
+      {status === "error" && <span className="text-[12px] text-red-600">{errorMsg}</span>}
+    </form>
+  );
+}
+
+function UnitMapView({ onSelectSubunit, role, showJoinBanner, onJoinedClass }) {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState(emptyProfile());
 
@@ -2722,6 +2775,9 @@ function UnitMapView({ onSelectSubunit }) {
   const subunitUnlocked = UNIT_SUBUNITS.map((s, i) => {
     const hasContent = SUBUNIT_CONTENT_IDS.includes(s.id);
     if (!hasContent) return false;
+    // Teachers and admins get full, unrestricted access — they shouldn't have to
+    // "complete" 1.1 before checking 1.2's content, the way a student does.
+    if (role === "teacher" || role === "admin") return true;
     return TESTING_UNLOCK_ALL_SUBUNITS || i === 0 || subunitProgress[i - 1] >= 100;
   });
   const allNodes = [
@@ -2788,6 +2844,12 @@ function UnitMapView({ onSelectSubunit }) {
           )}
         </div>
       </div>
+
+      {showJoinBanner && (
+        <div className="mx-auto max-w-2xl px-5 pt-4">
+          <JoinClassBanner onJoined={onJoinedClass} />
+        </div>
+      )}
 
       <div
         className="mx-auto max-w-2xl relative overflow-hidden"
@@ -3003,7 +3065,7 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId }) {
   );
 }
 
-export default function ApplePractice1_1() {
+export default function ApplePractice1_1({ initialRole = "student", initialClassId = null } = {}) {
   const [view, setView] = useState("unitmap"); // "unitmap" | "hub" | "practice" | "terms" | "study"
   const [currentSubunitId, setCurrentSubunitId] = useState("1.1");
   const subunit = SUBUNIT_REGISTRY[currentSubunitId];
@@ -3028,6 +3090,57 @@ export default function ApplePractice1_1() {
   const [profile, setProfile] = useState(emptyProfile());
   const [badgeToast, setBadgeToast] = useState(null);
   const [currentStage, setCurrentStage] = useState("discover");
+  const [roleInfo, setRoleInfo] = useState({ role: initialRole, classId: initialClassId });
+
+  // Refresh role/class info once on mount (covers cases where the server-rendered props
+  // are stale — e.g. right after joining a class in a previous tab).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const info = await loadRoleInfo();
+        if (!cancelled) setRoleInfo(info);
+      } catch {
+        // keep whatever came from initial props
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ---- Time-on-app tracking ----
+  // Accumulates active (tab-visible) seconds client-side and flushes them into
+  // daily_activity every 30s (and on unload), via an atomic server-side increment —
+  // this is what powers the teacher dashboard's daily/weekly/monthly totals.
+  useEffect(() => {
+    let accumulated = 0;
+    let lastTick = Date.now();
+    let active = typeof document !== "undefined" && document.visibilityState === "visible";
+    const tick = () => {
+      const now = Date.now();
+      if (active) accumulated += (now - lastTick) / 1000;
+      lastTick = now;
+    };
+    const onVisibilityChange = () => {
+      tick();
+      active = document.visibilityState === "visible";
+    };
+    const flush = () => {
+      tick();
+      if (accumulated >= 1) {
+        recordActivitySeconds(accumulated);
+        accumulated = 0;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", flush);
+    const flushInterval = setInterval(flush, 30000);
+    return () => {
+      flush();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", flush);
+      clearInterval(flushInterval);
+    };
+  }, []);
 
   // Reset to the first stage whenever the active subunit changes, so switching
   // subunits never lands you mid-way through a stage sequence that belongs to
@@ -3221,6 +3334,16 @@ export default function ApplePractice1_1() {
       persist(question.id, newEntry);
       dirtyKindsRef.current.add("responses");
       flushResponses(); // save the graded result right away rather than waiting on the draft debounce
+      // Fire-and-forget: append to the attempt log a teacher can later query for
+      // accuracy/score analytics. Every submission logs (not just the first), since
+      // Edit Again resubmissions are genuinely new attempts worth showing improvement on.
+      logQuestionAttempt({
+        subunitId: currentSubunitId,
+        questionId: question.id,
+        section: question.section,
+        marksEarned: result.score,
+        marksPossible: question.marks,
+      });
 
       setProfile((prevProfile) => {
         const p = { ...prevProfile };
@@ -3239,7 +3362,7 @@ export default function ApplePractice1_1() {
         [question.id]: { ...prev[question.id], status: "error", errorMsg: err.message || "Marking failed." },
       }));
     }
-  }, [state, persist, flushResponses, announceBadges]);
+  }, [state, persist, flushResponses, announceBadges, currentSubunitId]);
 
   const onSubmitComp = useCallback(async (question) => {
     setCompState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "loading" } }));
@@ -3352,7 +3475,16 @@ export default function ApplePractice1_1() {
   // (per-stage question rendering now handled directly in the stepper below)
 
   if (view === "unitmap") {
-    return <FadeIn key="unitmap" className="min-h-full"><UnitMapView onSelectSubunit={(id) => { if (SUBUNIT_CONTENT_IDS.includes(id)) { setCurrentSubunitId(id); setView("hub"); } }} /></FadeIn>;
+    return (
+      <FadeIn key="unitmap" className="min-h-full">
+        <UnitMapView
+          onSelectSubunit={(id) => { if (SUBUNIT_CONTENT_IDS.includes(id)) { setCurrentSubunitId(id); setView("hub"); } }}
+          role={roleInfo.role}
+          showJoinBanner={roleInfo.role === "student" && !roleInfo.classId}
+          onJoinedClass={(result) => setRoleInfo((prev) => ({ ...prev, classId: result ? result.classId : prev.classId }))}
+        />
+      </FadeIn>
+    );
   }
   if (view === "hub") {
     return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /></FadeIn>;

@@ -24,6 +24,24 @@ export default function AdminTable({ initialStudents, currentUserId }) {
     }
   };
 
+  // Role and is_admin are updated together in one call so the legacy is_admin flag
+  // (still used by the /admin page's own access check) always stays consistent with role.
+  const setRole = async (id, role) => {
+    setPendingIds((prev) => new Set(prev).add(id));
+    try {
+      const { error } = await supabase.from("profiles").update({ role, is_admin: role === "admin" }).eq("id", id);
+      if (!error) {
+        setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, role, is_admin: role === "admin" } : s)));
+      }
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
   if (students.length === 0) {
     return <p className="text-[13px] text-stone-500">No students have signed up yet.</p>;
   }
@@ -35,6 +53,7 @@ export default function AdminTable({ initialStudents, currentUserId }) {
           <tr className="border-b border-stone-200 text-left text-stone-500">
             <th className="px-4 py-2.5 font-medium">Email</th>
             <th className="px-4 py-2.5 font-medium">Status</th>
+            <th className="px-4 py-2.5 font-medium">Role</th>
             <th className="px-4 py-2.5 font-medium">XP</th>
             <th className="px-4 py-2.5 font-medium text-right">Action</th>
           </tr>
@@ -54,6 +73,22 @@ export default function AdminTable({ initialStudents, currentUserId }) {
                     <span className="inline-flex items-center gap-1 text-green-700"><CheckCircle2 size={13} /> Approved</span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-amber-600"><XCircle size={13} /> Pending</span>
+                  )}
+                </td>
+                <td className="px-4 py-2.5">
+                  {isSelf ? (
+                    <span className="text-[12.5px] text-stone-500 capitalize">{s.role || "student"}</span>
+                  ) : (
+                    <select
+                      value={s.role || "student"}
+                      onChange={(e) => setRole(s.id, e.target.value)}
+                      disabled={isPending}
+                      className="rounded-md border border-stone-300 px-2 py-1 text-[12.5px] disabled:opacity-50"
+                    >
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Admin</option>
+                    </select>
                   )}
                 </td>
                 <td className="px-4 py-2.5 text-stone-600">{s.xp || 0}</td>

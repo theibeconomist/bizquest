@@ -11,7 +11,7 @@ export default async function Home() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("approved, is_admin")
+    .select("approved, is_admin, role, class_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -43,9 +43,19 @@ export default async function Home() {
     );
   }
 
+  const isTeacher = profile.role === "teacher" || profile.role === "admin" || profile.is_admin;
+
   return (
     <>
       <SignOutButton />
+      {isTeacher && (
+        <Link
+          href="/teacher"
+          className="fixed top-3 right-[196px] z-50 flex items-center rounded-full bg-white/90 backdrop-blur border border-stone-200 px-3 py-1.5 text-[12px] font-medium text-stone-600 shadow-sm hover:bg-white"
+        >
+          Teacher dashboard
+        </Link>
+      )}
       {profile.is_admin && (
         <Link
           href="/admin"
@@ -54,7 +64,7 @@ export default async function Home() {
           Admin
         </Link>
       )}
-      <BizQuest />
+      <BizQuest initialRole={profile.role || "student"} initialClassId={profile.class_id || null} />
     </>
   );
 }
