@@ -574,12 +574,12 @@ const QUESTIONS_1_4 = [
 // ============================================================
 // SUBUNIT 1.5 — Growth and evolution
 // ============================================================
-const VIDEO_1_5 = { id: "31ZgQ8ugzPE", title: "How Apple Almost Went Bankrupt In The Mid-90s", source: "Real Stories" };
+const VIDEO_1_5 = { id: "xchYT9wz5hk", title: "Steve Jobs 1997 Interview: Defending His Commitment To Apple", source: "CNBC" };
 const COMPREHENSION_QUESTIONS_1_5 = [
-  { id: "c1", prompt: "According to the video, roughly how close to bankruptcy was Apple when Jobs returned?",
-    guidance: "Correct answer: roughly 90 days from bankruptcy, according to widely reported accounts of the period. Accept any answer indicating Apple was weeks/months, not years, away. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "Why had Jobs originally left Apple, and what company did he found in the meantime?",
-    guidance: "Correct answer: he left after a power struggle with then-CEO John Sculley in 1985; he founded NeXT, the computer company Apple later acquired to bring him back. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the interview, what did Jobs say was his strategy for turning Apple around?",
+    guidance: "Correct answer: get the right strategy, the right people and the right culture in place, and the right products/marketing/logistics will follow — leading the bottom line (profit) to follow too. Accept any answer capturing 'get the fundamentals right and the results will follow'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the interview, how did the crowd react when Jobs announced Apple's new partnership with Microsoft at Macworld?",
+    guidance: "Correct answer: the crowd booed/jeered him — many Mac loyalists saw partnering with their long-time rival Microsoft as a betrayal. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT_1_5 = `Apple has grown through a combination of internal (organic) growth and external growth. Internally, the company expanded from a single computer product line into an ecosystem spanning Mac, iPhone, iPad, Apple Watch, AirPods and a rapidly growing Services division. Apple's enormous purchasing volumes allow it to negotiate lower component prices than smaller rivals — an example of internal economies of scale. Apple's contract manufacturers benefit from external economies of scale too: the clustering of suppliers, skilled labour and infrastructure around manufacturing hubs such as Shenzhen, China, lowers costs for every electronics company based there, not just Apple.
 
