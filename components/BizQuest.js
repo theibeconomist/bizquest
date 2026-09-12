@@ -2919,7 +2919,7 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
           </div>
           {loaded && (
             <div className="self-center flex items-center gap-2 sm:shrink-0">
-              <MessagesBell />
+              {role === "student" && <MessagesBell />}
               <ProfileChip role={role} />
               <div className="flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: GOLD }}>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BizQuest from "@/components/BizQuest";
 import SignOutButton from "@/components/SignOutButton";
+import TeacherDashboardLink from "@/components/TeacherDashboardLink";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -49,12 +50,9 @@ export default async function Home() {
     <>
       <SignOutButton />
       {isTeacher && (
-        <Link
-          href="/teacher"
+        <TeacherDashboardLink
           className="fixed top-3 right-[196px] z-50 flex items-center rounded-full bg-white/90 backdrop-blur border border-stone-200 px-3 py-1.5 text-[12px] font-medium text-stone-600 shadow-sm hover:bg-white"
-        >
-          Teacher dashboard
-        </Link>
+        />
       )}
       {profile.is_admin && (
         <Link

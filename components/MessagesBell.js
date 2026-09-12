@@ -1,7 +1,94 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Bell, X, Loader2 } from "lucide-react";
-import { loadMyMessages, markMessageRead } from "@/lib/db";
+import { Bell, X, Loader2, ThumbsUp, Reply, Send } from "lucide-react";
+import { loadMyMessages, markMessageRead, replyToTeacher } from "@/lib/db";
+
+function MessageRow({ m, onReplied }) {
+  const [replying, setReplying] = useState(false);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentJustNow, setSentJustNow] = useState(false);
+
+  // Only a teacher-authored message that isn't itself already a reply can be acknowledged
+  // or replied to — keeps this to one level of threading rather than infinite back-and-forth.
+  const canRespond = m.sender_role !== "student";
+
+  const send = async (body) => {
+    if (!body.trim() || sending) return;
+    setSending(true);
+    try {
+      await replyToTeacher({ classId: m.class_id, teacherId: m.teacher_id, message: body.trim(), replyToId: m.id });
+      setText("");
+      setReplying(false);
+      setSentJustNow(true);
+      onReplied?.();
+    } catch {
+      // best-effort UI — a failed reply just leaves the box open so they can try again
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5">
+      <div className="text-[11px] text-stone-400 mb-1">
+        {m.sender_role === "student" ? "Your reply" : m.student_id ? "From your teacher" : "Class announcement"} · {new Date(m.created_at).toLocaleString()}
+      </div>
+      <p className="text-[13px] text-stone-700 whitespace-pre-wrap mb-1.5">{m.message}</p>
+
+      {canRespond && (
+        <>
+          {sentJustNow && !replying && (
+            <div className="text-[11.5px] text-green-700">Sent ✓</div>
+          )}
+          {!replying && !sentJustNow && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => send("Got it, thanks!")}
+                disabled={sending}
+                className="inline-flex items-center gap-1 text-[11.5px] font-medium text-stone-500 hover:text-stone-700 disabled:opacity-60"
+              >
+                <ThumbsUp size={11} /> Acknowledge
+              </button>
+              <button
+                onClick={() => setReplying(true)}
+                className="inline-flex items-center gap-1 text-[11.5px] font-medium text-stone-500 hover:text-stone-700"
+              >
+                <Reply size={11} /> Reply
+              </button>
+            </div>
+          )}
+          {replying && (
+            <div className="space-y-1.5">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write a reply…"
+                rows={2}
+                autoFocus
+                className="w-full rounded-md border border-stone-300 px-2 py-1.5 text-[12.5px] focus:outline-none focus:ring-2"
+                style={{ "--tw-ring-color": "#15396B" }}
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={() => { setReplying(false); setText(""); }} className="text-[11.5px] text-stone-500 hover:text-stone-700">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => send(text)}
+                  disabled={sending || !text.trim()}
+                  className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11.5px] font-semibold text-white disabled:opacity-60"
+                  style={{ backgroundColor: "#15396B" }}
+                >
+                  {sending ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />} Send
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function MessagesBell() {
   const [messages, setMessages] = useState([]);
@@ -68,14 +155,7 @@ export default function MessagesBell() {
               ) : messages.length === 0 ? (
                 <p className="text-[13px] text-stone-400 py-4 text-center">No messages yet.</p>
               ) : (
-                messages.map((m) => (
-                  <div key={m.id} className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5">
-                    <div className="text-[11px] text-stone-400 mb-1">
-                      {m.student_id ? "From your teacher" : "Class announcement"} · {new Date(m.created_at).toLocaleString()}
-                    </div>
-                    <p className="text-[13px] text-stone-700 whitespace-pre-wrap">{m.message}</p>
-                  </div>
-                ))
+                messages.map((m) => <MessageRow key={m.id} m={m} onReplied={refresh} />)
               )}
             </div>
           </div>

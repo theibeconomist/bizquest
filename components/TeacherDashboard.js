@@ -10,7 +10,7 @@ import {
 import {
   createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers,
   loadComprehensionAttemptsForUsers, removeStudentFromClass, generateStudentSummary,
-  sendClassMessage, loadClassMessages,
+  sendClassMessage, loadClassMessages, markMessagesReadForUser,
 } from "@/lib/db";
 import Avatar from "@/components/Avatar";
 import { questionText } from "@/lib/question-bank";
@@ -987,6 +987,8 @@ function MessagesPanel({ classId, roster }) {
       try {
         const data = await loadClassMessages(classId);
         if (!cancelled) setMessages(data);
+        const unreadReplyIds = data.filter((m) => m.sender_role === "student").map((m) => m.id);
+        if (unreadReplyIds.length > 0) markMessagesReadForUser(unreadReplyIds);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -1059,14 +1061,21 @@ function MessagesPanel({ classId, roster }) {
       ) : (
         <div className="space-y-1.5 max-h-56 overflow-y-auto">
           {messages.map((m) => {
-            const recipient = m.student_id ? (roster.find((s) => s.id === m.student_id)?.display_name || roster.find((s) => s.id === m.student_id)?.email || "a student") : "Whole class";
+            const isReply = m.sender_role === "student";
+            const studentProfile = roster.find((s) => s.id === (isReply ? m.sender_id : m.student_id));
+            const studentLabel = studentProfile?.display_name || studentProfile?.email || "a student";
+            const recipient = m.student_id ? studentLabel : "Whole class";
             const audienceSize = m.student_id ? 1 : roster.length;
             return (
               <div key={m.id} className="rounded-md bg-stone-50 border border-stone-200 px-2.5 py-2">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-stone-400 mb-0.5">
-                  <span className="font-medium text-stone-500">To: {recipient}</span>
+                  {isReply ? (
+                    <span className="font-medium text-stone-500">Reply from: {studentLabel}</span>
+                  ) : (
+                    <span className="font-medium text-stone-500">To: {recipient}</span>
+                  )}
                   <span>{new Date(m.created_at).toLocaleString()}</span>
-                  <span className="ml-auto">Read {m.readCount}/{audienceSize}</span>
+                  {!isReply && <span className="ml-auto">Read {m.readCount}/{audienceSize}</span>}
                 </div>
                 <p className="text-[12.5px] text-stone-700 whitespace-pre-wrap">{m.message}</p>
               </div>
