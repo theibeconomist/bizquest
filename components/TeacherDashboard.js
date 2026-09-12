@@ -2,17 +2,25 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import {
   Loader2, Copy, Check, ChevronRight, ChevronDown, Users, Clock, Target, BookOpen,
-  AlertTriangle, Flame, Calendar,
+  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers } from "@/lib/db";
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from "recharts";
+import {
+  createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers,
+  loadComprehensionAttemptsForUsers, removeStudentFromClass,
+} from "@/lib/db";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
 const RED = "#B3392C";
+const GREEN = "#2E8B84";
+const STONE = "#a8a29e";
 
-// Mirrors UNIT_SUBUNITS in components/BizQuest.js — kept as a small, separate lookup here
-// since this dashboard doesn't need (and shouldn't import) the rest of that huge file.
+// Mirrors UNIT_SUBUNITS / SUBUNIT_REGISTRY in components/BizQuest.js — kept as a small,
+// separate lookup here since this dashboard doesn't need (and shouldn't import) the rest
+// of that huge file. If question counts change there, update SUBUNIT_QUESTION_COUNTS too.
 const SUBUNIT_LABELS = {
   "1.1": "1.1 What is a business?",
   "1.2": "1.2 Types of business entities",
@@ -23,7 +31,19 @@ const SUBUNIT_LABELS = {
 };
 const SECTION_LABELS = { vocab: "Vocabulary", structured: "Structured", essay: "Extended response" };
 
-const ACTIVITY_WINDOW_DAYS = 90; // covers roughly a semester of streak/last-active/accuracy history
+// Total question counts per subunit, by stage — powers the stage-tracking feature.
+// discover = comprehension (video) questions, vocab/structured/essay map to Build/Apply/Master.
+const SUBUNIT_QUESTION_COUNTS = {
+  "1.1": { discover: 2, vocab: 7, structured: 3, essay: 1 },
+  "1.2": { discover: 2, vocab: 16, structured: 6, essay: 1 },
+};
+const STAGE_ORDER = ["discover", "build", "apply", "master"];
+const STAGE_LABEL = { discover: "Discover", build: "Build", apply: "Apply", master: "Master" };
+const STAGE_COLOR = { discover: "#6B4C9A", build: GREEN, apply: "#4A6FA5", master: "#8B3A4A", complete: STONE };
+const STAGE_TO_COUNT_KEY = { discover: "discover", build: "vocab", apply: "structured", master: "essay" };
+
+const ACTIVITY_WINDOW_DAYS = 90; // covers roughly a semester of streak/last-active/accuracy/trend history
+const TREND_WEEKS = 8;
 
 function isoDaysAgo(n) {
   const d = new Date();
@@ -45,7 +65,6 @@ function formatMinutes(seconds) {
   const m = mins % 60;
   return m ? `${h}h ${m}m` : `${h}h`;
 }
-// Last N calendar dates (oldest first) as "YYYY-MM-DD" strings, for building day-by-day charts.
 function lastNDates(n) {
   const out = [];
   for (let i = n - 1; i >= 0; i--) out.push(isoDaysAgo(i));
@@ -55,8 +74,6 @@ function shortDayLabel(iso) {
   const d = new Date(iso + "T00:00:00Z");
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
-// Counts consecutive active days ending today (or ending yesterday if today has no
-// activity yet — so a streak isn't shown as "broken" just because today isn't over).
 function computeStreak(activeDateSet) {
   let cursor = new Date();
   const todayKey = cursor.toISOString().slice(0, 10);
@@ -68,8 +85,131 @@ function computeStreak(activeDateSet) {
   }
   return streak;
 }
+// Comprehension checks are reported entirely separately from accuracy — they're a
+// verdict (correct/partial/incorrect), not a mark, so they're never mixed into the
+// question_attempts-based accuracy %. This just dedupes to one verdict per question
+// (in case of any retry) and tallies correct/partial/incorrect, plus a rough "score"
+// (correct = full credit, partial = half) purely for at-a-glance color-coding.
+function summarizeComprehension(compAttemptsInScope) {
+  const latest = {};
+  for (const a of [...compAttemptsInScope].sort((x, y) => new Date(x.submitted_at) - new Date(y.submitted_at))) {
+    latest[`${a.user_id}:${a.subunit_id}:${a.question_id}`] = a.verdict;
+  }
+  const counts = { correct: 0, partial: 0, incorrect: 0 };
+  for (const v of Object.values(latest)) if (counts[v] !== undefined) counts[v]++;
+  const total = Object.keys(latest).length;
+  const score = total > 0 ? Math.round(((counts.correct + 0.5 * counts.partial) / total) * 100) : null;
+  return { counts, total, score };
+}
+
 function pct(earned, possible) {
   return possible > 0 ? Math.round((earned / possible) * 100) : null;
+}
+
+// 8 weekly buckets (oldest first), each { label, value (accuracy % or null if no attempts) }.
+function weeklyAccuracyTrend(attemptsInScope, weeks = TREND_WEEKS) {
+  const buckets = [];
+  for (let w = weeks - 1; w >= 0; w--) {
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() - w * 7);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
+    const inBucket = attemptsInScope.filter((a) => {
+      const t = new Date(a.submitted_at);
+      return t >= start && t < end;
+    });
+    const earned = inBucket.reduce((sum, a) => sum + (a.marks_earned || 0), 0);
+    const possible = inBucket.reduce((sum, a) => sum + (a.marks_possible || 0), 0);
+    buckets.push({ label: shortDayLabel(start.toISOString().slice(0, 10)), value: pct(earned, possible) });
+  }
+  return buckets;
+}
+
+// Where a student currently stands in one subunit: which stage they're on, and their
+// done/total count for every stage (used for both the compact badge and the mini bar).
+function computeSubunitProgress(subunitId, compAttemptsForUser, questionAttemptsForUser) {
+  const totals = SUBUNIT_QUESTION_COUNTS[subunitId];
+  if (!totals) return null;
+  const compDone = new Set(
+    compAttemptsForUser.filter((a) => a.subunit_id === subunitId).map((a) => a.question_id)
+  ).size;
+  const bySection = { vocab: new Set(), structured: new Set(), essay: new Set() };
+  for (const a of questionAttemptsForUser) {
+    if (a.subunit_id !== subunitId) continue;
+    if (bySection[a.section]) bySection[a.section].add(a.question_id);
+  }
+  const doneCounts = { discover: compDone, vocab: bySection.vocab.size, structured: bySection.structured.size, essay: bySection.essay.size };
+  let currentStage = null;
+  for (const stage of STAGE_ORDER) {
+    const key = STAGE_TO_COUNT_KEY[stage];
+    if (doneCounts[key] < totals[key]) { currentStage = stage; break; }
+  }
+  return { totals, doneCounts, currentStage, isComplete: currentStage === null };
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map((row) => row.map((cell) => {
+    const s = String(cell ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function printStudentReport(student, subunitProgressList) {
+  const w = window.open("", "_blank", "width=800,height=900");
+  if (!w) return;
+  const rows = subunitProgressList.map((sp) => `
+    <tr>
+      <td>${sp.label}</td>
+      <td>${sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage]}</td>
+      <td>Discover ${sp.doneCounts.discover}/${sp.totals.discover} · Build ${sp.doneCounts.vocab}/${sp.totals.vocab} · Apply ${sp.doneCounts.structured}/${sp.totals.structured} · Master ${sp.doneCounts.essay}/${sp.totals.essay}</td>
+    </tr>`).join("");
+  w.document.write(`
+    <html>
+      <head>
+        <title>Report — ${student.email || student.id}</title>
+        <style>
+          body { font-family: -apple-system, Arial, sans-serif; padding: 32px; color: #1c1917; }
+          h1 { font-size: 20px; margin-bottom: 2px; }
+          .sub { color: #78716c; font-size: 13px; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+          th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e7e2d8; }
+          .stats { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+          .stat { border: 1px solid #e7e2d8; border-radius: 8px; padding: 8px 14px; }
+          .stat b { display: block; font-size: 16px; }
+          .stat span { font-size: 11px; color: #78716c; }
+        </style>
+      </head>
+      <body>
+        <h1>${student.email || "(no email on file)"}</h1>
+        <div class="sub">BizQuest progress report — generated ${new Date().toLocaleDateString()}</div>
+        <div class="stats">
+          <div class="stat"><b>${student.xp || 0}</b><span>XP</span></div>
+          <div class="stat"><b>${student.accuracy !== null ? student.accuracy + "%" : "—"}</b><span>Accuracy — graded questions (${student.attemptCount} attempts)</span></div>
+          <div class="stat"><b>${student.comprehension.total > 0 ? student.comprehension.score + "%" : "—"}</b><span>Comprehension checks — separate from accuracy (${student.comprehension.total} checks)</span></div>
+          <div class="stat"><b>${student.streak}d</b><span>Current streak</span></div>
+          <div class="stat"><b>${formatMinutes(student.weekly)}</b><span>Time this week</span></div>
+          <div class="stat"><b>${formatMinutes(student.monthly)}</b><span>Time this month</span></div>
+        </div>
+        <table>
+          <thead><tr><th>Subunit</th><th>Current stage</th><th>Detail</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+    </html>
+  `);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
 }
 
 function CopyableCode({ code }) {
@@ -103,13 +243,11 @@ function StatChip({ icon: Icon, label, value }) {
   );
 }
 
-// Small horizontal-bar-style chart (accuracy % by subunit/section), color-coded so a
-// teacher can spot weak spots at a glance without reading exact numbers.
 function AccuracyBarChart({ data, height = 180 }) {
   if (!data || data.length === 0) {
     return <div className="text-[12.5px] text-stone-400 py-6 text-center">Not enough graded answers yet.</div>;
   }
-  const colorFor = (v) => (v >= 70 ? "#2E8B84" : v >= 50 ? GOLD : RED);
+  const colorFor = (v) => (v >= 70 ? GREEN : v >= 50 ? GOLD : RED);
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
@@ -125,7 +263,6 @@ function AccuracyBarChart({ data, height = 180 }) {
   );
 }
 
-// Simple time-spent-per-day chart, in minutes.
 function TimeBarChart({ data, height = 160 }) {
   const allZero = !data || data.every((d) => d.minutes === 0);
   if (allZero) {
@@ -141,6 +278,96 @@ function TimeBarChart({ data, height = 160 }) {
         <Bar dataKey="minutes" radius={[3, 3, 0, 0]} fill={NAVY} />
       </BarChart>
     </ResponsiveContainer>
+  );
+}
+
+// Weekly accuracy trend — a line, not a bar, since the point is direction over time.
+// Gaps (null) render as breaks in the line rather than dropping to zero, so a week with
+// no attempts doesn't look like a 0% week.
+function TrendLineChart({ data, height = 160 }) {
+  const hasAny = data.some((d) => d.value !== null);
+  if (!hasAny) {
+    return <div className="text-[12.5px] text-stone-400 py-6 text-center">Not enough history yet to show a trend.</div>;
+  }
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <LineChart data={data} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e7e2d8" />
+        <XAxis dataKey="label" tick={{ fontSize: 10.5, fill: "#78716c" }} />
+        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#78716c" }} width={34} unit="%" />
+        <Tooltip formatter={(v) => [v === null ? "No attempts" : `${v}%`, "Accuracy"]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        <Line type="monotone" dataKey="value" stroke={NAVY} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// Compact "which stage is each student on" progress bar for one subunit — 4 segments
+// (Discover/Build/Apply/Master), each shaded by how complete that stage is.
+function StageMiniBar({ progress }) {
+  if (!progress) return null;
+  return (
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-stone-100">
+      {STAGE_ORDER.map((stage) => {
+        const key = STAGE_TO_COUNT_KEY[stage];
+        const frac = progress.totals[key] > 0 ? progress.doneCounts[key] / progress.totals[key] : 0;
+        return (
+          <div key={stage} className="flex-1 relative bg-stone-100">
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{ width: `${Math.round(frac * 100)}%`, backgroundColor: STAGE_COLOR[stage] }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Class-wide "how far along is everyone" view: for each subunit, a stacked bar showing
+// how many students currently sit in each stage (or have completed it entirely).
+function StagePipeline({ subunitId, students, subunitProgressByStudent }) {
+  const counts = { discover: 0, build: 0, apply: 0, master: 0, complete: 0 };
+  let total = 0;
+  for (const s of students) {
+    const p = subunitProgressByStudent[s.id]?.[subunitId];
+    if (!p) continue;
+    total++;
+    counts[p.isComplete ? "complete" : p.currentStage]++;
+  }
+  if (total === 0) return null;
+  const buckets = [...STAGE_ORDER, "complete"];
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between text-[12px] text-stone-600 mb-1">
+        <span className="font-medium">{SUBUNIT_LABELS[subunitId] || subunitId}</span>
+        <span className="text-stone-400">{total} student{total !== 1 ? "s" : ""}</span>
+      </div>
+      <div className="flex h-5 w-full overflow-hidden rounded-md">
+        {buckets.map((b) => {
+          const width = (counts[b] / total) * 100;
+          if (width === 0) return null;
+          return (
+            <div
+              key={b}
+              className="flex items-center justify-center text-[10px] font-medium text-white"
+              style={{ width: `${width}%`, backgroundColor: STAGE_COLOR[b] }}
+              title={`${b === "complete" ? "Complete" : STAGE_LABEL[b]}: ${counts[b]}`}
+            >
+              {width > 9 ? counts[b] : ""}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+        {buckets.map((b) => (
+          <span key={b} className="inline-flex items-center gap-1 text-[10px] text-stone-500">
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STAGE_COLOR[b] }} />
+            {b === "complete" ? "Complete" : STAGE_LABEL[b]}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -168,13 +395,11 @@ function NeedsAttentionBanner({ students, onSelect }) {
   );
 }
 
-// Full drill-down for one student: subunit/section accuracy, daily time chart, and a
-// recent-attempts table. Rendered inline below their roster row when clicked.
-function StudentDetailPanel({ student, attempts, activity }) {
+function StudentDetailPanel({ student, attempts, activity, subunitProgressList, onRemove }) {
   const myAttempts = useMemo(() => attempts.filter((a) => a.user_id === student.id), [attempts, student.id]);
   const myActivity = useMemo(() => activity.filter((a) => a.user_id === student.id), [activity, student.id]);
 
-  const subunitData = useMemo(() => {
+  const subunitAccuracyData = useMemo(() => {
     const bySubunit = {};
     for (const a of myAttempts) {
       const key = a.subunit_id;
@@ -184,7 +409,7 @@ function StudentDetailPanel({ student, attempts, activity }) {
     }
     return Object.entries(bySubunit)
       .map(([id, v]) => ({ label: SUBUNIT_LABELS[id] || id, value: pct(v.earned, v.possible) ?? 0 }))
-      .sort((a, b) => (SUBUNIT_LABELS[a.label] || a.label).localeCompare(b.label));
+      .sort((a, b) => (a.label).localeCompare(b.label));
   }, [myAttempts]);
 
   const dailyTimeData = useMemo(() => {
@@ -193,6 +418,8 @@ function StudentDetailPanel({ student, attempts, activity }) {
     return lastNDates(14).map((d) => ({ label: shortDayLabel(d), minutes: Math.round((byDate[d] || 0) / 60) }));
   }, [myActivity]);
 
+  const trendData = useMemo(() => weeklyAccuracyTrend(myAttempts), [myAttempts]);
+
   const recentAttempts = useMemo(
     () => [...myAttempts].sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)).slice(0, 15),
     [myAttempts]
@@ -200,15 +427,74 @@ function StudentDetailPanel({ student, attempts, activity }) {
 
   return (
     <div className="bg-stone-50 border-t border-stone-200 px-4 py-4 space-y-4">
+      <div className="flex flex-wrap items-center gap-4 rounded-md border border-stone-200 bg-white px-3.5 py-2.5">
+        <div className="leading-tight">
+          <div className="text-[10px] uppercase tracking-wide text-stone-400">Accuracy — graded questions</div>
+          <div className="text-[15px] font-semibold text-stone-700">
+            {student.accuracy !== null ? `${student.accuracy}%` : "—"} <span className="text-stone-400 text-[12px] font-normal">({student.attemptCount} attempts)</span>
+          </div>
+        </div>
+        <div className="h-8 w-px bg-stone-200" />
+        <div className="leading-tight">
+          <div className="text-[10px] uppercase tracking-wide text-stone-400">Comprehension checks — reported separately</div>
+          <div className="text-[15px] font-semibold text-stone-700">
+            {student.comprehension.total > 0 ? `${student.comprehension.score}%` : "—"}{" "}
+            <span className="text-stone-400 text-[12px] font-normal">
+              ({student.comprehension.counts.correct} correct, {student.comprehension.counts.partial} partial, {student.comprehension.counts.incorrect} incorrect)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[12px] font-semibold text-stone-600">Subunit progress</div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => printStudentReport(student, subunitProgressList)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1 text-[11.5px] font-medium text-stone-600 hover:bg-stone-50"
+          >
+            <Printer size={12} /> Print report
+          </button>
+          <button
+            onClick={() => onRemove(student)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 py-1 text-[11.5px] font-medium text-red-600 hover:bg-red-50"
+          >
+            <UserMinus size={12} /> Remove from class
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        {subunitProgressList.map((sp) => (
+          <div key={sp.subunitId}>
+            <div className="flex items-center justify-between text-[12px] mb-1">
+              <span className="text-stone-600">{sp.label}</span>
+              <span className="font-medium" style={{ color: sp.isComplete ? GREEN : STAGE_COLOR[sp.currentStage] }}>
+                {sp.isComplete ? "Complete" : STAGE_LABEL[sp.currentStage]}
+              </span>
+            </div>
+            <StageMiniBar progress={sp} />
+          </div>
+        ))}
+        {subunitProgressList.length === 0 && (
+          <div className="text-[12.5px] text-stone-400">No subunit activity yet.</div>
+        )}
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Accuracy by subunit</div>
-          <AccuracyBarChart data={subunitData} height={Math.max(90, subunitData.length * 34)} />
+          <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Accuracy trend — last {TREND_WEEKS} weeks</div>
+          <TrendLineChart data={trendData} />
         </div>
         <div>
           <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Time spent — last 14 days</div>
           <TimeBarChart data={dailyTimeData} />
         </div>
+      </div>
+
+      <div>
+        <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Accuracy by subunit</div>
+        <AccuracyBarChart data={subunitAccuracyData} height={Math.max(90, subunitAccuracyData.length * 34)} />
       </div>
 
       <div>
@@ -246,6 +532,15 @@ function StudentDetailPanel({ student, attempts, activity }) {
   );
 }
 
+const SORT_OPTIONS = [
+  { key: "email", label: "Name" },
+  { key: "xp", label: "XP" },
+  { key: "accuracy", label: "Accuracy" },
+  { key: "streak", label: "Streak" },
+  { key: "weekly", label: "Time this week" },
+  { key: "daysSinceActive", label: "Last active" },
+];
+
 export default function TeacherDashboard({ initialClasses }) {
   const [classes, setClasses] = useState(initialClasses || []);
   const [selectedClassId, setSelectedClassId] = useState((initialClasses && initialClasses[0]?.id) || null);
@@ -256,8 +551,14 @@ export default function TeacherDashboard({ initialClasses }) {
   const [roster, setRoster] = useState([]);
   const [activity, setActivity] = useState([]);
   const [attempts, setAttempts] = useState([]);
+  const [compAttempts, setCompAttempts] = useState([]);
   const [loadingClass, setLoadingClass] = useState(false);
   const [expandedStudentId, setExpandedStudentId] = useState(null);
+
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState("email");
+  const [sortDir, setSortDir] = useState("asc");
+  const [removing, setRemoving] = useState(null); // student pending removal confirmation
 
   const selectedClass = classes.find((c) => c.id === selectedClassId) || null;
 
@@ -283,7 +584,7 @@ export default function TeacherDashboard({ initialClasses }) {
     if (!selectedClassId) {
       Promise.resolve().then(() => {
         if (cancelled) return;
-        setRoster([]); setActivity([]); setAttempts([]); setExpandedStudentId(null);
+        setRoster([]); setActivity([]); setAttempts([]); setCompAttempts([]); setExpandedStudentId(null);
       });
       return () => { cancelled = true; };
     }
@@ -295,15 +596,19 @@ export default function TeacherDashboard({ initialClasses }) {
         if (cancelled) return;
         setRoster(r);
         const ids = r.map((s) => s.id);
-        const [a, q] = await Promise.all([
-          loadActivityForUsers(ids, isoDaysAgo(ACTIVITY_WINDOW_DAYS)),
-          loadAttemptsForUsers(ids, new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 86400000).toISOString()),
+        const sinceDate = isoDaysAgo(ACTIVITY_WINDOW_DAYS);
+        const sinceISO = new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 86400000).toISOString();
+        const [a, q, c] = await Promise.all([
+          loadActivityForUsers(ids, sinceDate),
+          loadAttemptsForUsers(ids, sinceISO),
+          loadComprehensionAttemptsForUsers(ids, sinceISO),
         ]);
         if (cancelled) return;
         setActivity(a);
         setAttempts(q);
+        setCompAttempts(c);
       } catch {
-        if (!cancelled) { setRoster([]); setActivity([]); setAttempts([]); }
+        if (!cancelled) { setRoster([]); setActivity([]); setAttempts([]); setCompAttempts([]); }
       } finally {
         if (!cancelled) setLoadingClass(false);
       }
@@ -313,8 +618,6 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const today = todayISODate();
 
-  // Per-student rollups: time windows, subunit/section accuracy, streak, last-active,
-  // and a "needs attention" verdict with human-readable reasons.
   const studentStats = useMemo(() => {
     const weekAgo = isoDaysAgo(7);
     const monthAgo = isoDaysAgo(30);
@@ -331,6 +634,7 @@ export default function TeacherDashboard({ initialClasses }) {
       const streak = computeStreak(activeDateSet);
 
       const myAttempts = attempts.filter((a) => a.user_id === s.id);
+      const myCompAttempts = compAttempts.filter((a) => a.user_id === s.id);
       const earned = myAttempts.reduce((sum, a) => sum + (a.marks_earned || 0), 0);
       const possible = myAttempts.reduce((sum, a) => sum + (a.marks_possible || 0), 0);
       const accuracy = pct(earned, possible);
@@ -346,6 +650,14 @@ export default function TeacherDashboard({ initialClasses }) {
         bySection[a.section].possible += a.marks_possible || 0;
       }
 
+      const subunitProgress = {};
+      for (const subunitId of Object.keys(SUBUNIT_QUESTION_COUNTS)) {
+        const sp = computeSubunitProgress(subunitId, myCompAttempts, myAttempts);
+        if (sp) subunitProgress[subunitId] = sp;
+      }
+
+      const comprehension = summarizeComprehension(myCompAttempts);
+
       const reasons = [];
       if (accuracy !== null && myAttempts.length >= 3 && accuracy < 60) reasons.push(`Low accuracy (${accuracy}%)`);
       if (lastActiveDate !== null && daysSinceActive >= 3) reasons.push(`Inactive ${daysSinceActive}d`);
@@ -358,11 +670,12 @@ export default function TeacherDashboard({ initialClasses }) {
         accuracy,
         completedCount: (s.completed_subunits || []).length,
         lastActiveDate, daysSinceActive, streak,
-        bySubunit, bySection,
+        bySubunit, bySection, subunitProgress,
+        comprehension,
         needsAttention, reasons,
       };
     });
-  }, [roster, activity, attempts, today]);
+  }, [roster, activity, attempts, compAttempts, today]);
 
   const classSummary = useMemo(() => {
     if (studentStats.length === 0) return null;
@@ -376,7 +689,10 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const needsAttentionList = useMemo(() => studentStats.filter((s) => s.needsAttention), [studentStats]);
 
-  // Class-wide accuracy by subunit (aggregated across every student in the roster).
+  // Class-wide comprehension summary — deliberately computed from compAttempts directly
+  // (not folded into any accuracy number), so it can never leak into the accuracy stats.
+  const classComprehension = useMemo(() => summarizeComprehension(compAttempts), [compAttempts]);
+
   const classAccuracyBySubunit = useMemo(() => {
     const agg = {};
     for (const s of studentStats) {
@@ -401,17 +717,76 @@ export default function TeacherDashboard({ initialClasses }) {
       }
     }
     const order = ["vocab", "structured", "essay"];
-    return order
-      .filter((k) => agg[k])
-      .map((k) => ({ label: SECTION_LABELS[k] || k, value: pct(agg[k].earned, agg[k].possible) ?? 0 }));
+    return order.filter((k) => agg[k]).map((k) => ({ label: SECTION_LABELS[k] || k, value: pct(agg[k].earned, agg[k].possible) ?? 0 }));
   }, [studentStats]);
 
-  // Class-wide time spent per day (sum across the whole roster), last 14 days.
   const classDailyTime = useMemo(() => {
     const byDate = {};
     for (const a of activity) byDate[a.activity_date] = (byDate[a.activity_date] || 0) + (a.seconds_spent || 0);
     return lastNDates(14).map((d) => ({ label: shortDayLabel(d), minutes: Math.round((byDate[d] || 0) / 60) }));
   }, [activity]);
+
+  const classTrend = useMemo(() => weeklyAccuracyTrend(attempts), [attempts]);
+
+  const subunitProgressByStudent = useMemo(() => {
+    const out = {};
+    for (const s of studentStats) out[s.id] = s.subunitProgress;
+    return out;
+  }, [studentStats]);
+
+  const visibleStats = useMemo(() => {
+    const filtered = search.trim()
+      ? studentStats.filter((s) => (s.email || "").toLowerCase().includes(search.trim().toLowerCase()))
+      : studentStats;
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if (sortKey === "email") { av = (av || "").toLowerCase(); bv = (bv || "").toLowerCase(); }
+      // Nulls (e.g. no accuracy yet, never active) always sort last regardless of direction.
+      if (av === null || av === undefined) return 1;
+      if (bv === null || bv === undefined) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [studentStats, search, sortKey, sortDir]);
+
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "email" ? "asc" : "desc"); }
+  };
+
+  const subunitProgressListFor = (student) =>
+    Object.entries(student.subunitProgress).map(([subunitId, sp]) => ({ subunitId, label: SUBUNIT_LABELS[subunitId] || subunitId, ...sp }));
+
+  const exportRosterCSV = () => {
+    const header = [
+      "Email", "XP", "Subunits completed",
+      "Accuracy % (graded questions)", "Graded attempts",
+      "Comprehension score %", "Comprehension checks", "Comprehension correct", "Comprehension partial", "Comprehension incorrect",
+      "Streak (days)", "Last active", "Time today (min)", "Time this week (min)", "Time this month (min)",
+    ];
+    const rows = visibleStats.map((s) => [
+      s.email || "", s.xp || 0, s.completedCount,
+      s.accuracy ?? "", s.attemptCount,
+      s.comprehension.score ?? "", s.comprehension.total, s.comprehension.counts.correct, s.comprehension.counts.partial, s.comprehension.counts.incorrect,
+      s.streak, s.lastActiveDate || "never", Math.round(s.daily / 60), Math.round(s.weekly / 60), Math.round(s.monthly / 60),
+    ]);
+    downloadCSV(`${(selectedClass?.name || "class").replace(/[^a-z0-9]+/gi, "_")}_roster.csv`, [header, ...rows]);
+  };
+
+  const confirmRemove = async () => {
+    if (!removing) return;
+    try {
+      await removeStudentFromClass(removing.id);
+      setRoster((prev) => prev.filter((s) => s.id !== removing.id));
+      if (expandedStudentId === removing.id) setExpandedStudentId(null);
+    } catch (err) {
+      alert(err.message || "Could not remove student.");
+    } finally {
+      setRemoving(null);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -475,7 +850,8 @@ export default function TeacherDashboard({ initialClasses }) {
               <div className="flex gap-2 flex-wrap">
                 <StatChip icon={Users} label="students" value={classSummary.count} />
                 <StatChip icon={Clock} label="avg / week" value={formatMinutes(classSummary.avgWeekly)} />
-                <StatChip icon={Target} label="avg accuracy" value={classSummary.avgAccuracy !== null ? `${classSummary.avgAccuracy}%` : "—"} />
+                <StatChip icon={Target} label="accuracy (graded questions)" value={classSummary.avgAccuracy !== null ? `${classSummary.avgAccuracy}%` : "—"} />
+                <StatChip icon={CheckCircle2} label={`comprehension (${classComprehension.total} checks)`} value={classComprehension.score !== null ? `${classComprehension.score}%` : "—"} />
               </div>
             )}
           </div>
@@ -507,9 +883,62 @@ export default function TeacherDashboard({ initialClasses }) {
                   <AccuracyBarChart data={classAccuracyBySection} height={Math.max(90, classAccuracyBySection.length * 34)} />
                 </div>
               </div>
-              <div className="mb-5">
-                <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Class time spent — last 14 days</div>
-                <TimeBarChart data={classDailyTime} />
+              <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Class accuracy trend — last {TREND_WEEKS} weeks</div>
+                  <TrendLineChart data={classTrend} />
+                </div>
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Class time spent — last 14 days</div>
+                  <TimeBarChart data={classDailyTime} />
+                </div>
+              </div>
+
+              {/* Subunit stage pipeline */}
+              <div className="mb-5 rounded-lg border border-stone-200 p-3.5">
+                <div className="text-[12px] font-semibold text-stone-600 mb-2.5">Where the class stands, by subunit</div>
+                {Object.keys(SUBUNIT_QUESTION_COUNTS).map((subunitId) => (
+                  <StagePipeline
+                    key={subunitId}
+                    subunitId={subunitId}
+                    students={studentStats}
+                    subunitProgressByStudent={subunitProgressByStudent}
+                  />
+                ))}
+              </div>
+
+              {/* Roster controls: search, sort, export */}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by email…"
+                    className="w-full rounded-md border border-stone-300 pl-8 pr-2.5 py-1.5 text-[12.5px] focus:outline-none focus:ring-2"
+                    style={{ "--tw-ring-color": NAVY }}
+                  />
+                </div>
+                <select
+                  value={sortKey}
+                  onChange={(e) => toggleSort(e.target.value)}
+                  className="rounded-md border border-stone-300 px-2 py-1.5 text-[12.5px]"
+                >
+                  {SORT_OPTIONS.map((o) => <option key={o.key} value={o.key}>Sort: {o.label}</option>)}
+                </select>
+                <button
+                  onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                  className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1.5 text-[12.5px] text-stone-600 hover:bg-stone-50"
+                  title="Reverse sort order"
+                >
+                  <ArrowUpDown size={12} /> {sortDir === "asc" ? "Asc" : "Desc"}
+                </button>
+                <button
+                  onClick={exportRosterCSV}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-50"
+                >
+                  <Download size={13} /> Export CSV
+                </button>
               </div>
 
               {/* Roster table */}
@@ -521,14 +950,16 @@ export default function TeacherDashboard({ initialClasses }) {
                       <th className="px-3 py-2 font-medium">Student</th>
                       <th className="px-3 py-2 font-medium">XP</th>
                       <th className="px-3 py-2 font-medium">Subunits</th>
-                      <th className="px-3 py-2 font-medium">Accuracy</th>
+                      <th className="px-3 py-2 font-medium">Accuracy (graded)</th>
+                      <th className="px-3 py-2 font-medium">Comprehension</th>
                       <th className="px-3 py-2 font-medium">Streak</th>
                       <th className="px-3 py-2 font-medium">Last active</th>
                       <th className="px-3 py-2 font-medium">This week</th>
+                      <th className="px-3 py-2 font-medium"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {studentStats.map((s) => {
+                    {visibleStats.map((s) => {
                       const isExpanded = expandedStudentId === s.id;
                       return (
                         <Fragment key={s.id}>
@@ -553,6 +984,9 @@ export default function TeacherDashboard({ initialClasses }) {
                               {s.accuracy !== null ? `${s.accuracy}%` : "—"} <span className="text-stone-400 text-[11px]">({s.attemptCount})</span>
                             </td>
                             <td className="px-3 py-2 text-stone-600">
+                              {s.comprehension.total > 0 ? `${s.comprehension.score}%` : "—"} <span className="text-stone-400 text-[11px]">({s.comprehension.total})</span>
+                            </td>
+                            <td className="px-3 py-2 text-stone-600">
                               {s.streak > 0 ? (
                                 <span className="inline-flex items-center gap-1"><Flame size={12} style={{ color: GOLD }} /> {s.streak}d</span>
                               ) : "—"}
@@ -566,22 +1000,59 @@ export default function TeacherDashboard({ initialClasses }) {
                               ) : "Never"}
                             </td>
                             <td className="px-3 py-2 text-stone-600">{formatMinutes(s.weekly)}</td>
+                            <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => setRemoving(s)}
+                                className="rounded-md p-1 text-stone-400 hover:text-red-600 hover:bg-red-50"
+                                title="Remove from class"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                            </td>
                           </tr>
                           {isExpanded && (
                             <tr>
-                              <td colSpan={8} className="p-0">
-                                <StudentDetailPanel student={s} attempts={attempts} activity={activity} />
+                              <td colSpan={10} className="p-0">
+                                <StudentDetailPanel
+                                  student={s}
+                                  attempts={attempts}
+                                  activity={activity}
+                                  subunitProgressList={subunitProgressListFor(s)}
+                                  onRemove={setRemoving}
+                                />
                               </td>
                             </tr>
                           )}
                         </Fragment>
                       );
                     })}
+                    {visibleStats.length === 0 && (
+                      <tr><td colSpan={10} className="px-3 py-6 text-center text-stone-400 text-[12.5px]">No students match “{search}”.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Remove-student confirmation */}
+      {removing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="bg-white rounded-xl border border-stone-200 shadow-lg max-w-sm w-full p-5">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-[15px] font-semibold text-stone-800">Remove from class?</h3>
+              <button onClick={() => setRemoving(null)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+            </div>
+            <p className="text-[13px] text-stone-500 mb-4">
+              {removing.email || "This student"} will lose access to your class dashboard and can rejoin later with the join code. Their own progress and XP are not affected.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setRemoving(null)} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
+              <button onClick={confirmRemove} className="rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white" style={{ backgroundColor: RED }}>Remove</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

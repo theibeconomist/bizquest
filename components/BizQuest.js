@@ -16,6 +16,7 @@ import {
   loadRoleInfo,
   joinClassByCode,
   logQuestionAttempt,
+  logComprehensionAttempt,
   recordActivitySeconds,
 } from "@/lib/db";
 
@@ -3380,6 +3381,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
       persistComp(question.id, newEntry);
       dirtyKindsRef.current.add("comp");
       flushResponses(); // save the checked result right away rather than waiting on the draft debounce
+      logComprehensionAttempt({ subunitId: currentSubunitId, questionId: question.id, verdict: result.status });
 
       setProfile((prevProfile) => {
         const p = { ...prevProfile };
@@ -3397,7 +3399,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         [question.id]: { ...prev[question.id], status: "error", errorMsg: err.message || "Check failed." },
       }));
     }
-  }, [compState, persistComp, flushResponses, announceBadges]);
+  }, [compState, persistComp, flushResponses, announceBadges, currentSubunitId]);
 
   const onEditAgain = useCallback((id) => {
     setState((prev) => ({ ...prev, [id]: { ...prev[id], status: "idle" } }));
