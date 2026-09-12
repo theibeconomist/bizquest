@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BizQuest from "@/components/BizQuest";
 import SignOutButton from "@/components/SignOutButton";
+import ProfileButton from "@/components/ProfileButton";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -48,6 +49,7 @@ export default async function Home() {
   return (
     <>
       <SignOutButton />
+      <ProfileButton role={profile.role} className="fixed top-2.5 right-[288px] z-50" fixed={false} />
       {isTeacher && (
         <Link
           href="/teacher"

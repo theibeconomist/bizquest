@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TeacherDashboard from "@/components/TeacherDashboard";
 import SignOutButton from "@/components/SignOutButton";
+import ProfileButton from "@/components/ProfileButton";
 
 export default async function TeacherPage() {
   const supabase = await createClient();
@@ -22,6 +23,7 @@ export default async function TeacherPage() {
   return (
     <div className="min-h-screen px-4 py-10" style={{ backgroundColor: "#FAF8F5" }}>
       <SignOutButton />
+      <ProfileButton role={me.role} className="fixed top-2.5 right-[104px] z-50" fixed={false} />
       <div className="max-w-5xl mx-auto">
         <Link href="/" className="inline-block mb-4 text-[13px] text-stone-500 hover:text-stone-700">
           ← Back to app

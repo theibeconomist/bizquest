@@ -11,6 +11,7 @@ import {
   createClass, loadClassRoster, loadActivityForUsers, loadAttemptsForUsers,
   loadComprehensionAttemptsForUsers, removeStudentFromClass,
 } from "@/lib/db";
+import Avatar from "@/components/Avatar";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -30,6 +31,21 @@ const SUBUNIT_LABELS = {
   "1.6": "1.6 Multinational companies",
 };
 const SECTION_LABELS = { vocab: "Vocabulary", structured: "Structured", essay: "Extended response" };
+
+// Mirrors the BADGES catalog in components/BizQuest.js (id -> display name), just for
+// showing which badges the class has earned. If badges change there, update this too.
+const BADGE_CATALOG = {
+  "first-steps": "First Steps",
+  "wordsmith-1": "Wordsmith",
+  "wordsmith-2": "Lexicon Master",
+  "sharp-shooter": "Sharp Shooter",
+  "subunit-1-1": "1.1 Complete",
+  "study-1-1": "Well Rounded",
+  "rising-star": "Rising Star",
+  "centurion": "Centurion",
+};
+
+const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // Total question counts per subunit, by stage — powers the stage-tracking feature.
 // discover = comprehension (video) questions, vocab/structured/essay map to Build/Apply/Master.
@@ -148,6 +164,71 @@ function computeSubunitProgress(subunitId, compAttemptsForUser, questionAttempts
   return { totals, doneCounts, currentStage, isComplete: currentStage === null };
 }
 
+// Class-wide "hardest questions" — average accuracy per distinct question across every
+// attempt in scope. A minAttempts floor keeps one unlucky/lucky student from making a
+// question look artificially hard or easy.
+function computeQuestionDifficulty(attemptsInScope, minAttempts = 3) {
+  const byQuestion = {};
+  for (const a of attemptsInScope) {
+    const key = `${a.subunit_id}:${a.question_id}`;
+    if (!byQuestion[key]) byQuestion[key] = { subunitId: a.subunit_id, questionId: a.question_id, section: a.section, earned: 0, possible: 0, attempts: 0 };
+    byQuestion[key].earned += a.marks_earned || 0;
+    byQuestion[key].possible += a.marks_possible || 0;
+    byQuestion[key].attempts += 1;
+  }
+  return Object.values(byQuestion)
+    .filter((q) => q.attempts >= minAttempts && q.possible > 0)
+    .map((q) => ({ ...q, accuracy: pct(q.earned, q.possible) }))
+    .sort((a, b) => a.accuracy - b.accuracy);
+}
+
+// When students are actually doing the work, based on attempt timestamps (both graded
+// questions and comprehension checks) — the closest proxy available without a dedicated
+// session-log table, since daily_activity only stores per-day totals, not per-hour ones.
+function computeTimePatterns(timestamps) {
+  const byHour = new Array(24).fill(0);
+  const byDow = new Array(7).fill(0);
+  for (const ts of timestamps) {
+    const d = new Date(ts);
+    byHour[d.getHours()]++;
+    byDow[d.getDay()]++;
+  }
+  return {
+    byHour: byHour.map((count, h) => ({ label: h % 3 === 0 ? `${h}:00` : "", count })),
+    byDow: byDow.map((count, i) => ({ label: DOW_LABELS[i], count })),
+  };
+}
+
+// Resubmission behavior: groups every attempt at the same question together (question_attempts
+// logs each submission, not just the first), and looks at how many tries it took to reach full
+// marks — a proxy for productive persistence via the app's "Edit Again" flow.
+function computePersistence(attemptsInScope) {
+  const groups = {};
+  for (const a of attemptsInScope) {
+    const key = `${a.user_id}:${a.subunit_id}:${a.question_id}`;
+    if (!groups[key]) groups[key] = { user_id: a.user_id, list: [] };
+    groups[key].list.push(a);
+  }
+  let oneTry = 0, twoTries = 0, threePlus = 0;
+  const perUserTotals = {}; // user_id -> { totalAttempts, totalQuestions, retriedQuestions }
+  for (const g of Object.values(groups)) {
+    g.list.sort((x, y) => new Date(x.submitted_at) - new Date(y.submitted_at));
+    const n = g.list.length;
+    if (n === 1) oneTry++;
+    else if (n === 2) twoTries++;
+    else threePlus++;
+    const u = (perUserTotals[g.user_id] = perUserTotals[g.user_id] || { totalAttempts: 0, totalQuestions: 0, retriedQuestions: 0 });
+    u.totalAttempts += n;
+    u.totalQuestions += 1;
+    if (n > 1) u.retriedQuestions += 1;
+  }
+  const totalQuestions = oneTry + twoTries + threePlus;
+  return {
+    distribution: { oneTry, twoTries, threePlus, totalQuestions },
+    perUser: perUserTotals,
+  };
+}
+
 function downloadCSV(filename, rows) {
   const csv = rows.map((row) => row.map((cell) => {
     const s = String(cell ?? "");
@@ -176,7 +257,7 @@ function printStudentReport(student, subunitProgressList) {
   w.document.write(`
     <html>
       <head>
-        <title>Report — ${student.email || student.id}</title>
+        <title>Report — ${student.label || student.id}</title>
         <style>
           body { font-family: -apple-system, Arial, sans-serif; padding: 32px; color: #1c1917; }
           h1 { font-size: 20px; margin-bottom: 2px; }
@@ -190,8 +271,8 @@ function printStudentReport(student, subunitProgressList) {
         </style>
       </head>
       <body>
-        <h1>${student.email || "(no email on file)"}</h1>
-        <div class="sub">BizQuest progress report — generated ${new Date().toLocaleDateString()}</div>
+        <h1>${student.label || "(no name or email on file)"}</h1>
+        <div class="sub">${student.display_name && student.email ? student.email + " · " : ""}BizQuest progress report — generated ${new Date().toLocaleDateString()}</div>
         <div class="stats">
           <div class="stat"><b>${student.xp || 0}</b><span>XP</span></div>
           <div class="stat"><b>${student.accuracy !== null ? student.accuracy + "%" : "—"}</b><span>Accuracy — graded questions (${student.attemptCount} attempts)</span></div>
@@ -371,6 +452,117 @@ function StagePipeline({ subunitId, students, subunitProgressByStudent }) {
   );
 }
 
+// Generic small count histogram — used for both the hour-of-day and day-of-week charts.
+function CountBarChart({ data, height = 140 }) {
+  const allZero = !data || data.every((d) => d.count === 0);
+  if (allZero) {
+    return <div className="text-[12.5px] text-stone-400 py-6 text-center">Not enough attempts yet to see a pattern.</div>;
+  }
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e2d8" />
+        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#78716c" }} interval={0} />
+        <YAxis tick={{ fontSize: 11, fill: "#78716c" }} width={28} allowDecimals={false} />
+        <Tooltip formatter={(v) => [v, "Attempts"]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        <Bar dataKey="count" radius={[3, 3, 0, 0]} fill={GOLD} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function HardestQuestionsList({ questions }) {
+  if (!questions || questions.length === 0) {
+    return <div className="text-[12.5px] text-stone-400 py-4 text-center">Not enough graded attempts yet (need at least 3 per question).</div>;
+  }
+  return (
+    <div className="overflow-x-auto rounded-md border border-stone-200">
+      <table className="w-full text-[12.5px]">
+        <thead>
+          <tr className="border-b border-stone-200 text-left text-stone-500 bg-stone-50">
+            <th className="px-3 py-1.5 font-medium">Subunit</th>
+            <th className="px-3 py-1.5 font-medium">Section</th>
+            <th className="px-3 py-1.5 font-medium">Question</th>
+            <th className="px-3 py-1.5 font-medium">Class avg</th>
+            <th className="px-3 py-1.5 font-medium">Attempts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {questions.slice(0, 8).map((q) => (
+            <tr key={`${q.subunitId}-${q.questionId}`} className="border-b border-stone-100 last:border-0">
+              <td className="px-3 py-1.5 text-stone-600">{SUBUNIT_LABELS[q.subunitId] || q.subunitId}</td>
+              <td className="px-3 py-1.5 text-stone-600">{SECTION_LABELS[q.section] || q.section}</td>
+              <td className="px-3 py-1.5 text-stone-500 font-mono">{q.questionId}</td>
+              <td className="px-3 py-1.5 font-medium" style={{ color: q.accuracy >= 70 ? GREEN : q.accuracy >= 50 ? GOLD : RED }}>{q.accuracy}%</td>
+              <td className="px-3 py-1.5 text-stone-400">{q.attempts}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Simple "N of M students earned this badge" list — not per-badge detail, just an overview.
+function BadgeOverview({ roster }) {
+  const counts = useMemo(() => {
+    const c = {};
+    for (const id of Object.keys(BADGE_CATALOG)) c[id] = 0;
+    for (const s of roster) for (const id of s.badge_ids || []) if (c[id] !== undefined) c[id]++;
+    return c;
+  }, [roster]);
+  const total = roster.length;
+  const entries = Object.entries(BADGE_CATALOG).sort((a, b) => counts[b[0]] - counts[a[0]]);
+  if (total === 0) return null;
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {entries.map(([id, name]) => (
+        <div key={id} className="rounded-md border border-stone-200 px-2.5 py-2 text-center">
+          <div className="text-[15px] font-semibold text-stone-700">{counts[id]}<span className="text-[11px] font-normal text-stone-400">/{total}</span></div>
+          <div className="text-[10.5px] text-stone-500">{name}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Distribution of "how many tries did it take to nail a question" across the class —
+// a rough persistence signal, most useful alongside accuracy (low accuracy + one-try-then-give-up
+// is a different story than low accuracy + lots of retrying).
+function PersistenceDistribution({ distribution }) {
+  const { oneTry, twoTries, threePlus, totalQuestions } = distribution;
+  if (totalQuestions === 0) {
+    return <div className="text-[12.5px] text-stone-400 py-4 text-center">Not enough graded attempts yet.</div>;
+  }
+  const segments = [
+    { label: "1 try", value: oneTry, color: GREEN },
+    { label: "2 tries", value: twoTries, color: GOLD },
+    { label: "3+ tries", value: threePlus, color: RED },
+  ];
+  return (
+    <div>
+      <div className="flex h-5 w-full overflow-hidden rounded-md mb-1.5">
+        {segments.map((seg) => {
+          const width = (seg.value / totalQuestions) * 100;
+          if (width === 0) return null;
+          return (
+            <div key={seg.label} className="flex items-center justify-center text-[10px] font-medium text-white" style={{ width: `${width}%`, backgroundColor: seg.color }}>
+              {width > 10 ? Math.round(width) + "%" : ""}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-x-3 text-[10.5px] text-stone-500">
+        {segments.map((seg) => (
+          <span key={seg.label} className="inline-flex items-center gap-1">
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: seg.color }} /> {seg.label} ({seg.value})
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NeedsAttentionBanner({ students, onSelect }) {
   if (!students || students.length === 0) return null;
   return (
@@ -386,7 +578,7 @@ function NeedsAttentionBanner({ students, onSelect }) {
             className="rounded-md bg-white border px-2.5 py-1.5 text-left hover:shadow-sm"
             style={{ borderColor: "#f0d9d5" }}
           >
-            <div className="text-[12.5px] font-medium text-stone-700">{s.email || "(no email)"}</div>
+            <div className="text-[12.5px] font-medium text-stone-700">{s.label}</div>
             <div className="text-[11px] text-stone-500">{s.reasons.join(" · ")}</div>
           </button>
         ))}
@@ -395,7 +587,7 @@ function NeedsAttentionBanner({ students, onSelect }) {
   );
 }
 
-function StudentDetailPanel({ student, attempts, activity, subunitProgressList, onRemove }) {
+function StudentDetailPanel({ student, attempts, activity, subunitProgressList, onRemove, persistence }) {
   const myAttempts = useMemo(() => attempts.filter((a) => a.user_id === student.id), [attempts, student.id]);
   const myActivity = useMemo(() => activity.filter((a) => a.user_id === student.id), [activity, student.id]);
 
@@ -427,6 +619,14 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
 
   return (
     <div className="bg-stone-50 border-t border-stone-200 px-4 py-4 space-y-4">
+      <div className="flex items-center gap-2.5">
+        <Avatar url={student.avatar_url} name={student.label} size={36} />
+        <div className="leading-tight">
+          <div className="text-[13.5px] font-semibold text-stone-800">{student.label}</div>
+          {student.extra_detail && <div className="text-[11.5px] text-stone-500">{student.extra_detail}</div>}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-4 rounded-md border border-stone-200 bg-white px-3.5 py-2.5">
         <div className="leading-tight">
           <div className="text-[10px] uppercase tracking-wide text-stone-400">Accuracy — graded questions</div>
@@ -441,6 +641,16 @@ function StudentDetailPanel({ student, attempts, activity, subunitProgressList, 
             {student.comprehension.total > 0 ? `${student.comprehension.score}%` : "—"}{" "}
             <span className="text-stone-400 text-[12px] font-normal">
               ({student.comprehension.counts.correct} correct, {student.comprehension.counts.partial} partial, {student.comprehension.counts.incorrect} incorrect)
+            </span>
+          </div>
+        </div>
+        <div className="h-8 w-px bg-stone-200" />
+        <div className="leading-tight">
+          <div className="text-[10px] uppercase tracking-wide text-stone-400">Persistence (Edit Again)</div>
+          <div className="text-[15px] font-semibold text-stone-700">
+            {persistence && persistence.totalQuestions > 0 ? (persistence.totalAttempts / persistence.totalQuestions).toFixed(1) : "—"}{" "}
+            <span className="text-stone-400 text-[12px] font-normal">
+              avg tries/question{persistence && persistence.totalQuestions > 0 ? ` (${persistence.retriedQuestions} retried)` : ""}
             </span>
           </div>
         </div>
@@ -663,6 +873,8 @@ export default function TeacherDashboard({ initialClasses }) {
       if (lastActiveDate !== null && daysSinceActive >= 3) reasons.push(`Inactive ${daysSinceActive}d`);
       const needsAttention = reasons.length > 0;
 
+      const label = s.display_name || s.email || "(no name or email on file)";
+
       return {
         ...s,
         daily, weekly, monthly,
@@ -672,7 +884,7 @@ export default function TeacherDashboard({ initialClasses }) {
         lastActiveDate, daysSinceActive, streak,
         bySubunit, bySection, subunitProgress,
         comprehension,
-        needsAttention, reasons,
+        needsAttention, reasons, label,
       };
     });
   }, [roster, activity, attempts, compAttempts, today]);
@@ -728,6 +940,15 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const classTrend = useMemo(() => weeklyAccuracyTrend(attempts), [attempts]);
 
+  const questionDifficulty = useMemo(() => computeQuestionDifficulty(attempts), [attempts]);
+
+  const timePatterns = useMemo(() => {
+    const timestamps = [...attempts.map((a) => a.submitted_at), ...compAttempts.map((a) => a.submitted_at)];
+    return computeTimePatterns(timestamps);
+  }, [attempts, compAttempts]);
+
+  const persistence = useMemo(() => computePersistence(attempts), [attempts]);
+
   const subunitProgressByStudent = useMemo(() => {
     const out = {};
     for (const s of studentStats) out[s.id] = s.subunitProgress;
@@ -735,13 +956,14 @@ export default function TeacherDashboard({ initialClasses }) {
   }, [studentStats]);
 
   const visibleStats = useMemo(() => {
-    const filtered = search.trim()
-      ? studentStats.filter((s) => (s.email || "").toLowerCase().includes(search.trim().toLowerCase()))
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? studentStats.filter((s) => (s.label || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q))
       : studentStats;
     const dir = sortDir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
       let av = a[sortKey], bv = b[sortKey];
-      if (sortKey === "email") { av = (av || "").toLowerCase(); bv = (bv || "").toLowerCase(); }
+      if (sortKey === "email") { av = (a.label || "").toLowerCase(); bv = (b.label || "").toLowerCase(); }
       // Nulls (e.g. no accuracy yet, never active) always sort last regardless of direction.
       if (av === null || av === undefined) return 1;
       if (bv === null || bv === undefined) return -1;
@@ -761,13 +983,13 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const exportRosterCSV = () => {
     const header = [
-      "Email", "XP", "Subunits completed",
+      "Name", "Email", "XP", "Subunits completed",
       "Accuracy % (graded questions)", "Graded attempts",
       "Comprehension score %", "Comprehension checks", "Comprehension correct", "Comprehension partial", "Comprehension incorrect",
       "Streak (days)", "Last active", "Time today (min)", "Time this week (min)", "Time this month (min)",
     ];
     const rows = visibleStats.map((s) => [
-      s.email || "", s.xp || 0, s.completedCount,
+      s.label || "", s.email || "", s.xp || 0, s.completedCount,
       s.accuracy ?? "", s.attemptCount,
       s.comprehension.score ?? "", s.comprehension.total, s.comprehension.counts.correct, s.comprehension.counts.partial, s.comprehension.counts.incorrect,
       s.streak, s.lastActiveDate || "never", Math.round(s.daily / 60), Math.round(s.weekly / 60), Math.round(s.monthly / 60),
@@ -907,6 +1129,32 @@ export default function TeacherDashboard({ initialClasses }) {
                 ))}
               </div>
 
+              <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Hardest questions class-wide</div>
+                  <HardestQuestionsList questions={questionDifficulty} />
+                </div>
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Persistence — tries needed per question</div>
+                  <div className="rounded-md border border-stone-200 p-3">
+                    <PersistenceDistribution distribution={persistence.distribution} />
+                  </div>
+                  <div className="text-[12px] font-semibold text-stone-600 mt-4 mb-1.5">Badges earned</div>
+                  <BadgeOverview roster={roster} />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">When students study — time of day</div>
+                  <CountBarChart data={timePatterns.byHour} />
+                </div>
+                <div>
+                  <div className="text-[12px] font-semibold text-stone-600 mb-1.5">When students study — day of week</div>
+                  <CountBarChart data={timePatterns.byDow} />
+                </div>
+              </div>
+
               {/* Roster controls: search, sort, export */}
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <div className="relative flex-1 min-w-[180px]">
@@ -971,8 +1219,11 @@ export default function TeacherDashboard({ initialClasses }) {
                               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                             </td>
                             <td className="px-3 py-2">
-                              <div className="flex items-center gap-1.5">
-                                {s.email || <span className="text-stone-400">(no email on file)</span>}
+                              <div className="flex items-center gap-2">
+                                <Avatar url={s.avatar_url} name={s.label} size={26} />
+                                <span title={s.email || ""}>
+                                  {s.label || <span className="text-stone-400">(no name or email on file)</span>}
+                                </span>
                                 {s.needsAttention && <AlertTriangle size={12} style={{ color: RED }} title={s.reasons.join(" · ")} />}
                               </div>
                             </td>
@@ -1019,6 +1270,7 @@ export default function TeacherDashboard({ initialClasses }) {
                                   activity={activity}
                                   subunitProgressList={subunitProgressListFor(s)}
                                   onRemove={setRemoving}
+                                  persistence={persistence.perUser[s.id]}
                                 />
                               </td>
                             </tr>
@@ -1046,7 +1298,7 @@ export default function TeacherDashboard({ initialClasses }) {
               <button onClick={() => setRemoving(null)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
             </div>
             <p className="text-[13px] text-stone-500 mb-4">
-              {removing.email || "This student"} will lose access to your class dashboard and can rejoin later with the join code. Their own progress and XP are not affected.
+              {removing.label || "This student"} will lose access to your class dashboard and can rejoin later with the join code. Their own progress and XP are not affected.
             </p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setRemoving(null)} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>

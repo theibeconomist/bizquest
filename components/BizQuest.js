@@ -2737,7 +2737,43 @@ function JoinClassBanner({ onJoined }) {
   );
 }
 
-function UnitMapView({ onSelectSubunit, role, showJoinBanner, onJoinedClass }) {
+// Shows "you're in X, taught by Y" once a student has joined a class, with a small
+// toggle to switch classes (re-entering a code just overwrites the old one). Shows the
+// plain join form directly if the student isn't in a class yet.
+function ClassMembershipInfo({ classInfo, onJoined }) {
+  const [switching, setSwitching] = useState(false);
+
+  if (!classInfo) {
+    return <JoinClassBanner onJoined={onJoined} />;
+  }
+
+  return (
+    <div className="mb-1">
+      <div
+        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5"
+        style={{ borderColor: "#e7e2d8", backgroundColor: "#FBF9F4" }}
+      >
+        <span className="text-[12.5px] text-stone-600">
+          You're in <span className="font-semibold text-stone-800">{classInfo.className}</span>
+          {classInfo.teacherEmail && <> — taught by <span className="font-medium">{classInfo.teacherEmail}</span></>}
+        </span>
+        <button
+          onClick={() => setSwitching((v) => !v)}
+          className="text-[12px] font-medium underline decoration-dotted text-stone-500 hover:text-stone-700"
+        >
+          {switching ? "Cancel" : "Switch class"}
+        </button>
+      </div>
+      {switching && (
+        <div className="mt-2">
+          <JoinClassBanner onJoined={(result) => { setSwitching(false); onJoined(result); }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState(emptyProfile());
 
@@ -2846,9 +2882,9 @@ function UnitMapView({ onSelectSubunit, role, showJoinBanner, onJoinedClass }) {
         </div>
       </div>
 
-      {showJoinBanner && (
+      {role === "student" && (
         <div className="mx-auto max-w-2xl px-5 pt-4">
-          <JoinClassBanner onJoined={onJoinedClass} />
+          <ClassMembershipInfo classInfo={classInfo} onJoined={onJoinedClass} />
         </div>
       )}
 
@@ -3091,7 +3127,9 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
   const [profile, setProfile] = useState(emptyProfile());
   const [badgeToast, setBadgeToast] = useState(null);
   const [currentStage, setCurrentStage] = useState("discover");
-  const [roleInfo, setRoleInfo] = useState({ role: initialRole, classId: initialClassId });
+  const [roleInfo, setRoleInfo] = useState({
+    role: initialRole, classId: initialClassId, className: null, teacherEmail: null,
+  });
 
   // Refresh role/class info once on mount (covers cases where the server-rendered props
   // are stale — e.g. right after joining a class in a previous tab).
@@ -3482,8 +3520,13 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         <UnitMapView
           onSelectSubunit={(id) => { if (SUBUNIT_CONTENT_IDS.includes(id)) { setCurrentSubunitId(id); setView("hub"); } }}
           role={roleInfo.role}
-          showJoinBanner={roleInfo.role === "student" && !roleInfo.classId}
-          onJoinedClass={(result) => setRoleInfo((prev) => ({ ...prev, classId: result ? result.classId : prev.classId }))}
+          classInfo={roleInfo.className ? { className: roleInfo.className, teacherEmail: roleInfo.teacherEmail } : null}
+          onJoinedClass={(result) => setRoleInfo((prev) => ({
+            ...prev,
+            classId: result ? result.classId : prev.classId,
+            className: result ? result.className : prev.className,
+            teacherEmail: result ? result.teacherEmail : prev.teacherEmail,
+          }))}
         />
       </FadeIn>
     );
