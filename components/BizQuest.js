@@ -2675,7 +2675,7 @@ function StudyCompletionCard({ xpEarned, badgeEarned }) {
   );
 }
 
-function StudyView({ onBack, subunitId }) {
+function StudyView({ onBack, subunitId, role }) {
   const STUDY_SECTIONS = STUDY_SECTIONS_BY_SUBUNIT[subunitId];
   const subunitTitle = `${subunitId} ${SUBUNIT_TITLES[subunitId] || ""}`;
   const [section, setSection] = useState(0);
@@ -2733,6 +2733,7 @@ function StudyView({ onBack, subunitId }) {
         progressLine={loaded ? `${doneCount}/${STUDY_SECTIONS.length} sections` : ""}
         progressPercent={loaded ? (doneCount / STUDY_SECTIONS.length) * 100 : 0}
         subunitTitle={subunitTitle}
+        role={role}
       />
 
       <div className="mx-auto max-w-4xl px-5 py-6">
@@ -2967,7 +2968,7 @@ function StudyView({ onBack, subunitId }) {
   );
 }
 
-function FlashcardsView({ onBack, subunitId }) {
+function FlashcardsView({ onBack, subunitId, role }) {
   const subunit = SUBUNIT_REGISTRY[subunitId];
   const FLASHCARD_TERMS = subunit.flashcardTerms;
   const subunitTitle = `${subunitId} ${subunit.title}`;
@@ -3060,6 +3061,7 @@ function FlashcardsView({ onBack, subunitId }) {
         progressLine={`${mastered.size}/${totalTerms} mastered`}
         progressPercent={(mastered.size / totalTerms) * 100}
         subunitTitle={subunitTitle}
+        role={role}
       />
 
       <div className="mx-auto max-w-4xl px-5 py-8">
@@ -3620,7 +3622,7 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
   );
 }
 
-function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine, progressPercent, subunitTitle }) {
+function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine, progressPercent, subunitTitle, role }) {
   return (
     <div className="sticky top-0 z-10" style={{ backgroundColor: themeColor }}>
       <div className="px-5 py-4">
@@ -3644,7 +3646,8 @@ function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine
             </h1>
           </div>
 
-          <div className="flex items-center sm:shrink-0">
+          <div className="flex items-center gap-2 sm:shrink-0">
+            <ProfileChip role={role} />
             <div className="self-center flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
                 <ModuleIcon size={16} />
@@ -3664,7 +3667,7 @@ function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine
   );
 }
 
-function SubunitHub({ onSelectView, onBackToMap, subunitId }) {
+function SubunitHub({ onSelectView, onBackToMap, subunitId, role }) {
   const subunit = SUBUNIT_REGISTRY[subunitId];
   const QUESTIONS = subunit.questions;
   const FLASHCARD_TERMS = subunit.flashcardTerms;
@@ -3739,13 +3742,16 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId }) {
             <h1 className="text-white text-[19px] font-semibold mt-0.5" style={{ fontFamily: "'Lora', serif" }}>{subunitId} {SUBUNIT_TITLES[subunitId] || ""}</h1>
           </div>
           {loaded && (
-            <div className="self-center flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5 sm:shrink-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: GOLD }}>
-                <Trophy size={16} />
-              </div>
-              <div className="leading-tight">
-                <div className="text-[12px] font-semibold text-white">{levelInfo.name}</div>
-                <div className="text-[10.5px] text-white/70">{profile.xp || 0} XP</div>
+            <div className="flex items-center gap-2 sm:shrink-0">
+              <ProfileChip role={role} />
+              <div className="self-center flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: GOLD }}>
+                  <Trophy size={16} />
+                </div>
+                <div className="leading-tight">
+                  <div className="text-[12px] font-semibold text-white">{levelInfo.name}</div>
+                  <div className="text-[10.5px] text-white/70">{profile.xp || 0} XP</div>
+                </div>
               </div>
             </div>
           )}
@@ -4219,13 +4225,13 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
     );
   }
   if (view === "hub") {
-    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} /><FeedbackTile page={`Subunit hub — ${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} role={roleInfo.role} /><FeedbackTile page={`Subunit hub — ${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "terms") {
-    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`Flashcards — ${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="terms" className="min-h-full"><FlashcardsView subunitId={currentSubunitId} onBack={() => setView("hub")} role={roleInfo.role} /><FeedbackTile page={`Flashcards — ${currentSubunitId}`} /></FadeIn>;
   }
   if (view === "study") {
-    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} /><FeedbackTile page={`Study guide — ${currentSubunitId}`} /></FadeIn>;
+    return <FadeIn key="study" className="min-h-full"><StudyView subunitId={currentSubunitId} onBack={() => setView("hub")} role={roleInfo.role} /><FeedbackTile page={`Study guide — ${currentSubunitId}`} /></FadeIn>;
   }
 
   return (
@@ -4257,6 +4263,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
             </div>
 
             <div className="flex items-center flex-wrap gap-2 sm:justify-end sm:shrink-0">
+              <ProfileChip role={roleInfo.role} />
               {loaded && (
                 <div className="self-center flex items-center gap-2 rounded-full bg-white/10 pl-1.5 pr-3 py-1.5" title={`${profile.xp || 0} XP total`}>
                   <div
