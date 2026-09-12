@@ -52,8 +52,8 @@ const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // Total question counts per subunit, by stage — powers the stage-tracking feature.
 // discover = comprehension (video) questions, vocab/structured/essay map to Build/Apply/Master.
 const SUBUNIT_QUESTION_COUNTS = {
-  "1.1": { discover: 2, vocab: 7, structured: 3, essay: 1 },
-  "1.2": { discover: 2, vocab: 16, structured: 6, essay: 1 },
+  "1.1": { discover: 2, vocab: 7, structured: 3, essay: 0 },
+  "1.2": { discover: 2, vocab: 14, structured: 3, essay: 1 },
 };
 const STAGE_ORDER = ["discover", "build", "apply", "master"];
 const STAGE_LABEL = { discover: "Discover", build: "Build", apply: "Apply", master: "Master" };
@@ -520,7 +520,7 @@ function StageMiniBar({ progress }) {
     <div className="flex h-2 w-full overflow-hidden rounded-full bg-stone-100">
       {STAGE_ORDER.map((stage) => {
         const key = STAGE_TO_COUNT_KEY[stage];
-        const frac = progress.totals[key] > 0 ? progress.doneCounts[key] / progress.totals[key] : 0;
+        const frac = progress.totals[key] > 0 ? progress.doneCounts[key] / progress.totals[key] : 1;
         return (
           <div key={stage} className="flex-1 relative bg-stone-100">
             <div

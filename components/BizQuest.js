@@ -322,10 +322,10 @@ const VIDEO = {
   source: "Fast Company",
 };
 const COMPREHENSION_QUESTIONS = [
-  { id: "c1", prompt: "According to the video, in which US state did Steve Jobs and Steve Wozniak build Apple's first computers?",
-    guidance: "Correct answer: California (the video places this in the Jobs family home/garage in the Cupertino/Los Altos area). Accept 'California' or a correctly named California city. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "Name one item Jobs and Wozniak are said to have sold to help fund their first batch of computers.",
-    guidance: "Correct answer: Steve Jobs's Volkswagen van, or Steve Wozniak's calculator (both are the commonly cited items sold to raise money for Apple's first production run). Accept either. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, in which city — inside Steve Jobs's parents' house — did Apple begin?",
+    guidance: "Correct answer: Cupertino, California (the video places Apple's beginning at Steve Jobs's parents' house in Cupertino). Accept 'Cupertino' alone or 'Cupertino, California'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, the first Apple computer was a circuit board encased in what material?",
+    guidance: "Correct answer: Wood. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT = `Apple was founded on 1 April 1976 in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially to build and sell Wozniak's hand-assembled Apple I computer kit. Two of Apple's three founders, Jobs and Wozniak, are widely regarded as classic examples of entrepreneurs — individuals who identified an opportunity, took on personal financial risk (they raised money for their first production run partly by selling a Volkswagen van and a calculator), and built an organization from nothing. Their creation of Apple from a home-built hobby project into a company is a textbook case of entrepreneurship.
 
@@ -371,99 +371,86 @@ const QUESTIONS = [
     rubric: `Mark as 2+2. For each reason: award 1 mark for identifying it (e.g. personal financial risk; identifying an opportunity; building an organization from nothing) and 1 further mark for developing it with case detail (e.g. they sold a Volkswagen van and a calculator to fund their first production run).` },
   { id: "s10", section: "structured", label: "Structured", num: 10, prompt: "Explain two reasons why Apple's growing Services revenue represents a shift toward the tertiary and quaternary sectors.", marks: 6,
     rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. Services includes App Store/iCloud — knowledge/service based, not manufacturing), 1 mark explain why this counts as tertiary/quaternary rather than secondary activity, 1 mark for accurate application of case figures (Services revenue $109.16 billion, up 13.5% year on year, out of total revenue $416.16 billion).` },
-
-  // ---- Essay ----
-  { id: "e11", section: "essay", label: "Extended response", num: 11, prompt: "Discuss whether it is still accurate to classify Apple primarily as a secondary-sector business.", marks: 10,
-    rubric: `Mark using the official IB markbands (0 / 1–2 / 3–4 / 5–6 / 7–8 / 9–10), reproduced below. A strong answer weighs secondary-sector evidence (hardware design/manufacturing remains central to iPhone/Mac) against the growing tertiary/quaternary share (Services revenue $109.16bn, +13.5% year on year, out of $416.16bn total) and reaches a balanced, well-substantiated judgment. To reach 7–8, the answer must genuinely develop BOTH sides with reasoning, not just assert one side. To reach 9–10, the answer must explicitly name a specific limitation of the case study material actually provided (e.g. the case gives no full segment-by-segment revenue breakdown, no data on the size of the primary-sector supply chain, or only a single year's figures with no trend over time) — a generic "the case has limitations" comment does not qualify. Any figures or claims not present in the case study context must not be credited as valid application, regardless of real-world accuracy.\n\nMARKBANDS:\n${MARKBANDS}` },
+  // No Extended Response in this subunit — 1.1's content maps only to AO1/AO2 per the IB
+  // Business Management guide (see the content/AO table on the print workbook's subunit
+  // title page). Extended-response and Paper 3–style questions belong only where a
+  // subunit's content includes AO3 (or AO3+AO4) — check this before adding one elsewhere.
 ];
 const VIDEO_1_2 = {
-  id: "lZZyBurzy5o",
-  title: "Apple Went Public 38 Years Ago in 1980",
-  source: "CNBC",
+  id: "ksdAC8CYF7A",
+  title: "Why Should I Incorporate",
+  source: "The Company Corporation",
 };
 const COMPREHENSION_QUESTIONS_1_2 = [
-  { id: "c1", prompt: "According to the video, roughly how much money did Apple's 1980 IPO raise, and at what share price?",
-    guidance: "Correct answer: Apple's IPO raised approximately $100–101 million, selling shares at $22 each. Accept close approximations (e.g. 'around $100 million', '$22 a share'). This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "According to the video, what effect did the IPO have on many Apple employees?",
-    guidance: "Correct answer: it made many of them instant millionaires (commonly cited as around 40 Apple employees, out of roughly 300 people overall who became millionaires that day). Accept any answer that captures 'created (instant) millionaires among employees'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, what can happen to a business owner's personal assets under unlimited liability if the business can't pay its debts?",
+    guidance: "Correct answer: personal assets (e.g. house, car, savings) can be seized/used to pay off the business's debts, since owner and business are treated as the same legal entity under unlimited liability. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "In one sentence, what does 'limited liability' mean for a business owner?",
+    guidance: "Correct answer: the owner's liability for business debts is limited to the amount they invested in the business — their personal assets beyond that are protected. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT_1_2 = `Apple was founded as a general partnership. Jobs and Wozniak each held a 45% stake; Wayne, the eldest of the three and the only one with meaningful personal assets, took the remaining 10% and drafted the founding partnership agreement. Just twelve days later, Wayne sold his 10% stake back to Jobs and Wozniak for $800. His stated reason illustrates a key disadvantage of the partnership form of business entity: under a general partnership, each partner has unlimited liability for the business's debts, and Wayne — who had already been through one bankruptcy from an earlier venture — feared his house, car and savings could be seized if Apple failed to pay a supplier or a loan.
 
 In January 1977, Apple was formally incorporated, with early investor Mike Markkula providing $250,000 in funding. Incorporation converted Apple into a separate legal entity with limited liability for its owners — removing the exact risk that had driven Wayne away. Between incorporation in 1977 and its stock market listing in 1980, Apple was itself a privately held company, with shares owned by only a small number of founders, employees and early investors. On 12 December 1980, Apple went public, listing on the NASDAQ exchange and selling 4.6 million shares at $22 each, raising roughly $101 million and valuing the company at about $1.8 billion. Apple is today one of the world's largest publicly held companies. As a company owned by private shareholders rather than the state, Apple operates in the private sector of the economy; by contrast, organizations owned and funded by government — such as public universities or state postal services — operate in the public sector.
 
-Other real businesses illustrate entity types not shown by Apple's own history. Apple's very first commercial customer, the Byte Shop in Mountain View, California — a single independent electronics retailer owned by Paul Terrell — placed the first order for 50 Apple I computers in 1976; a business like this, owned and run by one person with unlimited liability, is a classic sole trader. Fairphone, a Dutch company, designs smartphones using ethically sourced minerals and modular, repairable parts, trading for profit while pursuing a stated social mission — a for-profit social enterprise structured as a private sector company. Systembolaget, Sweden's state-owned alcohol retailer, is 100% government-owned, trades commercially, but its mission — set by public health policy, not profit — is to reduce alcohol-related harm: a public sector company operating as a for-profit social enterprise. REI, a large American outdoor-equipment retailer, is owned by its millions of members, who help set its direction and share its profits — a cooperative. Oxfam, an international NGO, works to reduce global poverty; as a non-profit social enterprise it has no owners to pay profit to, reinvesting any surplus into its programmes instead.`;
+Other real businesses illustrate entity types not shown by Apple's own history. Apple's very first commercial customer, the Byte Shop in Mountain View, California — a single independent electronics retailer owned by Paul Terrell — placed the first order for 50 Apple I computers in 1976; a business like this, owned and run by one person with unlimited liability, is a classic sole trader. Fairphone and Systembolaget illustrate for-profit social enterprises; REI and GlenWyvis Distillery are cooperatives, owned by their own members; and Oxfam and UNICEF are NGOs, reinvesting any surplus into their missions rather than distributing profit.`;
 const FLASHCARD_TERMS_1_2 = [
-  { term: "Private sector", definition: "The part of the economy owned and run by private individuals or businesses, generally aiming to make a profit." },
-  { term: "Public sector", definition: "The part of the economy owned and controlled by government." },
-  { term: "Sole trader", definition: "A business owned and operated by one person with unlimited liability." },
-  { term: "Partnership", definition: "A business owned by two or more people who share risks, costs and profits, typically with unlimited liability." },
+  { term: "Private sector", definition: "The portion of an economy not owned or directed by the government." },
+  { term: "Public sector", definition: "This refers to the portion of the economy controlled or owned by the government, such as government services and schools or, in countries with nationalized industries, state-owned entities or corporations." },
+  { term: "Sole trader", definition: "A business owned and run by one person. When a business operates as a sole trader, no legal distinction exists between the business and the owner." },
+  { term: "Partnership", definition: "This refers to a business owned and run by two or more persons who share the profits, often specified in a partnership agreement. Like a sole trader, no legal distinction exists between the business and the partners, who legally are 100% liable for all debts of the partnership, regardless of any understanding specified in the partnership agreement." },
   { term: "Deed of partnership", definition: "A legal document, drawn up when a partnership is formed, that formalizes agreements such as how profits and losses will be shared between partners." },
   { term: "Unlimited liability", definition: "Owners are personally responsible for all business debts, risking personal assets." },
   { term: "Limited liability", definition: "Owners' liability for business debts is limited to the amount they invested." },
   { term: "Incorporation", definition: "The legal process of forming a company as a separate legal entity from its owners." },
   { term: "Shareholder", definition: "A person or organization that owns shares in a company, providing capital in exchange for part-ownership." },
-  { term: "Privately held company", definition: "A company whose shares are owned by a limited number of shareholders and not traded publicly." },
-  { term: "Publicly held company", definition: "A company whose shares are traded on a stock exchange and can be bought by the public." },
+  { term: "Privately held company", definition: "A corporation that offers limited liability to the owners. Whereas laws governing privately held companies or private limited companies vary according to legal jurisdiction, shareholders of private limited companies cannot sell their shares unless first offering them to existing shareholders, and the shares cannot be traded on a stock exchange. Most jurisdictions limit the number of shareholders in a privately held company." },
+  { term: "Publicly held company", definition: "A corporation that offers limited liability to the owners. The shares of the company are traded in some public exchange, and, because of the large number of shareholders, publicly held companies must disclose or make public considerable information about the company, including audited financial information." },
   { term: "For-profit social enterprise", definition: "A business that trades to address a social or environmental problem while also generating a profit." },
-  { term: "Private sector company (social enterprise)", definition: "A for-profit social enterprise owned by private individuals or investors." },
-  { term: "Public sector company (social enterprise)", definition: "A for-profit social enterprise owned or controlled by government, pursuing a public-policy mission rather than profit-maximization." },
-  { term: "Cooperative", definition: "A business owned and democratically controlled by its members." },
-  { term: "NGO / non-profit social enterprise", definition: "An organization independent of government that addresses social, humanitarian or environmental issues, reinvesting any surplus rather than distributing profit." },
+  { term: "Cooperatives", definition: "Businesses owned and operated by their members, who share the profits. Cooperatives are commonplace in agriculture but also exist in other industries." },
+  { term: "Non-governmental organizations (NGOs)", definition: "These are organizations independent of government. They are non-profit and often have a humanitarian or social purpose. Though technically independent, NGOs often receive government funding and cooperate with government." },
 ];
 const QUESTIONS_1_2 = [
-  // ---- Vocabulary ----
+  // ---- Vocabulary ---- (order matches the print workbook's teaching sequence; ids kept
+  // stable for terms that already existed, even where array order changed)
   { id: "v1", section: "vocab", label: "Vocabulary", num: 1, prompt: "Define the term private sector.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the part of the economy owned and run by private individuals or businesses, generally aiming to make a profit."` },
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the portion of an economy not owned or directed by the government."` },
   { id: "v2", section: "vocab", label: "Vocabulary", num: 2, prompt: "Define the term public sector.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the part of the economy owned and controlled by government."` },
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the portion of the economy controlled or owned by the government, such as government services and schools or, in countries with nationalized industries, state-owned entities or corporations."` },
   { id: "v3", section: "vocab", label: "Vocabulary", num: 3, prompt: "Define the term sole trader.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned and operated by one person with unlimited liability."` },
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned and run by one person; no legal distinction exists between the business and the owner."` },
   { id: "v4", section: "vocab", label: "Vocabulary", num: 4, prompt: "Define the term partnership.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned by two or more people who share risks, costs and profits, typically with unlimited liability."` },
-  { id: "v5", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term unlimited liability.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "owners are personally responsible for all business debts, risking personal assets."` },
-  { id: "v6", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term limited liability.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "owners' liability for business debts is limited to the amount they invested."` },
-  { id: "v7", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term incorporation.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the legal process of forming a company as a separate legal entity from its owners."` },
-  { id: "v8", section: "vocab", label: "Vocabulary", num: 8, prompt: "Define the term privately held company.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a company whose shares are owned by a limited number of shareholders and not traded publicly."` },
-  { id: "v9", section: "vocab", label: "Vocabulary", num: 9, prompt: "Define the term publicly held company.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a company whose shares are traded on a stock exchange and can be bought by the public."` },
-  { id: "v10", section: "vocab", label: "Vocabulary", num: 10, prompt: "Define the term for-profit social enterprise.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business that trades to address a social/environmental problem while also generating a profit."` },
-  { id: "v11", section: "vocab", label: "Vocabulary", num: 11, prompt: "Define the term private sector company, as a type of social enterprise.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a for-profit social enterprise owned by private individuals/investors."` },
-  { id: "v12", section: "vocab", label: "Vocabulary", num: 12, prompt: "Define the term public sector company, as a type of social enterprise.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a for-profit social enterprise owned/controlled by government, pursuing a public-policy mission rather than profit-maximization."` },
-  { id: "v13", section: "vocab", label: "Vocabulary", num: 13, prompt: "Define the term cooperative.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned and democratically controlled by its members."` },
-  { id: "v14", section: "vocab", label: "Vocabulary", num: 14, prompt: "Define the term NGO / non-profit social enterprise.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "an organization independent of government addressing social, humanitarian or environmental issues, reinvesting surplus rather than distributing profit."` },
-  { id: "v15", section: "vocab", label: "Vocabulary", num: 15, prompt: "Define the term deed of partnership.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned and run by two or more persons who share the profits, often specified in a partnership agreement; no legal distinction exists between the business and the partners, who are 100% liable for all its debts."` },
+  { id: "v15", section: "vocab", label: "Vocabulary", num: 5, prompt: "Define the term deed of partnership.", marks: 2,
     rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a legal document, drawn up when a partnership is formed, that formalizes agreements such as how profits and losses will be shared between partners."` },
-  { id: "v16", section: "vocab", label: "Vocabulary", num: 16, prompt: "Define the term shareholder.", marks: 2,
+  { id: "v5", section: "vocab", label: "Vocabulary", num: 6, prompt: "Define the term unlimited liability.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "owners are personally responsible for all business debts, risking personal assets."` },
+  { id: "v6", section: "vocab", label: "Vocabulary", num: 7, prompt: "Define the term limited liability.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "owners' liability for business debts is limited to the amount they invested."` },
+  { id: "v7", section: "vocab", label: "Vocabulary", num: 8, prompt: "Define the term incorporation.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "the legal process of forming a company as a separate legal entity from its owners."` },
+  { id: "v16", section: "vocab", label: "Vocabulary", num: 9, prompt: "Define the term shareholder.", marks: 2,
     rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a person or organization that owns shares in a company, providing capital in exchange for part-ownership."` },
+  { id: "v8", section: "vocab", label: "Vocabulary", num: 10, prompt: "Define the term privately held company.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a corporation offering limited liability to its owners, whose shares cannot be traded on a stock exchange and (in most jurisdictions) are held by a limited number of shareholders."` },
+  { id: "v9", section: "vocab", label: "Vocabulary", num: 11, prompt: "Define the term publicly held company.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a corporation offering limited liability to its owners, whose shares are traded on a public exchange; because of its large number of shareholders it must disclose considerable information, including audited financial information."` },
+  { id: "v10", section: "vocab", label: "Vocabulary", num: 12, prompt: "Define the term for-profit social enterprise.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business that trades to address a social/environmental problem while also generating a profit."` },
+  { id: "v13", section: "vocab", label: "Vocabulary", num: 13, prompt: "Define the term cooperative.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owned and operated by its members, who share the profits."` },
+  { id: "v14", section: "vocab", label: "Vocabulary", num: 14, prompt: "Define the term NGO / non-profit social enterprise.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "an organization independent of government, usually non-profit with a humanitarian or social purpose, that reinvests any surplus rather than distributing profit."` },
 
   // ---- Structured ----
-  { id: "s17", section: "structured", label: "Structured", num: 17, prompt: "State two features of a general partnership.", marks: 2,
+  { id: "s17", section: "structured", label: "Structured", num: 15, prompt: "State two features of a general partnership.", marks: 2,
     rubric: `Award 1 mark per correct feature (e.g. owned by two or more partners; typically unlimited liability; profits/losses/decisions shared; formalized by a deed of partnership; no separate legal identity from its owners). No development needed, pure identification.` },
-  { id: "s18", section: "structured", label: "Structured", num: 18, prompt: "Describe one advantage and one disadvantage of unlimited liability for a business owner.", marks: 4,
+  { id: "s18", section: "structured", label: "Structured", num: 16, prompt: "Describe one advantage and one disadvantage of unlimited liability for a business owner.", marks: 4,
     rubric: `Mark as 2+2. For the advantage: award 1 mark for identifying it (e.g. no separate legal registration needed; simpler business structure; owner keeps direct/full control) and 1 mark for developing it. For the disadvantage: award 1 mark for identifying it (e.g. personal assets — house, car, savings — are at risk if the business cannot pay its debts) and 1 mark for developing it, ideally referencing Wayne's decision to leave Apple's partnership for this exact reason.` },
-  { id: "s19", section: "structured", label: "Structured", num: 19, prompt: "Explain two advantages Apple gained by converting from a partnership into an incorporated, publicly held company.", marks: 6,
+  { id: "s19", section: "structured", label: "Structured", num: 17, prompt: "Explain two advantages Apple gained by converting from a partnership into an incorporated, publicly held company.", marks: 6,
     rubric: `Mark as 3+3 per advantage: 1 mark identify (e.g. limited liability for owners; access to significant capital via share sales), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. the 1980 IPO raised roughly $101 million; limited liability directly removed the risk that drove Wayne away in 1976). No credit for advantages not grounded in the case.` },
 
-  // ---- Paper 2–style mini-scenario ----
-  { id: "s20a", section: "structured", label: "Structured", num: "20(a)", prompt: "State two features of a publicly held company.", marks: 2,
-    rubric: `Award 1 mark per correct feature of a publicly held company (e.g. shares traded on a stock exchange; owned by many shareholders/the general public; no prior permission needed from other shareholders to sell shares; subject to greater regulation/disclosure).` },
-  { id: "s20b", section: "structured", label: "Structured", num: "20(b)", prompt: "Using the case (Apple's IPO raised approximately $101 million and valued the company at approximately $1.8 billion immediately afterward), calculate the percentage of Apple's post-IPO valuation that was raised through the share sale. Show all your working.", marks: 3,
-    rubric: `101 ÷ 1,800 × 100 ≈ 5.6%. Award 1 mark for correct method/setup, 1 mark for correct substitution of the case figures, 1 mark for a correct final answer expressed as a percentage. Accept a final answer in the range 5.5–5.7% with correct working shown. Award full marks for correct working even if the final % is mis-rounded, provided the method and substitution are both correct.` },
-  { id: "s20c", section: "structured", label: "Structured", num: "20(c)", prompt: "Explain one advantage to Apple's early investors of the company becoming a publicly held company.", marks: 2,
-    rubric: `Award 1 mark for identifying a valid advantage (e.g. ability to sell their shares on the stock exchange / exit their investment; increased company credibility/valuation; access to a liquid market for their shares) and 1 mark for developing it with reference to the case.` },
-
   // ---- Essay ----
-  { id: "e21", section: "essay", label: "Extended response", num: 21, prompt: "Recommend whether the founders of a promising new technology start-up should structure their business as a partnership or move quickly toward incorporation.", marks: 10,
-    rubric: `Mark using the official IB markbands (0 / 1–2 / 3–4 / 5–6 / 7–8 / 9–10), reproduced below. A strong answer weighs the simplicity and low cost of a partnership against the unlimited-liability risk it carries (illustrated by Wayne's exit from Apple's founding partnership over exactly this risk), against incorporation's benefits of limited liability and improved access to capital (illustrated by Apple raising ≈$250,000 from Mike Markkula upon incorporating, and later ≈$101 million at IPO) — and reaches a balanced, well-substantiated recommendation. To reach 7–8, the answer must genuinely develop BOTH sides with reasoning, not just assert one side. To reach 9–10, the answer must explicitly name a specific limitation of the case study material actually provided (e.g. the case gives no detail on incorporation's legal/administrative costs, no data on how much equity a founder would need to give up to secure funding, or only Apple's specific circumstances rather than start-ups in general) — a generic "the case has limitations" comment does not qualify. Any figures or claims not present in the case study context must not be credited as valid application, regardless of real-world accuracy.\n\nMARKBANDS:\n${MARKBANDS}` },
+  { id: "e21", section: "essay", label: "Extended response", num: 18, prompt: "Discuss whether Apple's move from a partnership to an incorporated, publicly held company was the right strategic choice for the business.", marks: 10,
+    rubric: `Mark using the official IB markbands (0 / 1–2 / 3–4 / 5–6 / 7–8 / 9–10), reproduced below. A strong answer discusses both sides directly from the case: in favor of the move — it removed the unlimited-liability risk that drove Ronald Wayne to exit within twelve days, and the 1980 IPO raised roughly $101 million and valued the company at about $1.8 billion, capital a partnership could not have accessed. Against it (or as a limitation to weigh) — incorporation and going public bring more regulation, disclosure requirements, and dilute founder control as shares are sold to outside shareholders, though the case does not detail Apple's founders losing control as a result. To reach 7–8, the answer must genuinely develop BOTH sides with reasoning, not just assert one side. To reach 9–10, the answer must explicitly name a specific limitation of the case study material actually provided — a generic "the case has limitations" comment does not qualify. Any figures or claims not present in the case study context must not be credited as valid application, regardless of real-world accuracy.\n\nMARKBANDS:\n${MARKBANDS}` },
 ];
 
 // ============================================================
@@ -1294,18 +1281,22 @@ function CompletionCard({ stats, profile, levelInfo }) {
 }
 
 
-function SectionChips({ stats, currentStage, onSelectStage }) {
+function SectionChips({ stats, currentStage, onSelectStage, role }) {
   const chips = [
     { key: "discover", label: "Discover", Icon: PlayCircle, color: VIDEO_COLOR, done: stats.compDone, total: stats.compTotal },
     { key: "build", label: "Build", Icon: BookOpen, color: SECTION_THEME.vocab.color, done: stats.bySection?.vocab.done ?? 0, total: stats.bySection?.vocab.total ?? 0 },
     { key: "apply", label: "Apply", Icon: Pencil, color: SECTION_THEME.structured.color, done: stats.bySection?.structured.done ?? 0, total: stats.bySection?.structured.total ?? 0 },
     { key: "master", label: "Master", Icon: Send, color: SECTION_THEME.essay.color, done: stats.bySection?.essay.done ?? 0, total: stats.bySection?.essay.total ?? 0 },
   ];
+  // Teachers/admins get full, unrestricted access to every stage — same reasoning as the
+  // subunit-level unlock bypass in UnitMapView: they shouldn't have to "complete" Build
+  // before checking what's in Master.
+  const bypassLock = role === "teacher" || role === "admin";
   return (
     <div className="mb-5 flex flex-wrap gap-2">
       {chips.map((c) => {
         const complete = c.total > 0 && c.done >= c.total;
-        const locked = isStageLocked(c.key, stats);
+        const locked = !bypassLock && isStageLocked(c.key, stats);
         const active = currentStage === c.key;
         return (
           <button
@@ -3684,7 +3675,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
 
         {loaded && <LearnerProfileBar profile={profile} levelInfo={levelInfo} />}
 
-        {loaded && <SectionChips stats={stats} currentStage={currentStage} onSelectStage={setCurrentStage} />}
+        {loaded && <SectionChips stats={stats} currentStage={currentStage} onSelectStage={setCurrentStage} role={roleInfo.role} />}
 
         {/* Stage 1: Discover — full width, no case study yet */}
         {loaded && currentStage === "discover" && (

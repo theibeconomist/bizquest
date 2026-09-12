@@ -20,7 +20,7 @@ export default function TeacherDashboardLink({ className }) {
   }, []);
 
   return (
-    <Link href="/teacher" className={className} style={{ position: "relative" }}>
+    <Link href="/teacher" className={className}>
       Teacher dashboard
       {unread > 0 && (
         <span
