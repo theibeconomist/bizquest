@@ -172,6 +172,18 @@ const STAGE_COLORS = { discover: "#6B4C9A", build: "#2E8B84", apply: "#4A6FA5", 
 
 const STAGE_TO_SECTION = { build: "vocab", apply: "structured", master: "essay" };
 
+// Skips over any stage with zero questions (e.g. 1.1's Master, which has no essay
+// question) — returns null if no further stage has any content at all.
+function nextContentStage(currentKey, stats) {
+  const idx = STAGE_ORDER.indexOf(currentKey);
+  for (let i = idx + 1; i < STAGE_ORDER.length; i++) {
+    const key = STAGE_ORDER[i];
+    const total = key === "discover" ? stats.compTotal : stats.bySection[STAGE_TO_SECTION[key]].total;
+    if (total > 0) return key;
+  }
+  return null;
+}
+
 function isStageComplete(stageKey, stats) {
   if (stageKey === "discover") return stats.compDone >= stats.compTotal;
   const sec = stats.bySection[STAGE_TO_SECTION[stageKey]];
@@ -185,9 +197,8 @@ function isStageLocked(stageKey, stats) {
   return false;
 }
 
-function ContinueButton({ stageKey, onAdvance }) {
-  const idx = STAGE_ORDER.indexOf(stageKey);
-  const nextKey = STAGE_ORDER[idx + 1];
+function ContinueButton({ stageKey, stats, onAdvance }) {
+  const nextKey = nextContentStage(stageKey, stats);
   if (!nextKey) return null;
   return (
     <FadeIn className="flex justify-end mt-2">
@@ -205,9 +216,8 @@ function ContinueButton({ stageKey, onAdvance }) {
 // Persistent bottom bar so "Continue" is reachable without scrolling to the end of a long question list
 // Sticky "stage complete" bar pinned to the bottom of the questions pane itself
 // (not the viewport), so it only ever overlaps that pane's own content.
-function PaneContinueBar({ stageKey, onAdvance }) {
-  const idx = STAGE_ORDER.indexOf(stageKey);
-  const nextKey = STAGE_ORDER[idx + 1];
+function PaneContinueBar({ stageKey, stats, onAdvance }) {
+  const nextKey = nextContentStage(stageKey, stats);
   if (!nextKey) return null;
   return (
     <div className="sticky bottom-0 -mx-5 -mb-5 mt-4 border-t bg-white/97 px-5 py-3" style={{ borderColor: "#e7e2d8" }}>
@@ -317,15 +327,15 @@ const BADGES = [
 ];
 
 const VIDEO = {
-  id: "DQh-1N_inMc",
-  title: "The History of Apple, in 2 Minutes",
-  source: "Fast Company",
+  id: "B7VGag3gtZo",
+  title: "The Fascinating Story of Apple: From a Los Altos Garage, Firing Jobs, Near Collapse, and His Return!",
+  source: "YouTube",
 };
 const COMPREHENSION_QUESTIONS = [
-  { id: "c1", prompt: "According to the video, in which city — inside Steve Jobs's parents' house — did Apple begin?",
-    guidance: "Correct answer: Cupertino, California (the video places Apple's beginning at Steve Jobs's parents' house in Cupertino). Accept 'Cupertino' alone or 'Cupertino, California'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "According to the video, the first Apple computer was a circuit board encased in what material?",
-    guidance: "Correct answer: Wood. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, in which city — inside Steve Jobs's parents' garage — did Apple begin?",
+    guidance: "Correct answer: Los Altos, California (matches the case study text too). Accept 'Los Altos' alone or 'Los Altos, California'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, what happened to Steve Jobs at Apple in the mid-1980s, and how did the company eventually bring him back?",
+    guidance: "Correct answer: Jobs was pushed out of Apple (following a power struggle, commonly with then-CEO John Sculley); Apple brought him back years later by acquiring NeXT, the company he had founded in the meantime. Accept any answer capturing 'he was fired/left' and 'he returned via Apple acquiring his other company'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT = `Apple was founded on 1 April 1976 in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially to build and sell Wozniak's hand-assembled Apple I computer kit. Two of Apple's three founders, Jobs and Wozniak, are widely regarded as classic examples of entrepreneurs — individuals who identified an opportunity, took on personal financial risk (they raised money for their first production run partly by selling a Volkswagen van and a calculator), and built an organization from nothing. Their creation of Apple from a home-built hobby project into a company is a textbook case of entrepreneurship.
 
@@ -1856,15 +1866,9 @@ function StudyIllustration({ variant }) {
       </svg>
     );
   }
-  // Neutral generic fallback for any section without its own bespoke illustration —
-  // deliberately plain (not the GET CASH graphic above, which is specific to 1.1's
-  // "reasons" section and was previously used as the fallback by mistake).
-  return (
-    <svg {...common}>
-      <circle cx="100" cy="45" r="30" fill="none" stroke={STUDY_COLOR} strokeWidth="2" opacity="0.5" />
-      <circle cx="100" cy="45" r="6" fill={STUDY_COLOR} />
-    </svg>
-  );
+  // No bespoke illustration for this section — render nothing rather than a repeated
+  // generic placeholder (which read as a confusing "same icon everywhere" artifact).
+  return null;
 }
 
 function StudyVideoLink({ video }) {
@@ -2463,7 +2467,7 @@ const CSR_EXAMPLES = [
     video: { id: "hn1sGvvdK9Q", title: "Nissan and Habitat Build 500th Home", channel: "Nissan", length: "1:45" } },
   { clues: ["A Swedish clothing retailer.", "Runs an in-house team exploring 'circular' fashion — designing clothes to be reused, repaired or recycled rather than thrown away.", "A response to growing pressure over fast fashion's environmental impact."],
     name: "H&M", business: "H&M's own circular-design content is a genuine attempt at CSR, but it sits in tension with a fast-fashion business model built on high sales volume and frequent new collections.",
-    video: { id: "a9mVRQBiD-c", title: "What Does Circular Fashion Actually Mean?", channel: "H&M", length: "3:12" } },
+    video: { id: "OPF4uf3IEVw", title: "How H&M Group is exploring circular business models in The Fashion ReModel", channel: "The Circular Economy Show, Ellen MacArthur Foundation", length: "0:59" } },
   { clues: ["A food/beverage business taken to court by a workplace regulator.", "Accused of systematically underpaying its workers.", "Shows what happens when a business ignores its ethical obligations to employees."],
     name: "Fair Work legal action", business: "This is the other side of CSR — a business that failed its ethical obligations. Ethical objectives aren't just a marketing choice: ignoring them can mean real legal and reputational consequences, not just a missed opportunity for good PR.",
     video: { id: "Ytz62ecp-gE", title: "Fair Work launches legal action…", channel: "ABC News Australia", length: "2:00" } },
@@ -2530,9 +2534,6 @@ const STAKEHOLDER_CONFLICT_EXAMPLES = [
   { clues: ["Protesters opposing an oil pipeline route.", "Concerned about land rights and potential environmental damage.", "Drew sustained national and international attention."],
     name: "Dakota Access Pipeline protests", business: "A clear case of a pressure group (protesters, environmental/indigenous-rights groups) in conflict with a business's shareholders and financiers, who prioritize the project's completion and returns.",
     video: { id: "15YAD0Us4N4", title: "Dakota Access Pipeline Protesters: 'The World Is Watching'", channel: "News", length: "3:00" } },
-  { clues: ["A private space technology company.", "Rumoured to be considering going public via an IPO.", "Would give many more outside shareholders a stake and a say."],
-    name: "SpaceX IPO speculation", business: "Illustrates how a shift toward more shareholders can change a company's stakeholder balance — existing owners weigh the benefits of new capital against a potential loss of control.",
-    video: { id: "BX4Yr-yHvCg", title: "SpaceX IPO: Is the Elon Musk-owned company preparing to go public?", channel: "News", length: "2:30" } },
 ];
 
 const STUDY_SECTIONS_1_4 = [
@@ -2594,20 +2595,24 @@ const GROW_STAY_SMALL_BUCKETS = [
 ];
 const GROWTH_METHOD_EXAMPLES = [
   { clues: ["Two large gaming/technology companies.", "Boards on both sides formally agreed to combine.", "One of the biggest deals in gaming industry history."],
-    name: "Microsoft / Activision Blizzard", business: "A merger and acquisition — Microsoft's purchase of Activision Blizzard was agreed by both companies' boards, giving Microsoft major gaming franchises and talent in one move." },
+    name: "Microsoft / Activision Blizzard", business: "A merger and acquisition — Microsoft's purchase of Activision Blizzard was agreed by both companies' boards, giving Microsoft major gaming franchises and talent in one move.",
+    video: { id: "K1E-7sXYOKk", title: "Microsoft to buy Call of Duty maker Activision Blizzard for US$68.7b", channel: "The Straits Times", length: "1:22" } },
   { clues: ["A social media company and a billionaire entrepreneur.", "The offer was made directly to shareholders, not first agreed with the board.", "Eventually resulted in a change of ownership and structure."],
-    name: "Musk / Twitter", business: "A takeover — the approach to shareholders directly, over the board's initial resistance, is the hallmark of an unsolicited (and here, ultimately successful) takeover attempt." },
+    name: "Musk / Twitter", business: "A takeover — the approach to shareholders directly, over the board's initial resistance, is the hallmark of an unsolicited (and here, ultimately successful) takeover attempt.",
+    video: { id: "_NbpH9GdBcQ", title: "Elon Musk completes $44 billion deal to own Twitter", channel: "News", length: "2:00" } },
   { clues: ["A Japanese electronics company and a Japanese car manufacturer.", "Jointly created a brand-new, separately owned company.", "Focused on developing electric vehicles together."],
-    name: "Sony / Honda", business: "A joint venture — Sony and Honda didn't merge or acquire each other; they jointly created and co-own a new company (Sony Honda Mobility) to pursue EVs together." },
+    name: "Sony / Honda", business: "A joint venture — Sony and Honda didn't merge or acquire each other; they jointly created and co-own a new company (Sony Honda Mobility) to pursue EVs together.",
+    video: { id: "OftHvHG2z8g", title: "Sony and Honda's joint venture unveils its first EV", channel: "News", length: "2:00" } },
   { clues: ["A well-known brand with thousands of locations worldwide.", "Individual local owners run each location under the brand's name.", "Owners pay fees and follow strict operating standards set centrally."],
-    name: "Franchising (e.g. McDonald's)", business: "This is franchising — the franchisor (the parent brand) licenses its name, systems and support to independent franchisees, who invest their own capital and share revenue back to the franchisor." },
+    name: "Franchising (e.g. McDonald's)", business: "This is franchising — the franchisor (the parent brand) licenses its name, systems and support to independent franchisees, who invest their own capital and share revenue back to the franchisor.",
+    video: { id: "8UsT8OzfiVI", title: "How Does Franchising Work?", channel: "The Ramsey Show", length: "3:30" } },
 ];
 
 const STUDY_SECTIONS_1_5 = [
   { key: "internal-economies", title: "Types of internal economies of scale", intro: "Economies of scale are the cost-reducing benefits a firm enjoys as its output grows toward an optimum level, due to greater efficiency — average costs fall as output rises. Internal economies happen inside the firm and are within its own control: technical (using sophisticated machinery to mass-produce), financial (borrowing large sums more cheaply, since large firms are seen as less risky), managerial (affording specialist managers for each function instead of one person doing everything), specialisation (workers focusing on one part of the process), marketing (spreading an ad campaign's cost across a bigger customer base), purchasing (bulk-buying discounts), and risk-bearing (a conglomerate's weak year in one division offset by a strong year in another). Sort each example into the right category:" },
   { key: "scale-type", title: "Internal vs. external economies of scale", intro: "Push past a firm's optimum size, though, and it can become too big or complex to manage efficiently — costs rise again, a pattern called diseconomies of scale. Internal economies benefit only the firm itself; external economies benefit every firm in an industry or location at once, arising from factors outside any single firm's control — technological progress (like the internet enabling e-commerce from cheaper locations), improved transport networks (globalized shipping making distant sourcing cheaper), an abundance of skilled labour in a location with strong training systems, or regional specialisation (a location building a reputation for one specific good or service). Sort each example:" },
   { key: "growth-type", title: "Internal vs. external growth", intro: "Internal (organic) growth happens when a business grows using its own resources — reinvesting profit to increase the scale of its own operations. External growth happens through dealing with other organizations entirely, usually via mergers, acquisitions, joint ventures, strategic alliances or franchising. Internal growth generally means better control, an easier-to-maintain culture, and lower cost and risk — but it's typically slower and can suffer from the diseconomies of scale above. External growth is quicker and can bring synergies and instant economies of scale — but it's more expensive, riskier, and can produce a culture clash between the combining firms. Sort each scenario:" },
-  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growing bigger brings real generic benefits: economies of scale, the ability to charge lower prices, stronger brand recognition, and deeper customer loyalty. But plenty of firms choose to stay small deliberately — for tighter cost control, lower financial risk, easier access to small-business government aid, local monopoly power in a niche too small to attract big competitors, and greater flexibility to adapt quickly. Sort each reason into the right column:" },
+  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growing bigger brings real generic benefits: economies of scale, the ability to charge lower prices, stronger brand recognition, and deeper customer loyalty. But plenty of firms choose to stay small deliberately — for tighter cost control, lower financial risk, easier access to small-business government aid, local monopoly power in a niche too small to attract big competitors, and greater flexibility to adapt quickly. Watch these two contrasting takes, then sort each reason into the right column:" },
   { key: "growth-methods", title: "Methods of external growth", intro: "External growth takes several distinct legal forms. A merger is when two firms agree to combine into an entirely new company; an acquisition is when one firm buys a controlling interest in another with its board's agreement — a takeover is the same thing done without the target's agreement, usually by appealing directly to shareholders. A joint venture is when two or more firms create a new, separate legal entity to share a project's costs, risks and rewards; a strategic alliance is looser cooperation where the firms stay fully independent. Franchising lets an entrepreneur (the franchisee) buy a licence to trade under an established firm's (the franchisor's) name and systems, typically paying a fee plus a share of revenue. Match each real example to its method:" },
 ];
 
@@ -2840,12 +2845,7 @@ function StudyView({ onBack, subunitId, role }) {
             <SortGame items={SECTOR_SPLIT_ITEMS} buckets={SECTOR_SPLIT_BUCKETS} onComplete={() => markComplete("sector-split")} />
           )}
           {current.key === "entity-liability" && (
-            <>
-              <div className="mb-4">
-                <StudyVideoLink video={{ id: "Sssmh4PDOoE", title: "The Secret Behind the Success of Blue Ribbon Sports: Nike's Humble Beginnings", channel: "YouTube", length: "8:12" }} />
-              </div>
-              <SortGame items={ENTITY_LIABILITY_ITEMS} buckets={ENTITY_LIABILITY_BUCKETS} onComplete={() => markComplete("entity-liability")} />
-            </>
+            <SortGame items={ENTITY_LIABILITY_ITEMS} buckets={ENTITY_LIABILITY_BUCKETS} onComplete={() => markComplete("entity-liability")} />
           )}
           {current.key === "companies" && (
             <>
@@ -2929,7 +2929,13 @@ function StudyView({ onBack, subunitId, role }) {
             </>
           )}
           {current.key === "grow-stay-small" && (
-            <SortGame items={GROW_STAY_SMALL_ITEMS} buckets={GROW_STAY_SMALL_BUCKETS} onComplete={() => markComplete("grow-stay-small")} />
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <StudyVideoLink video={{ id: "cQK_p1abRGc", title: "The case for staying small", channel: "YouTube", length: "—" }} />
+                <StudyVideoLink video={{ id: "hhBDfJY-xZw", title: "The Big Lie of Small Business — Vusi Thembekwayo", channel: "TEDxUniversityofNamibia", length: "17:00" }} />
+              </div>
+              <SortGame items={GROW_STAY_SMALL_ITEMS} buckets={GROW_STAY_SMALL_BUCKETS} onComplete={() => markComplete("grow-stay-small")} />
+            </>
           )}
           {current.key === "growth-methods" && (
             <EntrepreneurGrid items={GROWTH_METHOD_EXAMPLES} onComplete={() => markComplete("growth-methods")} />
@@ -4357,7 +4363,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         {loaded && currentStage === "discover" && (
           <FadeIn key="discover">
             <VideoSection compState={compState} onChangeAnswer={onChangeCompAnswer} onSubmit={onSubmitComp} unlocked={unlocked} savedPulses={savedPulses} video={VIDEO} comprehensionQuestions={COMPREHENSION_QUESTIONS} />
-            {isStageComplete("discover", stats) && <ContinueButton stageKey="discover" onAdvance={setCurrentStage} />}
+            {isStageComplete("discover", stats) && <ContinueButton stageKey="discover" stats={stats} onAdvance={setCurrentStage} />}
           </FadeIn>
         )}
 
@@ -4404,7 +4410,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
                       {QUESTIONS.filter((q) => q.section === "vocab").map((q) => (
                         <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} savedPulse={savedPulses[q.id]} caseText={CASE_TEXT} />
                       ))}
-                      {isStageComplete("build", stats) && <PaneContinueBar stageKey="build" onAdvance={setCurrentStage} />}
+                      {isStageComplete("build", stats) && <PaneContinueBar stageKey="build" stats={stats} onAdvance={setCurrentStage} />}
                     </>
                   )}
 
@@ -4413,7 +4419,8 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
                       {QUESTIONS.filter((q) => q.section === "structured").map((q) => (
                         <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} savedPulse={savedPulses[q.id]} caseText={CASE_TEXT} />
                       ))}
-                      {isStageComplete("apply", stats) && <PaneContinueBar stageKey="apply" onAdvance={setCurrentStage} />}
+                      {isStageComplete("apply", stats) && <PaneContinueBar stageKey="apply" stats={stats} onAdvance={setCurrentStage} />}
+                      {subunitComplete && !nextContentStage("apply", stats) && <CompletionCard stats={stats} profile={profile} levelInfo={levelInfo} />}
                     </>
                   )}
 
