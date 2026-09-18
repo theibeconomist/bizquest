@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminTable from "@/components/AdminTable";
@@ -26,8 +27,8 @@ export default async function AdminPage() {
       <SignOutButton />
       <ProfileButton role={me.role || "admin"} className="fixed top-2.5 right-[104px] z-50" fixed={false} />
       <div className="max-w-3xl mx-auto">
-        <Link href="/" className="inline-block mb-4 text-[13px] text-stone-500 hover:text-stone-700">
-          ← Back to app
+        <Link href="/" className="group inline-flex items-center gap-1.5 rounded-full bg-stone-200/60 pl-2 pr-3 py-1 mb-4 text-[12.5px] font-medium text-stone-600 transition hover:bg-stone-200 hover:text-stone-800">
+          <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to app
         </Link>
         <h1 className="text-[22px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>
           Student approvals

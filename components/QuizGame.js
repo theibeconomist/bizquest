@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import {
-  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone,
+  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone, AlertCircle,
 } from "lucide-react";
 import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -44,6 +44,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -78,11 +79,12 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
   const removeTeam = (i) => setTeamNames((prev) => prev.filter((_, idx) => idx !== i));
 
   const onStart = () => {
+    setError("");
     const questions = getQuizQuestions(subunitId, questionCount, { allUnit }).map(shuffleOptions);
     const label = allUnit ? "All of Unit 1" : subunitId;
     if (mode === "single_screen") {
       const names = teamNames.map((t) => t.trim()).filter(Boolean);
-      if (names.length < 2) { alert("Add at least 2 teams."); return; }
+      if (names.length < 2) { setError("Add at least 2 teams to start."); return; }
       onStartSingleScreen({ subunitId: label, questions, teamNames: names });
     } else {
       onStartMultiDevice({ subunitId: label, questions, classId: classId || null });
@@ -158,7 +160,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
                   className="flex-1 rounded-md border border-stone-300 px-2.5 py-1.5 text-[13.5px]"
                 />
                 {teamNames.length > 2 && (
-                  <button onClick={() => removeTeam(i)} className="text-stone-400 hover:text-red-600"><Trash2 size={15} /></button>
+                  <button onClick={() => removeTeam(i)} className="text-stone-400 hover:text-red-600" aria-label={`Remove ${name || `team ${i + 1}`}`}><Trash2 size={15} /></button>
                 )}
               </div>
             ))}
@@ -186,6 +188,12 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
         </div>
       )}
 
+      {error && (
+        <div className="mb-4 flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+          <AlertCircle size={14} className="shrink-0" /> {error}
+        </div>
+      )}
+
       <button
         onClick={onStart}
         disabled={creatingGame}
@@ -209,6 +217,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
   const [revealed, setRevealed] = useState(false);
   const [feedback, setFeedback] = useState(null); // { correct, points } while the popup shows
   const [finished, setFinished] = useState(false);
+  const [confirmingExit, setConfirmingExit] = useState(false);
 
   const question = questions[index];
   const currentTeam = teams.find((t) => t.id === currentTeamId);
@@ -265,9 +274,24 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
       {feedback && (
         <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} onDismiss={() => setFeedback(null)} />
       )}
+      {confirmingExit && (
+        <ConfirmModal
+          title="End this game now?"
+          message="All teams' scores will be lost."
+          confirmLabel="End game"
+          onConfirm={onExit}
+          onCancel={() => setConfirmingExit(false)}
+        />
+      )}
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {index + 1} of {questions.length}</div>
-        <button onClick={onExit} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
+        <button
+          onClick={() => setConfirmingExit(true)}
+          className="text-stone-400 hover:text-stone-600"
+          aria-label="End game"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <Scoreboard teams={teams} currentTeamId={currentTeamId} />
@@ -323,6 +347,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmingExit, setConfirmingExit] = useState(false);
   const unsubRef = useRef(null);
 
   useEffect(() => {
@@ -347,7 +372,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   }, [subunitId, questions, classId]);
 
   const startGame = async () => {
-    if (teams.length < 2) { alert("Wait for at least 2 teams to join."); return; }
+    if (teams.length < 2) return; // guarded by the button's own disabled state below
     const firstTeamId = pickRandomTeamId(teams, null);
     await updateQuizGame(game.id, { status: "active", current_index: 0, current_team_id: firstTeamId, revealed: false });
   };
@@ -366,9 +391,14 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: nextTeamId, revealed: false });
   };
 
-  const exitAndCleanup = async () => {
+  const doExit = async () => {
     if (game) await deleteQuizGame(game.id);
     onExit();
+  };
+  const requestExit = () => {
+    const hasSomethingToLose = game && (game.status === "active" || teams.length > 0);
+    if (hasSomethingToLose) setConfirmingExit(true);
+    else doExit();
   };
 
   const copyCode = () => {
@@ -385,9 +415,18 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   if (game.status === "lobby") {
     return (
       <div className="max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center">
+        {confirmingExit && (
+          <ConfirmModal
+            title="End this game now?"
+            message="Everyone's progress and scores will be lost."
+            confirmLabel="End game"
+            onConfirm={doExit}
+            onCancel={() => setConfirmingExit(false)}
+          />
+        )}
         <div className="text-[12.5px] text-stone-500 mb-1">{SUBUNIT_OPTIONS.find((s) => s.id === subunitId)?.label || subunitId}</div>
         <div className="text-[13px] text-stone-500 mb-2">Join code</div>
-        <button onClick={copyCode} className="inline-flex items-center gap-2 mb-6 rounded-lg border-2 border-dashed px-6 py-3" style={{ borderColor: NAVY }}>
+        <button onClick={copyCode} className="inline-flex items-center gap-2 mb-6 rounded-lg border-2 border-dashed px-6 py-3" style={{ borderColor: NAVY }} aria-label={`Copy join code ${game.join_code}`}>
           <span className="text-[32px] font-bold tracking-widest font-mono" style={{ color: NAVY }}>{game.join_code}</span>
           {copied ? <Check size={18} className="text-green-600" /> : <Copy size={18} className="text-stone-400" />}
         </button>
@@ -400,7 +439,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
           ))}
         </div>
         <div className="flex gap-2 justify-center">
-          <button onClick={exitAndCleanup} className="rounded-md px-3 py-2 text-[13px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
+          <button onClick={requestExit} className="rounded-md px-3 py-2 text-[13px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
           <button
             onClick={startGame}
             disabled={teams.length < 2}
@@ -433,7 +472,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
             </div>
           ))}
         </div>
-        <button onClick={exitAndCleanup} className="rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
+        <button onClick={doExit} className="rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
           New game
         </button>
       </div>
@@ -444,9 +483,18 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   const currentTeam = teams.find((t) => t.id === game.current_team_id);
   return (
     <div className="max-w-2xl mx-auto">
+      {confirmingExit && (
+        <ConfirmModal
+          title="End this game now?"
+          message="Everyone's progress and scores will be lost."
+          confirmLabel="End game"
+          onConfirm={doExit}
+          onCancel={() => setConfirmingExit(false)}
+        />
+      )}
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {questions.length} · Code {game.join_code}</div>
-        <button onClick={exitAndCleanup} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
+        <button onClick={requestExit} className="text-stone-400 hover:text-stone-600" aria-label="End game"><X size={18} /></button>
       </div>
 
       <Scoreboard teams={teams} currentTeamId={game.current_team_id} />

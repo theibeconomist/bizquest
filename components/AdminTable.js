@@ -7,6 +7,7 @@ export default function AdminTable({ initialStudents, currentUserId }) {
   const supabase = createClient();
   const [students, setStudents] = useState(initialStudents);
   const [pendingIds, setPendingIds] = useState(new Set());
+  const [confirming, setConfirming] = useState(null); // { student, action: "revoke" | "makeAdmin" }
 
   const setApproved = async (id, approved) => {
     setPendingIds((prev) => new Set(prev).add(id));
@@ -47,7 +48,7 @@ export default function AdminTable({ initialStudents, currentUserId }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-stone-200 overflow-x-auto">
       <table className="w-full text-[13px]">
         <thead>
           <tr className="border-b border-stone-200 text-left text-stone-500">
@@ -89,7 +90,11 @@ export default function AdminTable({ initialStudents, currentUserId }) {
                   ) : (
                     <select
                       value={s.role || "student"}
-                      onChange={(e) => setRole(s.id, e.target.value)}
+                      onChange={(e) => {
+                        const nextRole = e.target.value;
+                        if (nextRole === "admin") setConfirming({ student: s, action: "makeAdmin" });
+                        else setRole(s.id, nextRole);
+                      }}
                       disabled={isPending}
                       className="rounded-md border border-stone-300 px-2 py-1 text-[12.5px] disabled:opacity-50"
                     >
@@ -105,7 +110,7 @@ export default function AdminTable({ initialStudents, currentUserId }) {
                     <span className="text-stone-400 text-[12px]">—</span>
                   ) : (
                     <button
-                      onClick={() => setApproved(s.id, !s.approved)}
+                      onClick={() => (s.approved ? setConfirming({ student: s, action: "revoke" }) : setApproved(s.id, true))}
                       disabled={isPending}
                       className={`rounded-md px-3 py-1 text-[12px] font-medium disabled:opacity-50 ${
                         s.approved ? "bg-stone-100 text-stone-600" : "text-white"
@@ -121,6 +126,34 @@ export default function AdminTable({ initialStudents, currentUserId }) {
           })}
         </tbody>
       </table>
+      {confirming && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="bg-white rounded-xl border border-stone-200 shadow-lg max-w-sm w-full p-5">
+            <h3 className="text-[15px] font-semibold text-stone-800 mb-2">
+              {confirming.action === "makeAdmin" ? "Grant admin access?" : "Revoke approval?"}
+            </h3>
+            <p className="text-[13px] text-stone-500 mb-4">
+              {confirming.action === "makeAdmin"
+                ? `${confirming.student.display_name || confirming.student.email || "This user"} will get full admin access — approving/rejecting any account, changing any role, and everything else admins can do.`
+                : `${confirming.student.display_name || confirming.student.email || "This user"} will lose access until re-approved.`}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirming(null)} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
+              <button
+                onClick={() => {
+                  if (confirming.action === "makeAdmin") setRole(confirming.student.id, "admin");
+                  else setApproved(confirming.student.id, false);
+                  setConfirming(null);
+                }}
+                className="rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white"
+                style={{ backgroundColor: confirming.action === "makeAdmin" ? "#15396B" : "#B3392C" }}
+              >
+                {confirming.action === "makeAdmin" ? "Grant admin" : "Revoke"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

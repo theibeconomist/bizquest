@@ -920,8 +920,8 @@ function RuledTextarea({ value, onChange, disabled, rows, color }) {
 
   return (
     <div
-      className="w-full rounded-md border overflow-hidden"
-      style={{ borderColor: "#d6d0c4", paddingTop: 8, paddingLeft: 12, paddingRight: 12, paddingBottom: 0 }}
+      className="w-full rounded-md border overflow-hidden focus-within:ring-2 focus-within:ring-offset-1"
+      style={{ borderColor: "#d6d0c4", paddingTop: 8, paddingLeft: 12, paddingRight: 12, paddingBottom: 0, "--tw-ring-color": color || "#15396B" }}
     >
       <textarea
         ref={textareaRef}
@@ -1218,7 +1218,7 @@ Respond as BM AI Bot in plain conversational text (not JSON, no markdown headers
         <div className="flex items-center gap-1.5 text-white text-[12px] font-semibold">
           <Bot size={14} /> BM AI Bot
         </div>
-        <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
+        <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white" aria-label="Close AI helper">
           <X size={14} />
         </button>
       </div>
@@ -3706,9 +3706,9 @@ function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine
           <div className="flex-1 min-w-0">
             <button
               onClick={onBack}
-              className="inline-flex items-center gap-1 text-white/70 text-[11.5px] font-medium mb-1 hover:text-white"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 text-[11.5px] font-medium text-white/80 mb-2 transition hover:bg-white/20 hover:text-white"
             >
-              <ArrowLeft size={12} /> Back to menu
+              <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to menu
             </button>
             <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 27, lineHeight: 1.15 }}>
               BizQuest
@@ -3807,9 +3807,9 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId, role }) {
           <div className="flex-1 min-w-0">
             <button
               onClick={onBackToMap}
-              className="inline-flex items-center gap-1 text-white/70 text-[11.5px] font-medium mb-1 hover:text-white"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 text-[11.5px] font-medium text-white/80 mb-2 transition hover:bg-white/20 hover:text-white"
             >
-              <ArrowLeft size={12} /> Back to Unit map
+              <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Unit map
             </button>
             <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 27, lineHeight: 1.15 }}>
               BizQuest
@@ -4334,9 +4334,9 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
             <div className="flex-1 min-w-0">
               <button
                 onClick={() => setView("hub")}
-                className="inline-flex items-center gap-1 text-white/70 text-[11.5px] font-medium mb-1 hover:text-white"
+                className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 text-[11.5px] font-medium text-white/80 mb-2 transition hover:bg-white/20 hover:text-white"
               >
-                <ArrowLeft size={12} /> Back to menu
+                <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to menu
               </button>
               <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 27, lineHeight: 1.15 }}>
                 BizQuest

@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import {
   Loader2, Copy, Check, ChevronRight, ChevronDown, Users, Clock, Target, BookOpen,
-  AlertTriangle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles, Send, Mail,
+  AlertTriangle, AlertCircle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles, Send, Mail,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -1118,6 +1118,7 @@ export default function TeacherDashboard({ initialClasses }) {
   const [sortKey, setSortKey] = useState("email");
   const [sortDir, setSortDir] = useState("asc");
   const [removing, setRemoving] = useState(null); // student pending removal confirmation
+  const [removeError, setRemoveError] = useState("");
   const [summaries, setSummaries] = useState({}); // studentId -> { text, loading, error }
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(null); // { done, total }
@@ -1403,14 +1404,14 @@ export default function TeacherDashboard({ initialClasses }) {
 
   const confirmRemove = async () => {
     if (!removing) return;
+    setRemoveError("");
     try {
       await removeStudentFromClass(removing.id);
       setRoster((prev) => prev.filter((s) => s.id !== removing.id));
       if (expandedStudentId === removing.id) setExpandedStudentId(null);
-    } catch (err) {
-      alert(err.message || "Could not remove student.");
-    } finally {
       setRemoving(null);
+    } catch (err) {
+      setRemoveError(err.message || "Could not remove student. Please try again.");
     }
   };
 
@@ -1679,7 +1680,7 @@ export default function TeacherDashboard({ initialClasses }) {
                             <td className="px-3 py-2 text-stone-600">{formatMinutes(s.weekly)}</td>
                             <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
                               <button
-                                onClick={() => setRemoving(s)}
+                                onClick={() => { setRemoving(s); setRemoveError(""); }}
                                 className="rounded-md p-1 text-stone-400 hover:text-red-600 hover:bg-red-50"
                                 title="Remove from class"
                               >
@@ -1724,13 +1725,18 @@ export default function TeacherDashboard({ initialClasses }) {
           <div className="bg-white rounded-xl border border-stone-200 shadow-lg max-w-sm w-full p-5">
             <div className="flex items-start justify-between mb-2">
               <h3 className="text-[15px] font-semibold text-stone-800">Remove from class?</h3>
-              <button onClick={() => setRemoving(null)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+              <button onClick={() => { setRemoving(null); setRemoveError(""); }} className="text-stone-400 hover:text-stone-600" aria-label="Cancel"><X size={16} /></button>
             </div>
             <p className="text-[13px] text-stone-500 mb-4">
               {removing.label || "This student"} will lose access to your class dashboard and can rejoin later with the join code. Their own progress and XP are not affected.
             </p>
+            {removeError && (
+              <div className="mb-4 flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+                <AlertCircle size={14} className="shrink-0" /> {removeError}
+              </div>
+            )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setRemoving(null)} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
+              <button onClick={() => { setRemoving(null); setRemoveError(""); }} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
               <button onClick={confirmRemove} className="rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white" style={{ backgroundColor: RED }}>Remove</button>
             </div>
           </div>

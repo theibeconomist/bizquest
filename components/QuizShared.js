@@ -113,6 +113,24 @@ export function OptionButton({ letter, color, text, onClick, disabled, state }) 
   );
 }
 
+// Matches the confirmation-modal pattern already used elsewhere in the app (e.g. "Remove
+// from class?" in the teacher dashboard) — used instead of the native browser confirm(),
+// which looks and feels out of place next to everything else here.
+export function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+      <div className="bg-white rounded-xl border border-stone-200 shadow-lg max-w-sm w-full p-5">
+        <h3 className="text-[15px] font-semibold text-stone-800 mb-2">{title}</h3>
+        <p className="text-[13px] text-stone-500 mb-4">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-100">Cancel</button>
+          <button onClick={onConfirm} className="rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white" style={{ backgroundColor: QUIZ_RED }}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Confetti() {
   const colors = [QUIZ_GOLD, QUIZ_GREEN, QUIZ_NAVY, QUIZ_RED, "#ffffff"];
   const [pieces] = useState(() =>
