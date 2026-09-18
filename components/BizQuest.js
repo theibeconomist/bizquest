@@ -2570,22 +2570,22 @@ const STUDY_SECTIONS_1_2 = [
   {
     key: "entity-liability",
     title: "Sole traders & partnerships",
-    intro: "A sole trader is a business owned and run by one person, while a partnership is owned by two or more people (partners), formalized by a deed of partnership. Both are usually the easiest and cheapest types of business to set up — but both typically carry unlimited liability, meaning the owner's personal assets are at risk if the business cannot pay its debts. This was exactly the risk that led Ronald Wayne to leave Apple's founding partnership in 1976, twelve days after it was formed. Sort these features into advantage or disadvantage:",
+    intro: "A sole trader is a business owned and run by one person, while a partnership is owned by two or more people (partners), formalized by a deed of partnership. Both are usually the easiest and cheapest types of business to set up — but both typically carry unlimited liability, meaning the owner's personal assets are at risk if the business cannot pay its debts. This was exactly the risk that led Ronald Wayne to leave Apple's founding partnership in 1976, twelve days after it was formed. Whether that risk is actually a dealbreaker depends on the business: a low-debt freelance consultant risks little by staying a sole trader, while a business taking on loans or physical stock — as Apple was about to, building its first computers — has real personal exposure the moment things go wrong. Sort these features into advantage or disadvantage:",
   },
   {
     key: "companies",
     title: "Privately held vs. publicly held companies",
-    intro: "Incorporating a business turns it into a company — a separate legal entity from its owners, giving those owners (its shareholders) limited liability. A privately held company's shares are owned by a small number of people (often friends, family or early investors) and can't be bought on the stock exchange. A publicly held company's shares are traded openly on the stock exchange, available to the general public. Apple itself was a privately held company between its 1977 incorporation and its 1980 stock market listing. First, sort these real companies by which type they are — then sort the advantages and disadvantages that come with incorporating in the first place:",
+    intro: "Incorporating a business turns it into a company — a separate legal entity from its owners, giving those owners (its shareholders) limited liability. A privately held company's shares are owned by a small number of people (often friends, family or early investors) and can't be bought on the stock exchange. A publicly held company's shares are traded openly on the stock exchange, available to the general public. Apple itself was a privately held company between its 1977 incorporation and its 1980 stock market listing — and that 1980 decision to go public is itself a trade-off worth weighing: going public raises large amounts of capital fast, but it also means giving up some control and facing constant public scrutiny of results, which is exactly why many successful companies choose to stay privately held for years, or permanently. First, sort these real companies by which type they are — then sort the advantages and disadvantages that come with incorporating in the first place:",
   },
   {
     key: "forprofit-social",
     title: "For-profit social enterprises",
-    intro: "A for-profit social enterprise trades commercially — generating real revenue and profit — while existing primarily to serve a social or environmental mission rather than to maximize returns for owners. These can be private sector companies, owned by private individuals or investors, or public sector companies, owned and controlled by government. Meet two real examples:",
+    intro: "A for-profit social enterprise trades commercially — generating real revenue and profit — while existing primarily to serve a social or environmental mission rather than to maximize returns for owners. These can be private sector companies, owned by private individuals or investors, or public sector companies, owned and controlled by government. The trade-off is real: chasing a social mission alongside profit can mean slower growth or lower returns than a purely profit-driven rival, which is exactly why this structure suits founders who genuinely prioritize impact over maximizing shareholder wealth, but may deter investors chasing the highest possible return. Meet two real examples:",
   },
   {
     key: "coop-ngo",
     title: "Cooperatives & NGOs",
-    intro: "Not every organization is structured around individual or government ownership. A cooperative is owned and democratically controlled by its own members, who share in any profits it makes. A non-governmental organization (NGO) is a non-profit social enterprise, independent of government, that reinvests any surplus into its mission rather than distributing it as profit — it has no owners to pay. Meet two real examples:",
+    intro: "Not every organization is structured around individual or government ownership. A cooperative is owned and democratically controlled by its own members, who share in any profits it makes — genuinely fair, but slower to make decisions than a business with a single owner or a small board, since major choices need member buy-in. A non-governmental organization (NGO) is a non-profit social enterprise, independent of government, that reinvests any surplus into its mission rather than distributing it as profit — it has no owners to pay, but also no shareholders to raise capital from, so it typically depends more heavily on donations and grants. Meet two real examples:",
   },
   {
     key: "entity-choice",
@@ -2796,8 +2796,8 @@ const STUDY_SECTIONS_1_5 = [
   { key: "internal-economies", title: "Types of internal economies of scale", intro: "Economies of scale are the cost-reducing benefits a firm enjoys as its output grows toward an optimum level, due to greater efficiency — average costs fall as output rises. Internal economies happen inside the firm and are within its own control: technical (using sophisticated machinery to mass-produce), financial (borrowing large sums more cheaply, since large firms are seen as less risky), managerial (affording specialist managers for each function instead of one person doing everything), specialisation (workers focusing on one part of the process), marketing (spreading an ad campaign's cost across a bigger customer base), purchasing (bulk-buying discounts), and risk-bearing (a conglomerate's weak year in one division offset by a strong year in another). Sort each example into the right category:" },
   { key: "scale-type", title: "Internal vs. external economies of scale", intro: "Push past a firm's optimum size, though, and it can become too big or complex to manage efficiently — costs rise again, a pattern called diseconomies of scale. Internal economies benefit only the firm itself; external economies benefit every firm in an industry or location at once, arising from factors outside any single firm's control — technological progress (like the internet enabling e-commerce from cheaper locations), improved transport networks (globalized shipping making distant sourcing cheaper), an abundance of skilled labour in a location with strong training systems, or regional specialisation (a location building a reputation for one specific good or service). Sort each example:" },
   { key: "growth-type", title: "Internal vs. external growth", intro: "Internal (organic) growth happens when a business grows using its own resources — reinvesting profit to increase the scale of its own operations. External growth happens through dealing with other organizations entirely, usually via mergers, acquisitions, joint ventures, strategic alliances or franchising. Internal growth generally means better control, an easier-to-maintain culture, and lower cost and risk — but it's typically slower and can suffer from the diseconomies of scale above. External growth is quicker and can bring synergies and instant economies of scale — but it's more expensive, riskier, and can produce a culture clash between the combining firms. Sort each scenario:" },
-  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growing bigger brings real generic benefits: economies of scale, the ability to charge lower prices, stronger brand recognition, and deeper customer loyalty. But plenty of firms choose to stay small deliberately — for tighter cost control, lower financial risk, easier access to small-business government aid, local monopoly power in a niche too small to attract big competitors, and greater flexibility to adapt quickly. Watch these two contrasting takes, then sort each reason into the right column:" },
-  { key: "growth-methods", title: "Methods of external growth", intro: "External growth takes several distinct legal forms. A merger is when two firms agree to combine into an entirely new company; an acquisition is when one firm buys a controlling interest in another with its board's agreement — a takeover is the same thing done without the target's agreement, usually by appealing directly to shareholders. A joint venture is when two or more firms create a new, separate legal entity to share a project's costs, risks and rewards; a strategic alliance is looser cooperation where the firms stay fully independent. Franchising lets an entrepreneur (the franchisee) buy a licence to trade under an established firm's (the franchisor's) name and systems, typically paying a fee plus a share of revenue. Match each real example to its method:" },
+  { key: "grow-stay-small", title: "Reasons to grow — or stay small", intro: "Growing bigger brings real generic benefits: economies of scale, the ability to charge lower prices, stronger brand recognition, and deeper customer loyalty. But plenty of firms choose to stay small deliberately — for tighter cost control, lower financial risk, easier access to small-business government aid, local monopoly power in a niche too small to attract big competitors, and greater flexibility to adapt quickly. Neither answer is right in general — the right call depends on the market: a firm in a fast-consolidating industry with strong economies of scale (like Apple's own hardware manufacturing) usually has to grow just to stay competitive on cost, while a firm serving a small, loyal niche market can lose exactly what makes it special by scaling up too fast. Watch these two contrasting takes, then sort each reason into the right column:" },
+  { key: "growth-methods", title: "Methods of external growth", intro: "External growth takes several distinct legal forms. A merger is when two firms agree to combine into an entirely new company; an acquisition is when one firm buys a controlling interest in another with its board's agreement — a takeover is the same thing done without the target's agreement, usually by appealing directly to shareholders. A joint venture is when two or more firms create a new, separate legal entity to share a project's costs, risks and rewards; a strategic alliance is looser cooperation where the firms stay fully independent. Franchising lets an entrepreneur (the franchisee) buy a licence to trade under an established firm's (the franchisor's) name and systems, typically paying a fee plus a share of revenue. Choosing between them is a real trade-off: a joint venture or alliance shares risk and speeds up entry into unfamiliar territory (like a new country or technology) but means sharing control and profit, while a full acquisition costs more and carries integration risk but keeps everything in-house — which is exactly why Apple, comfortable funding its own acquisitions outright, has never needed a joint venture, while a smaller firm entering a market it doesn't understand well might choose one deliberately. Match each real example to its method:" },
 ];
 
 // ============================================================
@@ -2853,10 +2853,10 @@ const APPLE_MNC_IMPACT_EXAMPLES = [
 ];
 
 const STUDY_SECTIONS_1_6 = [
-  { key: "why-mnc", title: "Why do businesses become MNCs?", intro: "A multinational company (MNC) owns or controls operations — factories, offices or subsidiaries — in two or more countries: a home country, where it's headquartered, and one or more host countries, where it operates. Businesses become MNCs for several common reasons: to reach a bigger customer base, to access cheaper production costs (especially labour), to capture economies of scale, to build brand value across markets, to avoid protectionist policies like import tariffs, and to spread risk across multiple economies rather than relying on just one. Tesla's Shanghai Gigafactory (its first factory outside the US, opened 2018) is a real example — watch the clip, then sort each scenario into the reason it best illustrates:" },
-  { key: "positive-impacts", title: "Positive impacts on host countries", intro: "When an MNC sets up in a host country, the effects can be beneficial or harmful, often both at once. On the positive side, MNCs typically bring job creation (new factories and offices need local workers), higher national income (through wages and taxes), knowledge and technology transfer (as local workers and suppliers learn advanced methods from the MNC), and increased competition (which pushes local firms to become more efficient). Samsung — Vietnam's single largest foreign investor — is a real example of this in action. Sort each example into the right impact:" },
-  { key: "negative-impacts", title: "Negative impacts and risks", intro: "On the negative side, MNCs can just as easily cause job losses if a factory closes or relocates once costs rise or a cheaper location is found. Repatriation of profits is a common concern — rather than reinvesting locally, an MNC may send profits back to its home country, so the host economy sees less lasting benefit than the headline revenue suggests. Host countries can become vulnerable if their economy grows too dependent on one or two large MNCs, especially if that MNC later leaves; MNCs are sometimes criticized for social responsibilities (like workplace or environmental standards they wouldn't accept at home); and local firms can face competitive pressures they're not equipped to survive. The 2022 unrest at Foxconn's Zhengzhou plant — the world's largest iPhone factory, employing roughly 200,000 workers — illustrates exactly this vulnerability risk. Sort each example into the right impact:" },
-  { key: "apple-impact", title: "Apple's own impact: India vs. China", intro: "Apple's own manufacturing shift illustrates both sides of MNC impact on host countries at once — India and Vietnam gaining jobs and technology transfer as production diversifies toward them, while China (the long-standing host) experiences some loss of manufacturing employment and investment. Compare the two host countries:" },
+  { key: "why-mnc", title: "Why do businesses become MNCs?", intro: "A multinational company (MNC) owns or controls operations — factories, offices or subsidiaries — in two or more countries: a home country, where it's headquartered, and one or more host countries, where it operates. Businesses become MNCs for several common reasons: to reach a bigger customer base, to access cheaper production costs (especially labour), to capture economies of scale, to build brand value across markets, to avoid protectionist policies like import tariffs, and to spread risk across multiple economies rather than relying on just one. These reasons don't all apply equally to every decision, though — Apple's own shift toward India was driven far more by risk-spreading and tariff avoidance than by cheaper labour alone, since assembly costs are only one part of a smartphone's overall cost. Tesla's Shanghai Gigafactory (its first factory outside the US, opened 2018) is a real example — watch the clip, then sort each scenario into the reason it best illustrates:" },
+  { key: "positive-impacts", title: "Positive impacts on host countries", intro: "When an MNC sets up in a host country, the effects can be beneficial or harmful, often both at once. On the positive side, MNCs typically bring job creation (new factories and offices need local workers), higher national income (through wages and taxes), knowledge and technology transfer (as local workers and suppliers learn advanced methods from the MNC), and increased competition (which pushes local firms to become more efficient). None of these benefits are guaranteed or automatic, though — they depend heavily on how much of the MNC's spending actually stays local (wages paid to local workers, contracts given to local suppliers) versus how much is repatriated or spent on imported inputs. Samsung — Vietnam's single largest foreign investor — is a real example of this in action. Sort each example into the right impact:" },
+  { key: "negative-impacts", title: "Negative impacts and risks", intro: "On the negative side, MNCs can just as easily cause job losses if a factory closes or relocates once costs rise or a cheaper location is found. Repatriation of profits is a common concern — rather than reinvesting locally, an MNC may send profits back to its home country, so the host economy sees less lasting benefit than the headline revenue suggests. Host countries can become vulnerable if their economy grows too dependent on one or two large MNCs, especially if that MNC later leaves; MNCs are sometimes criticized for social responsibilities (like workplace or environmental standards they wouldn't accept at home); and local firms can face competitive pressures they're not equipped to survive. The severity of these risks tends to scale with how concentrated the dependence is: a country with one dominant MNC employer, like a single-factory town, is far more exposed than one where MNC investment is spread across many firms and industries. The 2022 unrest at Foxconn's Zhengzhou plant — the world's largest iPhone factory, employing roughly 200,000 workers — illustrates exactly this vulnerability risk. Sort each example into the right impact:" },
+  { key: "apple-impact", title: "Apple's own impact: India vs. China", intro: "Apple's own manufacturing shift illustrates both sides of MNC impact on host countries at once — India and Vietnam gaining jobs and technology transfer as production diversifies toward them, while China (the long-standing host) experiences some loss of manufacturing employment and investment. Weighing whether this net impact is positive or negative isn't the same question for every country involved: India and Vietnam are clearly net beneficiaries so far, gaining investment they didn't previously have, while whether China is genuinely worse off is far less clear-cut, since it retains the large majority of Apple's production and the diversification has been gradual rather than a sudden withdrawal. Compare the two host countries:" },
 ];
 
 const STUDY_SECTIONS_BY_SUBUNIT = {
@@ -2885,37 +2885,144 @@ function StudyCompletionCard({ xpEarned, badgeEarned }) {
   );
 }
 
-// Assessment objectives actually examined in this subunit's Practice, computed directly
-// from its real question data (vocab -> AO1, structured -> AO1+AO2, essay -> AO3) rather
-// than a separately-maintained description that could drift out of sync with it.
-const AO_INFO = {
-  AO1: { label: "AO1 — Knowledge", color: "#2E8B84", desc: "define/state — recall of terms and concepts" },
-  AO2: { label: "AO2 — Application", color: "#C9A24B", desc: "describe/explain — applying concepts to the case" },
-  AO3: { label: "AO3 — Evaluation", color: "#B3392C", desc: "discuss/evaluate — balanced judgement, extended response" },
+// The official IB Business Management content list and its AO tagging, per subunit —
+// this is the real source-of-truth table (Content | Assessment objective), not a guess
+// derived from question type. Each row's content may itself be a short list of the named
+// sub-items the guide groups under one AO tag.
+const AO_COLOR = { AO1: "#2E8B84", AO2: "#C9A24B", AO3: "#B3392C" };
+const AO_CONTENT_TABLES = {
+  "1.1": [
+    { content: "The nature of business", ao: "AO1" },
+    { content: "Primary, secondary, tertiary and quaternary sectors", ao: "AO2" },
+    { content: "Entrepreneurship", ao: "AO2" },
+    { content: "Challenges and opportunities for starting a business", ao: "AO2" },
+  ],
+  "1.2": [
+    { content: "Distinction between the private and public sectors", ao: "AO2" },
+    { content: "The main features of sole traders, partnerships, privately held companies and publicly held companies", ao: "AO3" },
+    { content: "The main features of for-profit social enterprises (private sector and public sector) and cooperatives", ao: "AO3" },
+    { content: "The main features of non-profit social enterprises (non-governmental organizations, NGOs)", ao: "AO3" },
+  ],
+  "1.3": [
+    { content: "Vision statement and mission statement", ao: "AO2" },
+    { content: "Common business objectives, including growth, profit, protecting shareholder value and ethical objectives", ao: "AO2" },
+    { content: "Strategic and tactical objectives", ao: "AO3" },
+    { content: "Corporate social responsibility (CSR)", ao: "AO3" },
+  ],
+  "1.4": [
+    { content: "Internal stakeholders", ao: "AO2" },
+    { content: "External stakeholders", ao: "AO2" },
+    { content: "Conflict between stakeholders", ao: "AO2" },
+  ],
+  "1.5": [
+    { content: "Internal economies and diseconomies of scale", ao: "AO2" },
+    { content: "External economies and diseconomies of scale", ao: "AO2" },
+    { content: "The difference between internal and external growth", ao: "AO3" },
+    { content: "Reasons for businesses to grow", ao: "AO3" },
+    { content: "Reasons for businesses to stay small", ao: "AO3" },
+    { content: "External growth methods: mergers and acquisitions, takeovers, joint ventures, strategic alliances and franchising", ao: "AO3" },
+  ],
+  "1.6": [
+    { content: "The impact of multinational companies (MNCs) on host countries", ao: "AO3" },
+  ],
 };
+// Subunits with no AO3 content of their own have no ordinary extended-response question —
+// 1.1 simply has none (Master doesn't appear at all, by design); 1.4's essay is a
+// deliberate synthesis question testing 1.2's AO3 content via 1.4's own stakeholder
+// evidence, which is why it still has one despite the table above being AO2-only.
+// "By the end of this subunit..." outcomes, one checklist per subunit — used both to
+// reframe the Study Guide's AO banner in student-facing language, and to power the
+// Revision module's interactive self-checklist (same data, two presentations).
+const SUBUNIT_OUTCOMES = {
+  "1.1": [
+    "define what a business is, using a real example",
+    "classify a business activity into the primary, secondary, tertiary or quaternary sector",
+    "explain why an economy's structure shifts over time (e.g. from primary/secondary toward tertiary/quaternary)",
+    "describe the role and key qualities of an entrepreneur",
+    "apply all of the above to the Apple case study specifically",
+  ],
+  "1.2": [
+    "state the key differences between a sole trader, partnership, privately held company and publicly held company",
+    "explain unlimited vs. limited liability, and why the difference genuinely matters to an owner",
+    "describe the main features of cooperatives, NGOs and for-profit social enterprises",
+    "evaluate which business entity structure would suit a given scenario, weighing real advantages and disadvantages",
+  ],
+  "1.3": [
+    "distinguish a vision statement from a mission statement",
+    "write an objective and test whether it meets all five SMART criteria",
+    "distinguish strategic objectives from tactical objectives, and explain how they should relate to each other",
+    "evaluate whether a firm's ethical/CSR objectives are genuinely compatible with its financial objectives",
+    "structure a markband 9–10 \"evaluate\" or \"discuss\" essay using the point → explanation → link → evaluation recipe",
+  ],
+  "1.4": [
+    "classify a given stakeholder as internal or external",
+    "describe what different stakeholder groups typically want from a business, and explain why those wants can conflict",
+    "apply stakeholder mapping to classify a stakeholder by level of interest and level of power",
+    "name a genuine limitation of the stakeholder mapping tool",
+  ],
+  "1.5": [
+    "distinguish internal (organic) growth from external growth",
+    "name and describe all five external growth methods (M&A, takeover, joint venture, strategic alliance, franchising)",
+    "distinguish economies of scale from diseconomies of scale",
+    "evaluate why a firm might choose one growth method over another in a specific situation",
+    "evaluate the benefits and drawbacks of franchising for both the franchisor and the franchisee",
+  ],
+  "1.6": [
+    "define what a multinational company is, including the home country/host country distinction",
+    "describe genuine benefits and drawbacks an MNC brings to a host country",
+    "evaluate the impact of a real MNC decision on more than one country's stakeholders at once",
+    "build a balanced \"evaluate\" essay that references specific case facts and explicitly notes a limitation of the case study",
+  ],
+};
+
+
+// Subunits with no AO3 content of their own have no ordinary extended-response question —
+// 1.1 simply has none (Master doesn't appear at all, by design); 1.4's essay is a
+// deliberate synthesis question testing 1.2's AO3 content via 1.4's own stakeholder
+// evidence, which is why it still has one despite the table above being AO2-only.
+const AO_SYNTHESIS_NOTE = {
+  "1.4": "This subunit's own content is entirely AO2 — there's no AO3 line above. The extended response you'll meet in Practice is a deliberate synthesis question instead: it tests 1.2's AO3 content (business entity structure), reasoned through using this subunit's stakeholder evidence.",
+};
+
 function AOSummaryBanner({ subunitId }) {
-  const questions = SUBUNIT_REGISTRY[subunitId]?.questions || [];
-  const vocabCount = questions.filter((q) => q.section === "vocab").length;
-  const structuredCount = questions.filter((q) => q.section === "structured").length;
-  const essayCount = questions.filter((q) => q.section === "essay").length;
-  const active = [
-    vocabCount > 0 && { ...AO_INFO.AO1, count: vocabCount, unit: "vocabulary question" },
-    structuredCount > 0 && { ...AO_INFO.AO2, count: structuredCount, unit: "structured question" },
-    essayCount > 0 && { ...AO_INFO.AO3, count: essayCount, unit: "extended response" },
-  ].filter(Boolean);
-  if (active.length === 0) return null;
+  const rows = AO_CONTENT_TABLES[subunitId];
+  const outcomes = SUBUNIT_OUTCOMES[subunitId];
+  if (!rows) return null;
   return (
     <div className="rounded-lg border bg-white p-3.5 mb-5" style={{ borderColor: "#e7e2d8" }}>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-2">Assessment objectives examined in this subunit&apos;s Practice</div>
-      <div className="flex flex-wrap gap-2">
-        {active.map((a) => (
-          <div key={a.label} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5" style={{ backgroundColor: `${a.color}14` }} title={a.desc}>
-            <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-            <span className="text-[11.5px] font-semibold" style={{ color: a.color }}>{a.label}</span>
-            <span className="text-[11px] text-stone-500">· {a.count} {a.unit}{a.count !== 1 ? "s" : ""}</span>
-          </div>
-        ))}
-      </div>
+      {outcomes && (
+        <>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-2">By the end of this subunit, you should be able to…</div>
+          <ul className="space-y-1 mb-3.5">
+            {outcomes.map((o, i) => (
+              <li key={i} className="text-[12.5px] text-stone-700 leading-snug flex gap-2">
+                <span className="shrink-0" style={{ color: "#2E8B84" }}>✓</span> {o}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <details className="group">
+        <summary className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 cursor-pointer select-none list-none flex items-center gap-1">
+          <ChevronRight size={12} className="transition-transform group-open:rotate-90" /> Official content &amp; assessment objectives
+        </summary>
+        <div className="space-y-1.5 mt-2.5 pt-2.5 border-t" style={{ borderColor: "#e7e2d8" }}>
+          {rows.map((r, i) => (
+            <div key={i} className="flex items-start justify-between gap-3">
+              <span className="text-[12.5px] text-stone-700 leading-snug">{r.content}</span>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
+                style={{ backgroundColor: AO_COLOR[r.ao] }}
+              >
+                {r.ao}
+              </span>
+            </div>
+          ))}
+        </div>
+        {AO_SYNTHESIS_NOTE[subunitId] && (
+          <p className="text-[11.5px] text-stone-500 mt-3 pt-3 border-t" style={{ borderColor: "#e7e2d8" }}>{AO_SYNTHESIS_NOTE[subunitId]}</p>
+        )}
+      </details>
     </div>
   );
 }
@@ -4037,6 +4144,87 @@ function DiagnosticsView({ onBack, role }) {
   );
 }
 
+// ============================================================
+// Self-checklist — the same "by the end of this subunit..." outcomes shown in each
+// Study Guide, gathered into one persisted checklist across all six subunits. Reuses
+// the existing study-progress storage (a "revision-checklist" id is just another row),
+// no new persistence mechanism needed.
+// ============================================================
+function SelfChecklistView({ onBack, role }) {
+  const [checked, setChecked] = useState({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try { setChecked(await loadStudyProgress("revision-checklist")); } catch {}
+      setLoaded(true);
+    })();
+  }, []);
+
+  const toggle = (key) => {
+    setChecked((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveStudyProgress("revision-checklist", next).catch(() => {});
+      return next;
+    });
+  };
+
+  const allItems = UNIT_SUBUNITS.flatMap((s) => (SUBUNIT_OUTCOMES[s.id] || []).map((o, i) => `${s.id}:${i}`));
+  const doneCount = allItems.filter((k) => checked[k]).length;
+
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
+        <div className="mx-auto max-w-3xl">
+          <button
+            onClick={onBack}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 mb-2 text-[11.5px] font-medium text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Revision
+          </button>
+          <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
+            Self-Check Checklist
+          </div>
+          <div className="text-white/70 text-[13px] mt-1">{loaded ? `${doneCount}/${allItems.length} checked` : ""} — tick each box honestly; anything you can&apos;t tick confidently is exactly what to revisit</div>
+        </div>
+      </div>
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        {UNIT_SUBUNITS.map((s) => {
+          const outcomes = SUBUNIT_OUTCOMES[s.id];
+          if (!outcomes) return null;
+          const subDone = outcomes.filter((_, i) => checked[`${s.id}:${i}`]).length;
+          return (
+            <div key={s.id} className="rounded-xl border bg-white p-4 mb-3.5" style={{ borderColor: "#e7e2d8" }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="text-[14px] font-semibold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{s.id} {s.title}</div>
+                <span className="text-[11px] font-semibold text-stone-400">{subDone}/{outcomes.length}</span>
+              </div>
+              <div className="space-y-2">
+                {outcomes.map((o, i) => {
+                  const key = `${s.id}:${i}`;
+                  const isChecked = !!checked[key];
+                  return (
+                    <label key={key} className="flex items-start gap-2.5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggle(key)}
+                        className="mt-0.5 shrink-0 rounded"
+                        style={{ accentColor: "#2E8B84", width: 15, height: 15 }}
+                      />
+                      <span className={`text-[13px] leading-snug ${isChecked ? "text-stone-400 line-through" : "text-stone-700"}`}>I can {o}.</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MockExamPicker({ onBackToMap, onChoose, progressByExam }) {
   return (
     <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
@@ -4095,6 +4283,19 @@ function MockExamPicker({ onBackToMap, onChoose, progressByExam }) {
             <div className="flex-1 min-w-0">
               <div className="text-[14.5px] font-semibold text-stone-800">Diagnostics</div>
               <div className="text-[12px] text-stone-500">See your accuracy by subunit, and get a short practice set targeting your weak spots.</div>
+            </div>
+          </button>
+          <button
+            onClick={() => onChoose("checklist")}
+            className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm flex items-center gap-4"
+            style={{ borderColor: "#e7e2d8" }}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: "#15396B" }}>
+              <CheckCircle2 size={19} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14.5px] font-semibold text-stone-800">Self-Check Checklist</div>
+              <div className="text-[12px] text-stone-500">Every &quot;by the end of this subunit&quot; outcome across 1.1–1.6, in one tickable list.</div>
             </div>
           </button>
           <button
@@ -4388,6 +4589,9 @@ function MockExamView({ onBackToMap, role }) {
   }
   if (examId === "diagnostics") {
     return <DiagnosticsView onBack={() => setExamId(null)} role={role} />;
+  }
+  if (examId === "checklist") {
+    return <SelfChecklistView onBack={() => setExamId(null)} role={role} />;
   }
   if (examId === "glossary") {
     return <GlossaryView onBack={() => setExamId(null)} role={role} />;
