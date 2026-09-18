@@ -707,6 +707,50 @@ const QUESTIONS_1_6 = [
     rubric: `Mark using the official IB markbands below. A strong answer evaluates both host-country perspectives in depth: India (job creation, technology transfer, the new Tata Electronics/Foxconn plants in Tamil Nadu and Karnataka, rising production share from ~5-7% to ~25%) as a likely net beneficiary, against China (loss of manufacturing employment and investment, and reduced hiring at its largest single site, Zhengzhou's "iPhone City", as production diversifies elsewhere — though China retains the majority of Apple's production for now). A strong answer should explicitly note what the case study doesn't establish — for example, exact job numbers gained in India or lost in China, or how individual workers (rather than governments or corporations) are affected.\n\nMARKBANDS:\n${MARKBANDS}` },
 ];
 
+// ============================================================
+// REVISION — Paper 1-style mock exam (Apple case study, cumulative across 1.1–1.6)
+// Structure matches a real IB Business Management Paper 1: one continuous case study,
+// Section A (5 compulsory questions, 2+2+4+6+6 = 20 marks), Section B (choose 1 of 2
+// extended-response questions, 10 marks) — 30 marks total, matching the real exam.
+// ============================================================
+const REVISION_CASE_TEXT = `Apple Inc. designs, manufactures and sells consumer electronics and services worldwide. Apple was founded in 1976 in a garage in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially operating as a general partnership. Wayne, concerned about the unlimited liability exposure of the partnership structure, sold his 10% stake for $800 within weeks. In 1977 the business incorporated, and in 1980 it became a publicly held company through an initial public offering (IPO) that raised approximately $101 million.
+
+Apple's mission is to deliver the best user experience to customers through innovative hardware, software and services. Beyond its mission, Apple has published seven official corporate values, including environment, privacy and supplier responsibility. In FY2025, Apple reported record revenue of $416.16 billion and record net income of $112.01 billion, alongside record research and development spending of $34.55 billion.
+
+Apple's stakeholders are wide-ranging. Shareholders received $29 billion in a single quarter of FY2025 through dividends and share buy-backs. Apple employs roughly 164,000 people worldwide, but does not own the factories that assemble most of its hardware; production is contracted to partners such as Foxconn and Pegatron. Independent labour-rights investigators, including China Labor Watch, have repeatedly raised concerns about excessive overtime and the use of temporary agency labour at these partner factories, findings which Apple and Foxconn have partly acknowledged. Apple has pledged to be carbon neutral across its supply chain by 2030, and by 2024 more than 320 of its suppliers had committed to 100% renewable energy for Apple production, although independent researchers note that some suppliers' actual emissions have fallen only slightly. In 2016, the European Commission ruled that Ireland had granted Apple illegal "state aid" through favourable tax arrangements, worth up to €13 billion; after appeal, the EU's top court reinstated this decision in 2024.
+
+Apple's growth has combined internal (organic) expansion — from a single computer line into an ecosystem spanning the Mac, iPhone, iPad, Apple Watch, AirPods and a fast-growing Services division — with more than 100 small, targeted acquisitions over its history, almost always of specialist technology or talent rather than direct competitors. Its largest acquisition to date, Beats Electronics in 2014, cost approximately $3 billion. In 2014, Apple also entered a strategic alliance with IBM, under which both companies remained fully independent while co-developing business software for corporate customers. Apple has never pursued a merger, a joint venture or franchising as a growth method.
+
+Apple's enormous purchasing volumes allow it to negotiate lower component prices than smaller rivals, an example of internal economies of scale. Apple's contract manufacturers also benefit from external economies of scale: the clustering of suppliers, skilled labour and infrastructure around manufacturing hubs such as Shenzhen, China, lowers costs for every electronics firm based there, not just Apple. During the mid-1990s, before Jobs returned to the company, Apple sold dozens of overlapping Macintosh models. This complexity led to confused customers, duplicated costs and slow decision-making — a widely cited example of diseconomies of scale — and contributed to heavy losses that nearly bankrupted the company.
+
+Apple is a clear example of a multinational company (MNC), headquartered in the United States but manufacturing and selling in host countries worldwide. For decades, the vast majority of Apple's hardware was assembled in China. Since around 2022, in response to geopolitical risk and US-China trade tariffs, Apple has pursued a "China+1" diversification strategy. India's share of iPhone production rose from roughly 5-7% in 2022 to about 25% by 2026, with new factories opened in Tamil Nadu and Karnataka; by mid-2025, India had overtaken China as the leading source of smartphones imported into the United States. Vietnam's share of US smartphone imports also rose sharply over the same period, and Vietnam has become the primary production base for the iPad, Mac, Apple Watch and AirPods. Meanwhile, Foxconn's Zhengzhou plant in China — once home to as many as 300,000 workers and known locally as "iPhone City" — has reportedly been hiring less as Apple's production diversifies elsewhere, a shift that accelerated after worker unrest at the plant during a COVID-19 lockdown in 2022. China continues to host the majority of Apple's overall manufacturing today, so this remains a gradual diversification rather than a withdrawal.
+
+Apple's board is now considering two further strategic decisions. The first is a proposed strategic alliance with a solar-technology start-up, SunCell Energy, to co-develop more energy-efficient charging components; both firms would remain fully independent. Some of Apple's own shareholders have questioned whether the alliance is worth the investment given SunCell's unproven technology, while Apple's environmental team argues it fits Apple's carbon-neutral commitments. The second is a proposed acquisition of Loop Recyclers, a small specialist firm that recovers rare-earth metals from discarded electronics, for $450 million. Loop Recyclers currently operates only in the United States, but Apple's board is evaluating whether to expand Loop's operations into new host countries as part of the acquisition.`;
+
+const REVISION_SECTION_A = [
+  { id: "ra1", section: "vocab", label: "Section A", num: 1, prompt: "Define the term entrepreneur.", marks: 2,
+    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "someone who organizes, operates and assumes the risk of a business venture."` },
+  { id: "ra2", section: "vocab", label: "Section A", num: 2, prompt: "State two features of a general partnership.", marks: 2,
+    rubric: `Award 1 mark per correct feature stated (e.g. two or more owners; typically unlimited liability for partners; often formalized by a deed of partnership; profits/losses shared between partners). No development needed — this is a "state" command term.` },
+  { id: "ra3", section: "structured", label: "Section A", num: 3, prompt: "Describe two of Apple's ethical or corporate social responsibility (CSR) commitments mentioned in the case study.", marks: 4,
+    rubric: `Mark as 2+2. For each commitment, 1 mark identify (e.g. carbon neutrality across the supply chain by 2030; suppliers committing to 100% renewable energy) and 1 mark develop with case detail (e.g. by 2024, over 320 suppliers had made this commitment, though independent researchers note some suppliers' emissions have fallen only slightly).` },
+  { id: "ra4", section: "structured", label: "Section A", num: 4, prompt: "Explain two reasons why Apple's contract manufacturers benefit from external economies of scale.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. clustering of suppliers, skilled labour and infrastructure around hubs like Shenzhen), 1 mark explain the mechanism (external economies benefit every firm in that location, not just one), 1 mark apply accurately to the case (naming Shenzhen, China, specifically as given in the case).` },
+  { id: "ra5", section: "structured", label: "Section A", num: 5, prompt: "Explain two reasons why Apple has diversified its iPhone production away from China since around 2022.", marks: 6,
+    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. geopolitical risk and US-China trade tariffs; the 2022 Zhengzhou worker unrest exposing single-site concentration risk), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. India's iPhone production share rising from ~5-7% in 2022 to ~25% by 2026; new factories in Tamil Nadu and Karnataka; Vietnam becoming the primary base for iPad/Mac/Watch/AirPods).` },
+];
+
+const REVISION_SECTION_B = [
+  { id: "rb1", section: "essay", label: "Section B", num: 6,
+    prompt: "Discuss whether Apple should proceed with the proposed strategic alliance with SunCell Energy.",
+    marks: 10,
+    rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's carbon-neutral commitments and stated environmental values; a strategic alliance lets Apple access new technology while both firms remain independent, limiting risk compared to a full acquisition) against the case AGAINST (some shareholders question SunCell's unproven technology and whether the investment is worthwhile; no financial detail on the alliance's cost or expected return is given in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no figures on the alliance's cost, expected savings, or timeline, making a fully-reasoned financial judgement impossible from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+  { id: "rb2", section: "essay", label: "Section B", num: 7,
+    prompt: "Discuss whether Apple should proceed with the proposed acquisition of Loop Recyclers, including expanding its operations into new host countries.",
+    marks: 10,
+    rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's environmental/CSR objectives and supply-chain sustainability goals; an acquisition, unlike a strategic alliance, gives Apple full control over Loop's operations and technology; expanding into new host countries could bring the standard MNC benefits of a larger customer/supplier base) against the case AGAINST (a $450 million acquisition is a significant commitment for a currently US-only specialist firm; expanding a small, specialist operation into new host countries carries real execution risk and potential host-country vulnerability/regulatory issues not detailed in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no detail on which host countries are being considered, or on Loop's current profitability, making it impossible to fully assess the expansion risk from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+];
+
 const SUBUNIT_REGISTRY = {
   "1.1": {
     title: "What is a business?",
@@ -3256,7 +3300,7 @@ function HubTile({ title, desc, Icon, color, onClick, disabled, badge, progressL
 // ============================================================
 function UnitMapToken({ node, x, y, onClick, lockedReason }) {
   const isRevision = node.isRevision;
-  const locked = isRevision ? true : !node.unlocked;
+  const locked = !node.unlocked;
   const pct = node.progressPct || 0;
   const complete = !locked && pct >= 100;
   const size = isRevision ? 88 : 74;
@@ -3326,7 +3370,9 @@ function UnitMapToken({ node, x, y, onClick, lockedReason }) {
         disabled={locked}
         aria-label={
           isRevision
-            ? "Revision — coming soon"
+            ? locked
+              ? `Revision — locked. ${lockedReason || ""}`
+              : "Revision — Unit 1 mock exam, ready to start"
             : locked
             ? `Unit ${node.id}: ${node.title} — locked. ${lockedReason || ""}`
             : `Unit ${node.id}: ${node.title} — ${pct}% complete`
@@ -3537,6 +3583,118 @@ function ClassMembershipInfo({ classInfo, onJoined }) {
   );
 }
 
+// ============================================================
+// Revision — Paper 1-style mock exam. Deliberately its own standalone flow (not the
+// Discover/Build/Apply/Master stage machinery) since a mock exam is fundamentally a
+// one-sitting experience, not a resettable practice loop — case study, then Section A
+// (all compulsory), then Section B (choose one), then a final mark total.
+// ============================================================
+function MockExamView({ onBackToMap }) {
+  const [state, setState] = useState({});
+  const [chosenEssayId, setChosenEssayId] = useState(null);
+
+  const onChangeAnswer = useCallback((id, text) => {
+    setState((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), answer: text, status: "idle" } }));
+  }, []);
+
+  const onSubmit = useCallback(async (question) => {
+    setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "loading" } }));
+    try {
+      const prevEntry = state[question.id] || {};
+      const result = await gradeAnswer(question, prevEntry.answer || "", REVISION_CASE_TEXT);
+      setState((prev) => ({
+        ...prev,
+        [question.id]: { answer: prevEntry.answer || "", status: "graded", score: result.score, feedback: result.feedback, tip: result.tip },
+      }));
+    } catch (err) {
+      setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "error", errorMsg: err.message || "Marking failed." } }));
+    }
+  }, [state]);
+
+  const onEditAgain = useCallback((id) => {
+    setState((prev) => ({ ...prev, [id]: { ...prev[id], status: "idle" } }));
+  }, []);
+
+  const chosenEssay = REVISION_SECTION_B.find((q) => q.id === chosenEssayId) || null;
+  const sectionADone = REVISION_SECTION_A.filter((q) => state[q.id]?.status === "graded").length;
+  const essayGraded = chosenEssay && state[chosenEssay.id]?.status === "graded";
+  const examComplete = sectionADone === REVISION_SECTION_A.length && essayGraded;
+  const totalPossible = REVISION_SECTION_A.reduce((s, q) => s + q.marks, 0) + 10;
+  const totalEarned = REVISION_SECTION_A.reduce((s, q) => s + (state[q.id]?.score || 0), 0) + (essayGraded ? state[chosenEssay.id].score : 0);
+
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
+        <div className="mx-auto max-w-3xl">
+          <button
+            onClick={onBackToMap}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 mb-2 text-[11.5px] font-medium text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Unit map
+          </button>
+          <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
+            Unit 1 Mock Exam
+          </div>
+          <div className="text-white/70 text-[13px] mt-1">Paper 1 style · 30 marks · Apple case study, cumulative across 1.1–1.6</div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        <div className="mb-5 rounded-lg border bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800" style={{ borderColor: "#f0dfb8" }}>
+          Instructions: read the case study carefully. Section A: answer all questions. Section B: answer <strong>one</strong> question. Answers are marked by AI using the same rigor as your regular practice questions.
+        </div>
+
+        <div className="mb-6 rounded-lg border bg-white" style={{ borderColor: "#e7e2d8" }}>
+          <ReadingPanel caseText={REVISION_CASE_TEXT} />
+        </div>
+
+        <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section A</h2>
+        <p className="text-[12.5px] text-stone-500 mb-4">Answer all questions from this section. ({sectionADone}/{REVISION_SECTION_A.length} marked)</p>
+        {REVISION_SECTION_A.map((q) => (
+          <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={REVISION_CASE_TEXT} />
+        ))}
+
+        <h2 className="text-[15px] font-bold mb-1 mt-8" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section B</h2>
+        <p className="text-[12.5px] text-stone-500 mb-4">Answer <strong>one</strong> question from this section.</p>
+        {!chosenEssayId ? (
+          <div className="space-y-3">
+            {REVISION_SECTION_B.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => setChosenEssayId(q.id)}
+                className="w-full text-left rounded-lg border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm"
+                style={{ borderColor: "#e7e2d8" }}
+              >
+                <div className="text-[13px] text-stone-800 leading-snug">{q.num}. {q.prompt}</div>
+                <div className="text-[11.5px] text-stone-400 mt-1">[{q.marks} marks]</div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            {!essayGraded && (
+              <button onClick={() => setChosenEssayId(null)} className="mb-3 text-[12.5px] font-medium hover:underline" style={{ color: "#15396B" }}>
+                ← Choose a different question
+              </button>
+            )}
+            <QuestionCard question={chosenEssay} state={state[chosenEssay.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={REVISION_CASE_TEXT} />
+          </>
+        )}
+
+        {examComplete && (
+          <div className="mt-8 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
+            <Trophy size={32} style={{ color: "#C9A24B" }} className="mx-auto mb-2" />
+            <div className="text-[15px] font-semibold text-stone-600 mb-1">Mock exam complete</div>
+            <div className="text-[28px] font-bold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{totalEarned} / {totalPossible}</div>
+            <p className="text-[12.5px] text-stone-500 mt-2">Review the feedback on each question above — click &quot;Edit again&quot; on any question to revise and resubmit.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState(emptyProfile());
@@ -3581,9 +3739,11 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
     if (role === "teacher" || role === "admin") return true;
     return TESTING_UNLOCK_ALL_SUBUNITS || i === 0 || subunitProgress[i - 1] >= 100;
   });
+  const allSubunitsComplete = subunitProgress.every((p) => p >= 100);
+  const revisionUnlocked = role === "teacher" || role === "admin" || allSubunitsComplete;
   const allNodes = [
     ...UNIT_SUBUNITS.map((s, i) => ({ ...s, unlocked: subunitUnlocked[i], progressPct: subunitProgress[i] })),
-    { id: "revision", isRevision: true, title: "Cumulative review across all of Unit 1" },
+    { id: "revision", isRevision: true, unlocked: revisionUnlocked, title: "Cumulative review across all of Unit 1" },
   ];
   const stepY = 172;
   const topPad = 66;
@@ -3699,7 +3859,7 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
               x={nodeX(i)}
               y={nodeY(i)}
               onClick={() => onSelectSubunit(n.id)}
-              lockedReason={n.isRevision ? "Coming soon" : i > 0 ? `Complete ${allNodes[i - 1].id} first` : null}
+              lockedReason={n.isRevision ? "Complete all 6 subunits first" : i > 0 ? `Complete ${allNodes[i - 1].id} first` : null}
             />
           </div>
         ))}
@@ -4308,7 +4468,10 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
     return (
       <FadeIn key="unitmap" className="min-h-full">
         <UnitMapView
-          onSelectSubunit={(id) => { if (SUBUNIT_CONTENT_IDS.includes(id)) { setCurrentSubunitId(id); setView("hub"); } }}
+          onSelectSubunit={(id) => {
+            if (id === "revision") { setView("revision"); return; }
+            if (SUBUNIT_CONTENT_IDS.includes(id)) { setCurrentSubunitId(id); setView("hub"); }
+          }}
           role={roleInfo.role}
           classInfo={roleInfo.className ? { className: roleInfo.className, teacherEmail: roleInfo.teacherEmail } : null}
           onJoinedClass={(result) => setRoleInfo((prev) => ({
@@ -4321,6 +4484,9 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         <FeedbackTile page="Unit map" />
       </FadeIn>
     );
+  }
+  if (view === "revision") {
+    return <FadeIn key="revision" className="min-h-full"><MockExamView onBackToMap={() => setView("unitmap")} /><FeedbackTile page="Unit 1 mock exam" /></FadeIn>;
   }
   if (view === "hub") {
     return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} role={roleInfo.role} /><FeedbackTile page={`Subunit hub — ${currentSubunitId}`} /></FadeIn>;
