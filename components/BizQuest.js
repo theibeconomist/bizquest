@@ -240,6 +240,90 @@ function PaneContinueBar({ stageKey, stats, onAdvance }) {
   );
 }
 
+// Shared by every case-study-plus-questions layout (regular Practice, and the mock
+// exam) — a resizable split pane: case study on the left, questions on the right,
+// stacked on mobile. Extracted once so both places behave identically rather than
+// drifting into two slightly different implementations.
+function useSplitPane() {
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const [splitPercent, setSplitPercent] = useState(38);
+  const [isDragging, setIsDragging] = useState(false);
+  const splitContainerRef = useRef(null);
+
+  const onDividerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e) => {
+      if (!splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const pct = ((clientX - rect.left) / rect.width) * 100;
+      setSplitPercent(Math.min(65, Math.max(22, pct)));
+    };
+    const onUp = () => setIsDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove);
+    window.addEventListener("touchend", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+  }, [isDragging]);
+
+  return { isDesktop, splitPercent, isDragging, splitContainerRef, onDividerMouseDown };
+}
+
+// A ready-to-use split pane: pass the case study text and the right-hand content.
+function SplitPane({ caseText, children }) {
+  const { isDesktop, splitPercent, isDragging, splitContainerRef, onDividerMouseDown } = useSplitPane();
+  return (
+    <div
+      ref={splitContainerRef}
+      className="flex flex-col sm:flex-row rounded-lg border overflow-hidden"
+      style={{ borderColor: "#e7e2d8", height: isDesktop ? 600 : "auto", userSelect: isDragging ? "none" : "auto" }}
+    >
+      <div
+        className="bg-white"
+        style={{ width: isDesktop ? `${splitPercent}%` : "100%", height: isDesktop ? "100%" : "auto", minHeight: 0, overflowY: isDesktop ? "auto" : "visible" }}
+      >
+        <ReadingPanel caseText={caseText} />
+      </div>
+
+      {isDesktop && (
+        <div
+          onMouseDown={onDividerMouseDown}
+          onTouchStart={onDividerMouseDown}
+          className="hidden sm:flex items-center justify-center shrink-0"
+          style={{ width: 14, cursor: "col-resize", backgroundColor: isDragging ? "#EAF1F8" : "#F5F3EE", borderLeft: "1px solid #e7e2d8", borderRight: "1px solid #e7e2d8" }}
+          title="Drag to resize"
+        >
+          <div className="w-1 rounded-full" style={{ height: 36, backgroundColor: "#c9c2b3" }} />
+        </div>
+      )}
+
+      <div
+        className="bg-white px-0"
+        style={{ width: isDesktop ? `${100 - splitPercent}%` : "100%", height: isDesktop ? "100%" : "auto", minHeight: 0, overflowY: isDesktop ? "auto" : "visible" }}
+      >
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function ReadingPanel({ caseText }) {
   return (
     <div className="px-5 py-4">
@@ -4232,12 +4316,13 @@ function MockExamPicker({ onBackToMap, onChoose, progressByExam }) {
             <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Unit map
           </button>
           <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
-            Unit 1 Mock Exam
+            Unit 1 Revision
           </div>
-          <div className="text-white/70 text-[13px] mt-1">Paper 1 style · 30 marks each · three independent Apple case studies</div>
+          <div className="text-white/70 text-[13px] mt-1">Mock exams, a diagnostic practice tool, a self-check checklist, and every key term and definition in one place</div>
         </div>
       </div>
       <div className="mx-auto max-w-3xl px-5 py-6">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-2">Mock Exams</div>
         <p className="text-[13px] text-stone-500 mb-5">Pick a variant. Each is a complete, separate exam with its own case study and its own saved progress — do one now and the others another day.</p>
         <div className="space-y-3">
           {REVISION_EXAMS.map((exam, i) => {
@@ -4267,6 +4352,7 @@ function MockExamPicker({ onBackToMap, onChoose, progressByExam }) {
         </div>
 
         <div className="mt-6 pt-5 border-t space-y-3" style={{ borderColor: "#e7e2d8" }}>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-2">More revision tools</div>
           <button
             onClick={() => onChoose("diagnostics")}
             className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#B3392C] hover:shadow-sm flex items-center gap-4"
@@ -4497,8 +4583,8 @@ function MockExamRunner({ exam, onBackToMap, onChangeExam, role }) {
       {loaded && !timeMode ? (
         <TimeModeGate examTitle={exam.title} onChoose={chooseTimeMode} />
       ) : (
-        <div className="mx-auto max-w-3xl px-5 py-6">
-          <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+        <div className="mx-auto max-w-5xl px-5 py-6">
+          <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
             <div className="rounded-lg border bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800 flex-1 min-w-[200px]" style={{ borderColor: "#f0dfb8" }}>
               Instructions: read the case study carefully. Section A: answer all questions. Section B: answer <strong>one</strong> question. Answers are marked by AI using the same rigor as your regular practice questions.
             </div>
@@ -4515,51 +4601,49 @@ function MockExamRunner({ exam, onBackToMap, onChangeExam, role }) {
           </div>
           <button onClick={onChangeExam} className="mb-4 text-[12px] font-medium hover:underline" style={{ color: "#15396B" }}>← Choose a different mock exam</button>
 
-          <div className="mb-6 rounded-lg border bg-white" style={{ borderColor: "#e7e2d8" }}>
-            <ReadingPanel caseText={exam.caseText} />
-          </div>
+          <SplitPane caseText={exam.caseText}>
+            <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section A</h2>
+            <p className="text-[12.5px] text-stone-500 mb-4">Answer all questions from this section. ({sectionADone}/{exam.sectionA.length} marked)</p>
+            {exam.sectionA.map((q) => (
+              <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
+            ))}
 
-          <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section A</h2>
-          <p className="text-[12.5px] text-stone-500 mb-4">Answer all questions from this section. ({sectionADone}/{exam.sectionA.length} marked)</p>
-          {exam.sectionA.map((q) => (
-            <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
-          ))}
+            <h2 className="text-[15px] font-bold mb-1 mt-8" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section B</h2>
+            <p className="text-[12.5px] text-stone-500 mb-4">Answer <strong>one</strong> question from this section.</p>
+            {!chosenEssayId ? (
+              <div className="space-y-3">
+                {exam.sectionB.map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setChosenEssayId(q.id)}
+                    className="w-full text-left rounded-lg border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm"
+                    style={{ borderColor: "#e7e2d8" }}
+                  >
+                    <div className="text-[13px] text-stone-800 leading-snug">{q.num}. {q.prompt}</div>
+                    <div className="text-[11.5px] text-stone-400 mt-1">[{q.marks} marks]</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <>
+                {!essayGraded && (
+                  <button onClick={() => setChosenEssayId(null)} className="mb-3 text-[12.5px] font-medium hover:underline" style={{ color: "#15396B" }}>
+                    ← Choose a different question
+                  </button>
+                )}
+                <QuestionCard question={chosenEssay} state={state[chosenEssay.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
+              </>
+            )}
 
-          <h2 className="text-[15px] font-bold mb-1 mt-8" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section B</h2>
-          <p className="text-[12.5px] text-stone-500 mb-4">Answer <strong>one</strong> question from this section.</p>
-          {!chosenEssayId ? (
-            <div className="space-y-3">
-              {exam.sectionB.map((q) => (
-                <button
-                  key={q.id}
-                  onClick={() => setChosenEssayId(q.id)}
-                  className="w-full text-left rounded-lg border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm"
-                  style={{ borderColor: "#e7e2d8" }}
-                >
-                  <div className="text-[13px] text-stone-800 leading-snug">{q.num}. {q.prompt}</div>
-                  <div className="text-[11.5px] text-stone-400 mt-1">[{q.marks} marks]</div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <>
-              {!essayGraded && (
-                <button onClick={() => setChosenEssayId(null)} className="mb-3 text-[12.5px] font-medium hover:underline" style={{ color: "#15396B" }}>
-                  ← Choose a different question
-                </button>
-              )}
-              <QuestionCard question={chosenEssay} state={state[chosenEssay.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
-            </>
-          )}
-
-          {examComplete && (
-            <div className="mt-8 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
-              <Trophy size={32} style={{ color: "#C9A24B" }} className="mx-auto mb-2" />
-              <div className="text-[15px] font-semibold text-stone-600 mb-1">{exam.title} complete</div>
-              <div className="text-[28px] font-bold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{totalEarned} / {totalPossible}</div>
-              <p className="text-[12.5px] text-stone-500 mt-2">Review the feedback on each question above — click &quot;Edit again&quot; on any question to revise and resubmit.</p>
-            </div>
-          )}
+            {examComplete && (
+              <div className="mt-8 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
+                <Trophy size={32} style={{ color: "#C9A24B" }} className="mx-auto mb-2" />
+                <div className="text-[15px] font-semibold text-stone-600 mb-1">{exam.title} complete</div>
+                <div className="text-[28px] font-bold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{totalEarned} / {totalPossible}</div>
+                <p className="text-[12.5px] text-stone-500 mt-2">Review the feedback on each question above — click &quot;Edit again&quot; on any question to revise and resubmit.</p>
+              </div>
+            )}
+          </SplitPane>
         </div>
       )}
     </div>
@@ -5056,43 +5140,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
   }, [currentStage]);
 
   // ---- Split-pane (Reading | Questions) with independent scroll + draggable divider ----
-  const [isDesktop, setIsDesktop] = useState(true);
-  useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth >= 640);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  const [splitPercent, setSplitPercent] = useState(38);
-  const [isDragging, setIsDragging] = useState(false);
-  const splitContainerRef = useRef(null);
-
-  const onDividerMouseDown = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-  useEffect(() => {
-    if (!isDragging) return;
-    const onMove = (e) => {
-      if (!splitContainerRef.current) return;
-      const rect = splitContainerRef.current.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const pct = ((clientX - rect.left) / rect.width) * 100;
-      setSplitPercent(Math.min(65, Math.max(22, pct)));
-    };
-    const onUp = () => setIsDragging(false);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove);
-    window.addEventListener("touchend", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onUp);
-    };
-  }, [isDragging]);
+  const { isDesktop, splitPercent, isDragging, splitContainerRef, onDividerMouseDown } = useSplitPane();
 
   const announceBadges = useCallback((newly) => {
     if (!newly || newly.length === 0) return;
