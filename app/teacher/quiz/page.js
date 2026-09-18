@@ -5,7 +5,9 @@ import QuizGame from "@/components/QuizGame";
 import SignOutButton from "@/components/SignOutButton";
 import ProfileButton from "@/components/ProfileButton";
 
-export default async function TeacherQuizPage() {
+export default async function TeacherQuizPage({ searchParams }) {
+  const params = await searchParams;
+  const initialSubunitId = params?.subunit || null;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -26,9 +28,9 @@ export default async function TeacherQuizPage() {
           Quiz Game
         </h1>
         <p className="text-[13px] text-stone-500 mb-6">
-          A quick, competitive review game for any subunit — pick teams and how they&apos;ll answer, then go.
+          Pick a subunit, set up teams, and go.
         </p>
-        <QuizGame />
+        <QuizGame initialSubunitId={initialSubunitId} />
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -35,8 +35,8 @@ function pickRandomTeamId(teams, excludeId) {
 // ============================================================
 // Setup screen — shared by both modes
 // ============================================================
-function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
-  const [subunitId, setSubunitId] = useState("1.1");
+function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, initialSubunitId }) {
+  const [subunitId, setSubunitId] = useState(initialSubunitId && SUBUNIT_OPTIONS.some((s) => s.id === initialSubunitId) ? initialSubunitId : "1.1");
   const [allUnit, setAllUnit] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
   const [mode, setMode] = useState("single_screen");
@@ -78,7 +78,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
   const removeTeam = (i) => setTeamNames((prev) => prev.filter((_, idx) => idx !== i));
 
   const onStart = () => {
-    const questions = getQuizQuestions(subunitId, questionCount, { allUnit });
+    const questions = getQuizQuestions(subunitId, questionCount, { allUnit }).map(shuffleOptions);
     const label = allUnit ? "All of Unit 1" : subunitId;
     if (mode === "single_screen") {
       const names = teamNames.map((t) => t.trim()).filter(Boolean);
@@ -91,10 +91,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
 
   return (
     <div className="max-w-xl mx-auto bg-white rounded-xl border border-stone-200 p-6">
-      <h2 className="text-[18px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>Set up a quiz game</h2>
-      <p className="text-[13px] text-stone-500 mb-5">
-        Mostly theory, ordered easy → hard as you go, with Apple case-study questions saved as higher-value bonus rounds at the end. Each question gets randomly assigned to one team to answer.
-      </p>
+      <h2 className="text-[18px] font-semibold mb-5" style={{ fontFamily: "'Lora', serif", color: NAVY }}>Set up a quiz game</h2>
 
       <div className="mb-4">
         <label className="flex items-center gap-2 text-[12.5px] font-medium text-stone-600 mb-2">
@@ -241,7 +238,8 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
     const winner = sorted[0];
     const isTie = sorted.length > 1 && sorted[1].score === winner.score;
     return (
-      <div className="max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center">
+      <div className="relative max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center overflow-hidden">
+        {!isTie && <Confetti />}
         <Trophy size={40} style={{ color: GOLD }} className="mx-auto mb-3" />
         <h2 className="text-[20px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
           {isTie ? "It's a tie!" : `${winner.name} wins!`}
@@ -286,19 +284,20 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
           {question.options.map((opt, i) => {
             const isCorrectOpt = i === question.correct;
             const isChosen = i === selected;
-            let style = { borderColor: "#e7e2d8" };
-            if (revealed && isCorrectOpt) style = { borderColor: GREEN, backgroundColor: "#EAF5F3" };
-            else if (revealed && isChosen) style = { borderColor: RED, backgroundColor: "#FBEFED" };
+            let state = "idle";
+            if (revealed && isCorrectOpt) state = "correct";
+            else if (revealed && isChosen) state = "incorrect";
+            else if (revealed) state = "muted";
             return (
-              <button
+              <OptionButton
                 key={i}
+                letter={OPTION_LETTERS[i]}
+                color={OPTION_COLORS[i]}
+                text={opt}
                 onClick={() => choose(i)}
                 disabled={revealed}
-                className="w-full text-left rounded-lg border px-4 py-3 text-[14px] text-stone-700 transition disabled:cursor-default"
-                style={style}
-              >
-                {opt}
-              </button>
+                state={state}
+              />
             );
           })}
         </div>
@@ -420,7 +419,8 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     const winner = sorted[0];
     const isTie = sorted.length > 1 && sorted[1]?.score === winner?.score;
     return (
-      <div className="max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center">
+      <div className="relative max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center overflow-hidden">
+        {!isTie && <Confetti />}
         <Trophy size={40} style={{ color: GOLD }} className="mx-auto mb-3" />
         <h2 className="text-[20px] font-semibold mb-5" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
           {isTie ? "It's a tie!" : `${winner?.name} wins!`}
@@ -459,13 +459,14 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
         <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
         <div className="space-y-2.5">
           {question.options.map((opt, i) => (
-            <div
+            <OptionButton
               key={i}
-              className="w-full rounded-lg border px-4 py-3 text-[14px] text-stone-700"
-              style={game.revealed && i === question.correct ? { borderColor: GREEN, backgroundColor: "#EAF5F3" } : { borderColor: "#e7e2d8" }}
-            >
-              {opt}
-            </div>
+              letter={OPTION_LETTERS[i]}
+              color={OPTION_COLORS[i]}
+              text={opt}
+              disabled
+              state={game.revealed && i === question.correct ? "correct" : "idle"}
+            />
           ))}
         </div>
         <div className="mt-5 flex justify-end gap-2">
@@ -484,7 +485,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   );
 }
 
-export default function QuizGame() {
+export default function QuizGame({ initialSubunitId }) {
   const [phase, setPhase] = useState("setup"); // "setup" | "single" | "multi"
   const [config, setConfig] = useState(null);
   const [creatingGame, setCreatingGame] = useState(false);
@@ -495,5 +496,5 @@ export default function QuizGame() {
 
   if (phase === "single") return <SingleScreenGame {...config} onExit={exit} />;
   if (phase === "multi") return <MultiDeviceHost {...config} onExit={exit} />;
-  return <QuizSetup onStartSingleScreen={startSingle} onStartMultiDevice={startMulti} creatingGame={creatingGame} />;
+  return <QuizSetup onStartSingleScreen={startSingle} onStartMultiDevice={startMulti} creatingGame={creatingGame} initialSubunitId={initialSubunitId} />;
 }

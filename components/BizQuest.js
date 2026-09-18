@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Loader2, Send, Pencil, CheckCircle2, AlertCircle, Sparkles, BookOpen, PlayCircle, Lock, Trophy, Award, Clock, RefreshCw, ChevronRight, ArrowLeft, Layers, Shuffle, ChevronLeft, RotateCw, Bot, MessageCircle, X, Building2, Factory, Lightbulb, TrendingUp } from "lucide-react";
 import {
@@ -3735,6 +3736,7 @@ function ModuleHeader({ themeColor, onBack, ModuleIcon, moduleName, progressLine
 }
 
 function SubunitHub({ onSelectView, onBackToMap, subunitId, role }) {
+  const router = useRouter();
   const subunit = SUBUNIT_REGISTRY[subunitId];
   const QUESTIONS = subunit.questions;
   const FLASHCARD_TERMS = subunit.flashcardTerms;
@@ -3826,8 +3828,8 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId, role }) {
       </div>
 
       <div className="mx-auto max-w-4xl px-5 py-8">
-        <p className="text-[13px] text-stone-500 mb-5">Choose how you'd like to work through this subunit.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <p className="text-[13px] text-stone-500 mb-5">Choose how you&apos;d like to work through this subunit.</p>
+        <div className={`grid grid-cols-1 sm:grid-cols-3 ${(role === "teacher" || role === "admin") ? "md:grid-cols-4" : ""} gap-4`}>
           <HubTile
             title="Study"
             desc="A guided walkthrough of the core ideas, with a quick activity in each section."
@@ -3855,6 +3857,16 @@ function SubunitHub({ onSelectView, onBackToMap, subunitId, role }) {
             progressLabel={loaded ? `${practiceProgress.done}/${practiceProgress.total}` : null}
             progressPercent={loaded ? (practiceProgress.done / practiceProgress.total) * 100 : 0}
           />
+          {(role === "teacher" || role === "admin") && (
+            <HubTile
+              title="Quiz Game"
+              desc="Run a fast-paced review game with your class, split into teams."
+              Icon={Trophy}
+              color="#C9A24B"
+              onClick={() => router.push(`/teacher/quiz?subunit=${subunitId}`)}
+              badge="Teacher"
+            />
+          )}
         </div>
       </div>
     </div>

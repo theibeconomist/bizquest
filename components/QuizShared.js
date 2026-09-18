@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Trophy, Shuffle, Sparkles } from "lucide-react";
+import { Trophy, Shuffle, Sparkles, CheckCircle2, XCircle } from "lucide-react";
 
 export const QUIZ_NAVY = "#15396B";
 export const QUIZ_GOLD = "#C9A24B";
@@ -25,6 +25,94 @@ export function DifficultyBadge({ question }) {
 }
 
 // Lightweight CSS confetti burst — no external library, just a handful of animated dots.
+export const OPTION_LETTERS = ["A", "B", "C", "D"];
+// Classic game-show / Kahoot-style option colors — red, blue, gold, green.
+export const OPTION_COLORS = ["#B3392C", "#2F5FA8", "#C9A24B", "#2E8B84"];
+
+// Shuffles one question's options (once, at game-creation time) so the correct answer
+// isn't always in the same position across a whole game — purely a fairness/replay-value
+// improvement, not a security measure.
+export function shuffleOptions(question) {
+  const indices = question.options.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return { ...question, options: indices.map((i) => question.options[i]), correct: indices.indexOf(question.correct) };
+}
+
+// Short synthesized tones via the Web Audio API — no external sound files needed (avoids
+// sourcing/licensing audio assets entirely). Silently no-ops if audio can't be created
+// (e.g. autoplay restrictions before any user interaction).
+export function playSuccessSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.16, now + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.1);
+      osc.stop(now + i * 0.1 + 0.35);
+    });
+  } catch {
+    // audio unsupported/blocked — the visual feedback still carries the moment
+  }
+}
+export function playErrorSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(85, now + 0.35);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+  } catch {
+    // audio unsupported/blocked — the visual feedback still carries the moment
+  }
+}
+
+// A "TV game show" style option button: big colored block, bold letter badge, checkmark/
+// cross once revealed. Shared across all three quiz views for a consistent look.
+export function OptionButton({ letter, color, text, onClick, disabled, state }) {
+  // state: "idle" | "correct" | "incorrect" | "muted" (an unpicked, non-correct option once revealed)
+  let bg = color, opacity = 1;
+  if (state === "correct") bg = QUIZ_GREEN;
+  else if (state === "incorrect") bg = QUIZ_RED;
+  else if (state === "muted") opacity = 0.45;
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition disabled:cursor-default"
+      style={{ backgroundColor: bg, color: "white", opacity, boxShadow: "0 2px 0 rgba(0,0,0,0.12)" }}
+    >
+      <span
+        className="shrink-0 flex items-center justify-center rounded-lg font-bold text-[15px]"
+        style={{ width: 30, height: 30, backgroundColor: "rgba(255,255,255,0.25)" }}
+      >
+        {letter}
+      </span>
+      <span className="text-[14.5px] font-medium leading-snug">{text}</span>
+      {state === "correct" && <CheckCircle2 size={18} className="ml-auto shrink-0" />}
+      {state === "incorrect" && <XCircle size={18} className="ml-auto shrink-0" />}
+    </button>
+  );
+}
+
 export function Confetti() {
   const colors = [QUIZ_GOLD, QUIZ_GREEN, QUIZ_NAVY, QUIZ_RED, "#ffffff"];
   const [pieces] = useState(() =>
@@ -59,9 +147,11 @@ export function Confetti() {
 // Celebration / consolation popup shown right after a team answers. Auto-dismisses.
 export function AnswerFeedbackModal({ correct, points, teamName, onDismiss }) {
   useEffect(() => {
+    if (correct) playSuccessSound(); else playErrorSound();
     const t = setTimeout(onDismiss, 2200);
     return () => clearTimeout(t);
-  }, [onDismiss]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onDismiss}>

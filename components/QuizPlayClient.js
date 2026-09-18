@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Trophy, CheckCircle2, XCircle, Users } from "lucide-react";
+import { Loader2, Trophy, Users } from "lucide-react";
 import { joinQuizByCode, submitQuizAnswer, loadQuizGame, loadQuizTeams, subscribeToQuizGame } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD, QUIZ_GREEN as GREEN, QUIZ_RED as RED } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
 
 function JoinForm({ onJoined }) {
   const [code, setCode] = useState("");
@@ -122,6 +122,7 @@ function TeamPlayer({ teamId, gameId }) {
     const winner = sorted[0];
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
+        {winner?.id === teamId && <Confetti />}
         <Trophy size={36} style={{ color: GOLD }} className="mb-3" />
         <h2 className="text-[19px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
           {winner?.id === teamId ? "You won! 🎉" : `${winner?.name} wins!`}
@@ -185,23 +186,21 @@ function TeamPlayer({ teamId, gameId }) {
         <h2 className="text-[17px] font-semibold text-stone-800 mb-4 mt-2">{question.q}</h2>
         <div className="space-y-2.5 mb-5">
           {question.options.map((opt, i) => {
-            let style = { borderColor: "#e7e2d8" };
             const showResult = game.revealed || alreadyAnswered;
-            if (showResult && i === question.correct) style = { borderColor: GREEN, backgroundColor: "#EAF5F3" };
-            else if (alreadyAnswered && i === pickedOption && i !== question.correct) style = { borderColor: RED, backgroundColor: "#FBEFED" };
+            let state = "idle";
+            if (showResult && i === question.correct) state = "correct";
+            else if (alreadyAnswered && i === pickedOption && i !== question.correct) state = "incorrect";
+            else if (showResult) state = "muted";
             return (
-              <button
+              <OptionButton
                 key={i}
+                letter={OPTION_LETTERS[i]}
+                color={OPTION_COLORS[i]}
+                text={opt}
                 onClick={() => choose(i)}
                 disabled={alreadyAnswered}
-                className="w-full text-left rounded-lg border bg-white px-4 py-3 text-[14.5px] text-stone-700 disabled:cursor-default"
-                style={style}
-              >
-                <span className="inline-flex items-center gap-2">
-                  {alreadyAnswered && i === pickedOption && (i === question.correct ? <CheckCircle2 size={15} className="text-green-600" /> : <XCircle size={15} className="text-red-600" />)}
-                  {opt}
-                </span>
-              </button>
+                state={state}
+              />
             );
           })}
         </div>
