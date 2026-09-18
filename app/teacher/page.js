@@ -29,9 +29,17 @@ export default async function TeacherPage() {
         <Link href="/" className="inline-block mb-4 text-[13px] text-stone-500 hover:text-stone-700">
           ← Back to app
         </Link>
-        <h1 className="text-[22px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>
-          Teacher dashboard
-        </h1>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h1 className="text-[22px] font-semibold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>
+            Teacher dashboard
+          </h1>
+          <Link
+            href="/teacher/quiz"
+            className="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-[12.5px] font-medium text-stone-600 hover:bg-stone-50 shrink-0"
+          >
+            🎮 Quiz Game
+          </Link>
+        </div>
         <p className="text-[13px] text-stone-500 mb-6">
           Create a class, share its join code with your students, then track how they are doing.
         </p>

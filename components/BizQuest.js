@@ -1020,7 +1020,39 @@ function ComprehensionCard({ question, state, onChangeAnswer, onSubmit, savedPul
   );
 }
 
-function VideoSection({ compState, onChangeAnswer, onSubmit, unlocked, savedPulses, video, comprehensionQuestions }) {
+// A secondary, non-required video (e.g. 1.1's longer deep-dive) — collapsed behind a
+// toggle so it doesn't compete with the main (shorter, required) Discover video, and
+// carries no comprehension questions of its own since it's purely optional viewing.
+function OptionalVideoLink({ video }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 text-[12.5px] font-medium hover:underline"
+        style={{ color: VIDEO_COLOR }}
+      >
+        <PlayCircle size={13} /> {open ? "Hide" : "Want more detail? Watch the longer story"} {!open && <ChevronRight size={12} />}
+      </button>
+      {open && (
+        <div className="mt-2 rounded-lg border bg-white p-3" style={{ borderColor: "#e7e2d8" }}>
+          <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", borderRadius: 8, overflow: "hidden", backgroundColor: "#000" }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${video.id}`}
+              title={video.title}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <div className="mt-2 text-[12px] text-stone-500">{video.title} · {video.source} · optional, not required for the comprehension checks below</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VideoSection({ compState, onChangeAnswer, onSubmit, unlocked, savedPulses, video, comprehensionQuestions, optionalVideo }) {
   const [playing, setPlaying] = useState(false);
   return (
     <div className="mb-6" id="stage-discover">
@@ -1074,6 +1106,8 @@ function VideoSection({ compState, onChangeAnswer, onSubmit, unlocked, savedPuls
           <span>{video.title} · {video.source}</span>
         </div>
       </div>
+
+      {optionalVideo && <OptionalVideoLink video={optionalVideo} />}
 
       {comprehensionQuestions.map((q) => (
         <ComprehensionCard key={q.id} question={q} state={compState[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} savedPulse={savedPulses?.["comp:" + q.id]} />
@@ -3837,6 +3871,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
   const CASE_TEXT = subunit.caseText;
   const QUESTIONS = subunit.questions;
   const VIDEO = subunit.video;
+  const VIDEO_OPTIONAL = subunit.optionalVideo || null;
   const COMPREHENSION_QUESTIONS = subunit.comprehensionQuestions;
   const SUBUNIT_ID = currentSubunitId;
   const STORAGE_PREFIX = `bm-apple-${currentSubunitId}:`;
@@ -4362,7 +4397,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
         {/* Stage 1: Discover — full width, no case study yet */}
         {loaded && currentStage === "discover" && (
           <FadeIn key="discover">
-            <VideoSection compState={compState} onChangeAnswer={onChangeCompAnswer} onSubmit={onSubmitComp} unlocked={unlocked} savedPulses={savedPulses} video={VIDEO} comprehensionQuestions={COMPREHENSION_QUESTIONS} />
+            <VideoSection compState={compState} onChangeAnswer={onChangeCompAnswer} onSubmit={onSubmitComp} unlocked={unlocked} savedPulses={savedPulses} video={VIDEO} optionalVideo={VIDEO_OPTIONAL} comprehensionQuestions={COMPREHENSION_QUESTIONS} />
             {isStageComplete("discover", stats) && <ContinueButton stageKey="discover" stats={stats} onAdvance={setCurrentStage} />}
           </FadeIn>
         )}
