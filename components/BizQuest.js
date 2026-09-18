@@ -4503,6 +4503,15 @@ function MockExamRunner({ exam, onBackToMap, onChangeExam, role }) {
               Instructions: read the case study carefully. Section A: answer all questions. Section B: answer <strong>one</strong> question. Answers are marked by AI using the same rigor as your regular practice questions.
             </div>
             {timeMode === "timed" && startedAtMs && <ExamTimer startedAtMs={startedAtMs} />}
+            {timeMode && (
+              <button
+                onClick={() => chooseTimeMode(timeMode !== "timed")}
+                className="text-[12px] font-medium hover:underline shrink-0"
+                style={{ color: "#15396B" }}
+              >
+                {timeMode === "timed" ? "Switch to untimed" : "Switch to timed (90 min)"}
+              </button>
+            )}
           </div>
           <button onClick={onChangeExam} className="mb-4 text-[12px] font-medium hover:underline" style={{ color: "#15396B" }}>← Choose a different mock exam</button>
 
