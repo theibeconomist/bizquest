@@ -3254,7 +3254,7 @@ function HubTile({ title, desc, Icon, color, onClick, disabled, badge, progressL
 // ============================================================
 // UNIT MAP visual nodes
 // ============================================================
-function UnitMapToken({ node, x, y, onClick }) {
+function UnitMapToken({ node, x, y, onClick, lockedReason }) {
   const isRevision = node.isRevision;
   const locked = isRevision ? true : !node.unlocked;
   const pct = node.progressPct || 0;
@@ -3310,8 +3310,11 @@ function UnitMapToken({ node, x, y, onClick }) {
 
   const label = (
     <div style={{ width: labelWidth, textAlign: isRevision ? "center" : isLeftSide ? "right" : "left" }}>
-      <div className="text-[12.5px] font-bold" style={{ color: locked ? "#a39c8c" : "#15396B" }}>{isRevision ? "Revision" : node.title}</div>
-      {locked && <div className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: "#b3aca0" }}>Coming soon</div>}
+      <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: locked ? "#b3aca0" : complete ? "#B8860B" : "#15396B", opacity: locked ? 1 : 0.75 }}>
+        {isRevision ? "Revision" : `Unit ${node.id}`}
+      </div>
+      <div className="text-[12.5px] font-bold" style={{ color: locked ? "#a39c8c" : "#15396B" }}>{isRevision ? "Cumulative review across all of Unit 1" : node.title}</div>
+      {locked && <div className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: "#b3aca0" }}>{lockedReason || "Locked"}</div>}
     </div>
   );
 
@@ -3323,9 +3326,9 @@ function UnitMapToken({ node, x, y, onClick }) {
         disabled={locked}
         aria-label={
           isRevision
-            ? "Revision — locked, coming soon"
+            ? "Revision — coming soon"
             : locked
-            ? `Unit ${node.id}: ${node.title} — locked, coming soon`
+            ? `Unit ${node.id}: ${node.title} — locked. ${lockedReason || ""}`
             : `Unit ${node.id}: ${node.title} — ${pct}% complete`
         }
         className="relative block group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-2xl disabled:cursor-not-allowed"
@@ -3340,7 +3343,8 @@ function UnitMapToken({ node, x, y, onClick }) {
           <div
             style={{
               position: "absolute",
-              top: -size / 2,
+              top: "50%",
+              transform: "translateY(-50%)",
               [isLeftSide ? "right" : "left"]: size / 2 + labelGap,
             }}
           >
@@ -3690,7 +3694,13 @@ function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
         ))}
         {loaded && allNodes.map((n, i) => (
           <div key={n.id} style={{ position: "relative", zIndex: 2 }}>
-            <UnitMapToken node={n} x={nodeX(i)} y={nodeY(i)} onClick={() => onSelectSubunit(n.id)} />
+            <UnitMapToken
+              node={n}
+              x={nodeX(i)}
+              y={nodeY(i)}
+              onClick={() => onSelectSubunit(n.id)}
+              lockedReason={n.isRevision ? "Coming soon" : i > 0 ? `Complete ${allNodes[i - 1].id} first` : null}
+            />
           </div>
         ))}
       </div>
