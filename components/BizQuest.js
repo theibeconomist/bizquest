@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Loader2, Send, Pencil, CheckCircle2, AlertCircle, Sparkles, BookOpen, PlayCircle, Lock, Trophy, Award, Clock, RefreshCw, ChevronRight, ArrowLeft, Layers, Shuffle, ChevronLeft, RotateCw, Bot, MessageCircle, X, Building2, Factory, Lightbulb, TrendingUp } from "lucide-react";
+import { Loader2, Send, Pencil, CheckCircle2, AlertCircle, Sparkles, BookOpen, PlayCircle, Lock, Trophy, Award, Clock, RefreshCw, ChevronRight, ArrowLeft, Layers, Shuffle, ChevronLeft, RotateCw, Bot, MessageCircle, X, Building2, Factory, Lightbulb, TrendingUp, Target, Search } from "lucide-react";
 import {
   emptyProfile,
   loadProfile,
@@ -17,6 +17,7 @@ import {
   loadRoleInfo,
   joinClassByCode,
   logQuestionAttempt,
+  loadMyAttempts,
   logComprehensionAttempt,
   recordActivitySeconds,
   loadMyProfileDetails,
@@ -713,7 +714,18 @@ const QUESTIONS_1_6 = [
 // Section A (5 compulsory questions, 2+2+4+6+6 = 20 marks), Section B (choose 1 of 2
 // extended-response questions, 10 marks) — 30 marks total, matching the real exam.
 // ============================================================
-const REVISION_CASE_TEXT = `Apple Inc. designs, manufactures and sells consumer electronics and services worldwide. Apple was founded in 1976 in a garage in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially operating as a general partnership. Wayne, concerned about the unlimited liability exposure of the partnership structure, sold his 10% stake for $800 within weeks. In 1977 the business incorporated, and in 1980 it became a publicly held company through an initial public offering (IPO) that raised approximately $101 million.
+// ============================================================
+// REVISION — Paper 1-style mock exams (Apple case studies, cumulative across 1.1–1.6).
+// Three independent variants so a student can sit multiple distinct mock exams, not
+// just repeat the same one. Each matches a real IB Business Management Paper 1's exact
+// structure: one continuous case study, Section A (5 compulsory questions, 2+2+4+6+6 =
+// 20 marks), Section B (choose 1 of 2 extended-response questions, 10 marks) — 30 total.
+// ============================================================
+const REVISION_EXAMS = [
+  {
+    id: "revision-a",
+    title: "Mock Exam A",
+    caseText: `Apple Inc. designs, manufactures and sells consumer electronics and services worldwide. Apple was founded in 1976 in a garage in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially operating as a general partnership. Wayne, concerned about the unlimited liability exposure of the partnership structure, sold his 10% stake for $800 within weeks. In 1977 the business incorporated, and in 1980 it became a publicly held company through an initial public offering (IPO) that raised approximately $101 million.
 
 Apple's mission is to deliver the best user experience to customers through innovative hardware, software and services. Beyond its mission, Apple has published seven official corporate values, including environment, privacy and supplier responsibility. In FY2025, Apple reported record revenue of $416.16 billion and record net income of $112.01 billion, alongside record research and development spending of $34.55 billion.
 
@@ -725,30 +737,106 @@ Apple's enormous purchasing volumes allow it to negotiate lower component prices
 
 Apple is a clear example of a multinational company (MNC), headquartered in the United States but manufacturing and selling in host countries worldwide. For decades, the vast majority of Apple's hardware was assembled in China. Since around 2022, in response to geopolitical risk and US-China trade tariffs, Apple has pursued a "China+1" diversification strategy. India's share of iPhone production rose from roughly 5-7% in 2022 to about 25% by 2026, with new factories opened in Tamil Nadu and Karnataka; by mid-2025, India had overtaken China as the leading source of smartphones imported into the United States. Vietnam's share of US smartphone imports also rose sharply over the same period, and Vietnam has become the primary production base for the iPad, Mac, Apple Watch and AirPods. Meanwhile, Foxconn's Zhengzhou plant in China — once home to as many as 300,000 workers and known locally as "iPhone City" — has reportedly been hiring less as Apple's production diversifies elsewhere, a shift that accelerated after worker unrest at the plant during a COVID-19 lockdown in 2022. China continues to host the majority of Apple's overall manufacturing today, so this remains a gradual diversification rather than a withdrawal.
 
-Apple's board is now considering two further strategic decisions. The first is a proposed strategic alliance with a solar-technology start-up, SunCell Energy, to co-develop more energy-efficient charging components; both firms would remain fully independent. Some of Apple's own shareholders have questioned whether the alliance is worth the investment given SunCell's unproven technology, while Apple's environmental team argues it fits Apple's carbon-neutral commitments. The second is a proposed acquisition of Loop Recyclers, a small specialist firm that recovers rare-earth metals from discarded electronics, for $450 million. Loop Recyclers currently operates only in the United States, but Apple's board is evaluating whether to expand Loop's operations into new host countries as part of the acquisition.`;
+Apple's board is now considering two further strategic decisions. The first is a proposed strategic alliance with a solar-technology start-up, SunCell Energy, to co-develop more energy-efficient charging components; both firms would remain fully independent. Some of Apple's own shareholders have questioned whether the alliance is worth the investment given SunCell's unproven technology, while Apple's environmental team argues it fits Apple's carbon-neutral commitments. The second is a proposed acquisition of Loop Recyclers, a small specialist firm that recovers rare-earth metals from discarded electronics, for $450 million. Loop Recyclers currently operates only in the United States, but Apple's board is evaluating whether to expand Loop's operations into new host countries as part of the acquisition.`,
+    sectionA: [
+      { id: "a-ra1", section: "vocab", label: "Section A", num: 1, prompt: "Define the term entrepreneur.", marks: 2,
+        rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "someone who organizes, operates and assumes the risk of a business venture."` },
+      { id: "a-ra2", section: "vocab", label: "Section A", num: 2, prompt: "State two features of a general partnership.", marks: 2,
+        rubric: `Award 1 mark per correct feature stated (e.g. two or more owners; typically unlimited liability for partners; often formalized by a deed of partnership; profits/losses shared between partners). No development needed — this is a "state" command term.` },
+      { id: "a-ra3", section: "structured", label: "Section A", num: 3, prompt: "Describe two of Apple's ethical or corporate social responsibility (CSR) commitments mentioned in the case study.", marks: 4,
+        rubric: `Mark as 2+2. For each commitment, 1 mark identify (e.g. carbon neutrality across the supply chain by 2030; suppliers committing to 100% renewable energy) and 1 mark develop with case detail (e.g. by 2024, over 320 suppliers had made this commitment, though independent researchers note some suppliers' emissions have fallen only slightly).` },
+      { id: "a-ra4", section: "structured", label: "Section A", num: 4, prompt: "Explain two reasons why Apple's contract manufacturers benefit from external economies of scale.", marks: 6,
+        rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. clustering of suppliers, skilled labour and infrastructure around hubs like Shenzhen), 1 mark explain the mechanism (external economies benefit every firm in that location, not just one), 1 mark apply accurately to the case (naming Shenzhen, China, specifically as given in the case).` },
+      { id: "a-ra5", section: "structured", label: "Section A", num: 5, prompt: "Explain two reasons why Apple has diversified its iPhone production away from China since around 2022.", marks: 6,
+        rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. geopolitical risk and US-China trade tariffs; the 2022 Zhengzhou worker unrest exposing single-site concentration risk), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. India's iPhone production share rising from ~5-7% in 2022 to ~25% by 2026; new factories in Tamil Nadu and Karnataka; Vietnam becoming the primary base for iPad/Mac/Watch/AirPods).` },
+    ],
+    sectionB: [
+      { id: "a-rb1", section: "essay", label: "Section B", num: 6,
+        prompt: "Discuss whether Apple should proceed with the proposed strategic alliance with SunCell Energy.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's carbon-neutral commitments and stated environmental values; a strategic alliance lets Apple access new technology while both firms remain independent, limiting risk compared to a full acquisition) against the case AGAINST (some shareholders question SunCell's unproven technology and whether the investment is worthwhile; no financial detail on the alliance's cost or expected return is given in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no figures on the alliance's cost, expected savings, or timeline, making a fully-reasoned financial judgement impossible from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+      { id: "a-rb2", section: "essay", label: "Section B", num: 7,
+        prompt: "Discuss whether Apple should proceed with the proposed acquisition of Loop Recyclers, including expanding its operations into new host countries.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's environmental/CSR objectives and supply-chain sustainability goals; an acquisition, unlike a strategic alliance, gives Apple full control over Loop's operations and technology; expanding into new host countries could bring the standard MNC benefits of a larger customer/supplier base) against the case AGAINST (a $450 million acquisition is a significant commitment for a currently US-only specialist firm; expanding a small, specialist operation into new host countries carries real execution risk and potential host-country vulnerability/regulatory issues not detailed in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no detail on which host countries are being considered, or on Loop's current profitability, making it impossible to fully assess the expansion risk from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+    ],
+  },
+  {
+    id: "revision-b",
+    title: "Mock Exam B",
+    caseText: `Apple Inc. is a publicly held, multinational technology company headquartered in Cupertino, California. Apple was founded in 1976 as a general partnership by Steve Jobs, Steve Wozniak and Ronald Wayne; Wayne left the partnership within weeks, concerned about his personal exposure under unlimited liability. The company incorporated in 1977 and became a publicly held company through its 1980 IPO.
 
-const REVISION_SECTION_A = [
-  { id: "ra1", section: "vocab", label: "Section A", num: 1, prompt: "Define the term entrepreneur.", marks: 2,
-    rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "someone who organizes, operates and assumes the risk of a business venture."` },
-  { id: "ra2", section: "vocab", label: "Section A", num: 2, prompt: "State two features of a general partnership.", marks: 2,
-    rubric: `Award 1 mark per correct feature stated (e.g. two or more owners; typically unlimited liability for partners; often formalized by a deed of partnership; profits/losses shared between partners). No development needed — this is a "state" command term.` },
-  { id: "ra3", section: "structured", label: "Section A", num: 3, prompt: "Describe two of Apple's ethical or corporate social responsibility (CSR) commitments mentioned in the case study.", marks: 4,
-    rubric: `Mark as 2+2. For each commitment, 1 mark identify (e.g. carbon neutrality across the supply chain by 2030; suppliers committing to 100% renewable energy) and 1 mark develop with case detail (e.g. by 2024, over 320 suppliers had made this commitment, though independent researchers note some suppliers' emissions have fallen only slightly).` },
-  { id: "ra4", section: "structured", label: "Section A", num: 4, prompt: "Explain two reasons why Apple's contract manufacturers benefit from external economies of scale.", marks: 6,
-    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. clustering of suppliers, skilled labour and infrastructure around hubs like Shenzhen), 1 mark explain the mechanism (external economies benefit every firm in that location, not just one), 1 mark apply accurately to the case (naming Shenzhen, China, specifically as given in the case).` },
-  { id: "ra5", section: "structured", label: "Section A", num: 5, prompt: "Explain two reasons why Apple has diversified its iPhone production away from China since around 2022.", marks: 6,
-    rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. geopolitical risk and US-China trade tariffs; the 2022 Zhengzhou worker unrest exposing single-site concentration risk), 1 mark explain the mechanism, 1 mark apply accurately to the case (e.g. India's iPhone production share rising from ~5-7% in 2022 to ~25% by 2026; new factories in Tamil Nadu and Karnataka; Vietnam becoming the primary base for iPad/Mac/Watch/AirPods).` },
-];
+In FY2025, Apple reported revenue of $416.16 billion and record R&D spending of $34.55 billion, reflecting its stated strategic objective of maintaining technological leadership. Apple's mission is to deliver the best user experience through innovative hardware, software and services, and its published corporate values include accessibility, privacy and environmental responsibility. Apple's enormous purchasing volumes allow it to negotiate favourable component prices directly with suppliers, an example of internal economies of scale unavailable to smaller competitors.
 
-const REVISION_SECTION_B = [
-  { id: "rb1", section: "essay", label: "Section B", num: 6,
-    prompt: "Discuss whether Apple should proceed with the proposed strategic alliance with SunCell Energy.",
-    marks: 10,
-    rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's carbon-neutral commitments and stated environmental values; a strategic alliance lets Apple access new technology while both firms remain independent, limiting risk compared to a full acquisition) against the case AGAINST (some shareholders question SunCell's unproven technology and whether the investment is worthwhile; no financial detail on the alliance's cost or expected return is given in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no figures on the alliance's cost, expected savings, or timeline, making a fully-reasoned financial judgement impossible from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
-  { id: "rb2", section: "essay", label: "Section B", num: 7,
-    prompt: "Discuss whether Apple should proceed with the proposed acquisition of Loop Recyclers, including expanding its operations into new host countries.",
-    marks: 10,
-    rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR proceeding (fits Apple's environmental/CSR objectives and supply-chain sustainability goals; an acquisition, unlike a strategic alliance, gives Apple full control over Loop's operations and technology; expanding into new host countries could bring the standard MNC benefits of a larger customer/supplier base) against the case AGAINST (a $450 million acquisition is a significant commitment for a currently US-only specialist firm; expanding a small, specialist operation into new host countries carries real execution risk and potential host-country vulnerability/regulatory issues not detailed in the case). A mark of 7-8 requires genuinely developing both sides, not just asserting one. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no detail on which host countries are being considered, or on Loop's current profitability, making it impossible to fully assess the expansion risk from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+Apple's roughly 164,000 employees are an internal stakeholder group, while its shareholders — who received $29 billion in a single FY2025 quarter through dividends and buy-backs — are another. Apple's external stakeholders include the suppliers and contract manufacturers, such as Foxconn and Pegatron, who assemble the majority of its hardware. These manufacturing partnerships have drawn scrutiny: independent investigators, including China Labor Watch, have documented excessive overtime at partner factories, concerns Apple and Foxconn have partly acknowledged.
+
+Every Apple Store is company-owned and operated; Apple has never used franchising for its retail network, unlike many other global consumer brands. Apple's board is now debating a pilot "Apple Express" concept: smaller-format stores, roughly a quarter the size of a full Apple Store, focused on accessories, repairs and basic setup support, aimed at secondary cities where a full flagship store is not commercially viable. One option under consideration is franchising this smaller-format concept to independent local operators, who would pay Apple an initial fee plus an ongoing share of revenue in exchange for using the Apple Express name and format. A rival option is for Apple to continue wholly owning and operating every location itself, as it always has.
+
+Since around 2022, Apple has pursued a "China+1" strategy, diversifying iPhone production away from its long-standing reliance on China in response to geopolitical risk and US-China trade tariffs. India's share of global iPhone production rose from roughly 5-7% in 2022 to about 25% by 2026, supported by new factories in Tamil Nadu and Karnataka; by mid-2025, India had overtaken China as the leading source of smartphones imported into the United States. Vietnam has separately become the primary production base for the iPad, Mac, Apple Watch and AirPods, and its own share of US smartphone imports has also risen sharply over the same period.
+
+Apple's board must now decide how to allocate a planned $2 billion in new manufacturing investment between India and Vietnam. India offers a much larger domestic consumer market and a well-established iPhone assembly ecosystem, but its government has recently proposed new local-content regulations that could raise costs for imported components. Vietnam offers a smaller domestic market but has no such regulations currently proposed, and its existing production base for other Apple products means new investment there could benefit from some shared infrastructure and supplier relationships already established for those product lines.
+
+Apple's contract manufacturers in China continue to benefit from external economies of scale: the deep clustering of suppliers, skilled labour and logistics infrastructure around hubs like Shenzhen lowers costs for every electronics firm based there, not just Apple. Some analysts have questioned whether India or Vietnam can currently match this level of external economies of scale, given their comparatively newer manufacturing ecosystems.`,
+    sectionA: [
+      { id: "b-ra1", section: "vocab", label: "Section A", num: 1, prompt: "Define the term unlimited liability.", marks: 2,
+        rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "a business owner's personal assets can be used to pay off business debts, since owner and business are treated as the same legal entity."` },
+      { id: "b-ra2", section: "vocab", label: "Section A", num: 2, prompt: "State two of Apple's official corporate values.", marks: 2,
+        rubric: `Award 1 mark per correct value named (accessibility; education; environment; inclusion and diversity; privacy; racial equity and justice; supplier responsibility) — accessibility and privacy and environmental responsibility are the ones named directly in this case study. No development needed.` },
+      { id: "b-ra3", section: "structured", label: "Section A", num: 3, prompt: "Describe two reasons why Apple has never used franchising for its retail stores.", marks: 4,
+        rubric: `Mark as 2+2. Accept reasonable reasons, e.g.: 1 mark identify (maintaining full control over brand experience/quality) + 1 mark develop; 1 mark identify (avoiding sharing revenue/profit with franchisees) + 1 mark develop. Candidates may also reference risk of inconsistent customer experience across independently-run stores. Credit any well-explained, plausible reason even if not explicitly stated in the case, provided it is not contradicted by it.` },
+      { id: "b-ra4", section: "structured", label: "Section A", num: 4, prompt: "Explain two reasons why Apple's contract manufacturers, such as Foxconn, have faced criticism regarding labour practices.", marks: 6,
+        rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. excessive overtime documented by independent investigators; use of temporary/agency labour), 1 mark explain why this is a stakeholder concern (external stakeholders such as labour-rights groups and the public hold the firm to ethical standards beyond legal minimums), 1 mark apply accurately to the case (naming China Labor Watch and that Apple/Foxconn have partly acknowledged the findings).` },
+      { id: "b-ra5", section: "structured", label: "Section A", num: 5, prompt: "Explain two internal economies of scale from which Apple has benefited, according to the case study.", marks: 6,
+        rubric: `Mark as 3+3 per economy: 1 mark identify (e.g. purchasing/bulk-buying economies — negotiating favourable component prices; financial economies implied by its scale), 1 mark explain the mechanism (internal economies occur inside the firm and are within its own control, lowering its average costs as it grows), 1 mark apply accurately to the case (explicitly referencing Apple's "enormous purchasing volumes" negotiating favourable component prices, as stated in the case).` },
+    ],
+    sectionB: [
+      { id: "b-rb1", section: "essay", label: "Section B", num: 6,
+        prompt: "Discuss whether Apple should franchise its proposed Apple Express concept stores.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR franchising (faster expansion into secondary cities with less of Apple's own capital at risk; local franchisees may have better knowledge of secondary markets) against the case AGAINST (Apple has never franchised before and has built its brand on tightly controlled, wholly-owned retail experiences; a franchised Apple Express could create inconsistent customer experience and dilute the brand; Apple's contract manufacturers' external economies of scale don't inform retail strategy directly, so a strong answer stays focused on retail-specific reasoning). A mark of 7-8 requires genuinely developing both sides. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. no financial projections are given for either option, making it impossible to fully compare their costs and returns from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+      { id: "b-rb2", section: "essay", label: "Section B", num: 7,
+        prompt: "Discuss whether Apple should allocate its planned $2 billion manufacturing investment to India rather than Vietnam.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR India (much larger domestic consumer market; already the leading source of US-bound iPhone imports by mid-2025; established assembly ecosystem) against the case FOR Vietnam instead (no proposed local-content regulations, unlike India; existing production base for other Apple products could offer shared infrastructure/supplier synergies) — and should explicitly compare, not just describe each country separately. A mark of 7-8 requires genuinely developing both sides. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case gives no detail on the exact cost or timeline impact of India's proposed local-content regulations, making a precise financial comparison impossible from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+    ],
+  },
+  {
+    id: "revision-c",
+    title: "Mock Exam C",
+    caseText: `Apple Inc., headquartered in Cupertino, California, was founded in 1976 by Steve Jobs, Steve Wozniak and Ronald Wayne as a general partnership, before incorporating in 1977 and becoming a publicly held company via its 1980 IPO, which raised approximately $101 million. Apple's stated mission is to deliver the best user experience through innovative hardware, software and services, underpinned by seven published corporate values including privacy and supplier responsibility.
+
+In FY2025, Apple reported record net income of $112.01 billion, and returned $29 billion to shareholders in a single quarter through dividends and share buy-backs. Apple's roughly 164,000 employees form its largest internal stakeholder group. Apple's external stakeholders include its extensive supplier network: components and assembly are contracted to partners including Foxconn, Pegatron, and a smaller specialist supplier, NovaOptics, which manufactures advanced camera sensors used across the iPhone line.
+
+An investigative report has found evidence of excessive, unpaid overtime at one of NovaOptics's factories, along with unsafe handling of chemicals used in sensor manufacturing. NovaOptics disputes some of the report's findings but has acknowledged "areas for improvement." NovaOptics currently supplies components found in roughly 15% of iPhones sold, and switching suppliers at this scale would take Apple's board an estimated 18 months to complete without disrupting production. Some of Apple's shareholders have called for Apple to immediately end its relationship with NovaOptics, citing reputational risk; other stakeholders, including some labour rights groups, have instead urged Apple to remain and use its influence as NovaOptics's largest customer to enforce improvements.
+
+Separately, Apple's board is considering a joint venture with VisionForge, a specialist augmented-reality (AR) hardware startup, to co-develop next-generation AR headset components. Under the proposed structure, Apple and VisionForge would jointly own and operate a new, separate entity, with each firm contributing engineering talent and funding. VisionForge would contribute its specialist optical-display patents; Apple would contribute $600 million in funding and its existing supply chain relationships. Some Apple executives have instead proposed a simpler strategic alliance, under which both firms would remain fully independent while co-developing the technology, rather than creating a jointly-owned entity.
+
+Apple's growth has historically relied on internal (organic) expansion and more than 100 small, targeted acquisitions — including Beats Electronics for approximately $3 billion in 2014 — rather than mergers or joint ventures; Apple has never previously entered a joint venture of any kind. Apple's enormous purchasing volumes allow it to negotiate favourable component prices with suppliers, an example of internal economies of scale.
+
+Apple continues to diversify its manufacturing base internationally. Since 2022, Apple has increased iPhone production in India, whose share of global iPhone output rose from roughly 5-7% in 2022 to about 25% by 2026, while China continues to host the majority of Apple's overall manufacturing.`,
+    sectionA: [
+      { id: "c-ra1", section: "vocab", label: "Section A", num: 1, prompt: "Define the term joint venture.", marks: 2,
+        rubric: `Award 1 mark limited / 2 marks accurate. No credit for examples. Model: "when two businesses create, own and operate a third organization."` },
+      { id: "c-ra2", section: "vocab", label: "Section A", num: 2, prompt: "State two features of a publicly held company.", marks: 2,
+        rubric: `Award 1 mark per correct feature (e.g. shares traded on a public stock exchange; must disclose considerable financial information, including audited statements; ownership can be very widely dispersed among shareholders). No development needed.` },
+      { id: "c-ra3", section: "structured", label: "Section A", num: 3, prompt: "Describe two of Apple's stakeholders mentioned in the case study, other than shareholders.", marks: 4,
+        rubric: `Mark as 2+2. For each, 1 mark identify (e.g. employees; NovaOptics/suppliers; labour rights groups) and 1 mark develop with case detail (e.g. ~164,000 employees worldwide; NovaOptics supplies components in ~15% of iPhones sold; labour rights groups urging Apple to stay and enforce improvements rather than leave).` },
+      { id: "c-ra4", section: "structured", label: "Section A", num: 4, prompt: "Explain two reasons why switching away from a key supplier like NovaOptics could be costly or risky for Apple.", marks: 6,
+        rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. NovaOptics supplies ~15% of iPhones' components; switching would take an estimated 18 months), 1 mark explain the mechanism (production disruption risk; time/cost of qualifying a new supplier at scale), 1 mark apply accurately to the case (the specific 15% and 18-month figures given).` },
+      { id: "c-ra5", section: "structured", label: "Section A", num: 5, prompt: "Explain two reasons why Apple's large purchasing volumes give it internal economies of scale.", marks: 6,
+        rubric: `Mark as 3+3 per reason: 1 mark identify (e.g. negotiating favourable component prices; purchasing/bulk-buying economies), 1 mark explain the mechanism (internal economies occur inside the firm, within its own control, and lower average costs as output/scale grows), 1 mark apply accurately to the case (referencing Apple's stated ability to negotiate favourable prices due to its enormous purchasing volumes).` },
+    ],
+    sectionB: [
+      { id: "c-rb1", section: "essay", label: "Section B", num: 6,
+        prompt: "Discuss whether Apple should immediately end its relationship with NovaOptics.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR ending the relationship immediately (reputational risk from continued association with documented labour/safety violations; some shareholders' explicit call to act) against the case FOR remaining (an 18-month switching time and 15% component reliance mean immediate exit risks major production disruption; Apple's influence as NovaOptics's largest customer could be used to enforce real improvements, a view held by some labour rights groups themselves). A mark of 7-8 requires genuinely developing both sides. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. the case does not specify what "areas for improvement" NovaOptics has already acknowledged or on what timeline, making it hard to judge whether continued engagement would actually work).\n\nMARKBANDS:\n${MARKBANDS}` },
+      { id: "c-rb2", section: "essay", label: "Section B", num: 7,
+        prompt: "Discuss whether Apple should structure its AR technology partnership with VisionForge as a joint venture rather than a strategic alliance.",
+        marks: 10,
+        rubric: `Mark using the official IB markbands below. A strong answer weighs the case FOR a joint venture (a jointly-owned entity gives Apple direct ownership and control over the new technology and its commercialization, matching the scale of Apple's $600 million contribution) against the case FOR a strategic alliance instead (Apple has never entered a joint venture before, unlike its long history of strategic alliances such as the 2014 IBM partnership; a strategic alliance carries less integration risk and lets both firms remain fully independent). A mark of 7-8 requires genuinely developing both sides. A mark of 9-10 additionally requires explicitly naming a specific limitation of the case material (e.g. no detail is given on how profits or losses from the new entity would be shared, or on VisionForge's own preference, making a full evaluation of the joint-venture option incomplete from the case alone).\n\nMARKBANDS:\n${MARKBANDS}` },
+    ],
+  },
 ];
 
 const SUBUNIT_REGISTRY = {
@@ -800,6 +888,15 @@ const SUBUNIT_REGISTRY = {
     caseText: CASE_TEXT_1_6,
     questions: QUESTIONS_1_6,
     flashcardTerms: FLASHCARD_TERMS_1_6,
+  },
+  "revision-terms": {
+    title: "All Key Terms",
+    // Not a real subunit — reuses the same FlashcardsView component for a combined
+    // review deck spanning every term from 1.1–1.6, accessed from the Revision hub.
+    flashcardTerms: [
+      ...FLASHCARD_TERMS, ...FLASHCARD_TERMS_1_2, ...FLASHCARD_TERMS_1_3,
+      ...FLASHCARD_TERMS_1_4, ...FLASHCARD_TERMS_1_5, ...FLASHCARD_TERMS_1_6,
+    ],
   },
 };
 const SUBUNIT_TITLES = Object.fromEntries(Object.entries(SUBUNIT_REGISTRY).map(([id, s]) => [id, s.title]));
@@ -1554,7 +1651,7 @@ function LevelUpToast({ levelName }) {
         <Trophy size={20} style={{ color: GOLD }} />
         <div>
           <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: GOLD }}>Congratulations — level up!</div>
-          <div className="text-[14px] font-semibold text-stone-800" style={{ fontFamily: "'Lora', serif" }}>You've reached {levelName}</div>
+          <div className="text-[14px] font-semibold text-stone-800" style={{ fontFamily: "'Lora', serif" }}>You&apos;ve reached {levelName}</div>
         </div>
       </FadeIn>
     </div>
@@ -1596,7 +1693,7 @@ function CompletionCard({ stats, profile, levelInfo }) {
           <Trophy size={14} /> Subunit complete
         </div>
         <h2 className="text-[20px] font-semibold mt-0.5" style={{ fontFamily: "'Lora', serif" }}>
-          Well done — you've finished 1.1!
+          Well done — you&apos;ve finished 1.1!
         </h2>
       </div>
       <div className="bg-white px-5 py-4">
@@ -1619,7 +1716,7 @@ function CompletionCard({ stats, profile, levelInfo }) {
         <div className="mt-4 flex items-center gap-2 rounded-md px-3 py-2.5" style={{ backgroundColor: "#FBF4E2" }}>
           <Trophy size={16} style={{ color: GOLD }} />
           <div className="text-[13px]" style={{ color: "#8A5A12" }}>
-            You're now <strong>{levelInfo.name}</strong> with <strong>{profile.xp || 0} XP</strong> — including a +{XP_SUBUNIT_COMPLETE_BONUS} XP completion bonus.
+            You&apos;re now <strong>{levelInfo.name}</strong> with <strong>{profile.xp || 0} XP</strong> — including a +{XP_SUBUNIT_COMPLETE_BONUS} XP completion bonus.
           </div>
         </div>
         <p className="mt-3 text-[13px] text-stone-500">
@@ -2778,13 +2875,48 @@ function StudyCompletionCard({ xpEarned, badgeEarned }) {
       <div className="text-[19px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>
         Study Guide complete!
       </div>
-      <p className="text-[13.5px] text-stone-600 mb-1">You've worked through all four sections — nice, thorough studying.</p>
+      <p className="text-[13.5px] text-stone-600 mb-1">You&apos;ve worked through all four sections — nice, thorough studying.</p>
       {(xpEarned || badgeEarned) && (
         <p className="text-[13px] font-medium mt-2" style={{ color: STUDY_COLOR }}>
           {xpEarned ? `+${xpEarned} XP` : ""}{xpEarned && badgeEarned ? " · " : ""}{badgeEarned ? `New badge: "${badgeEarned}"` : ""}
         </p>
       )}
     </FadeIn>
+  );
+}
+
+// Assessment objectives actually examined in this subunit's Practice, computed directly
+// from its real question data (vocab -> AO1, structured -> AO1+AO2, essay -> AO3) rather
+// than a separately-maintained description that could drift out of sync with it.
+const AO_INFO = {
+  AO1: { label: "AO1 — Knowledge", color: "#2E8B84", desc: "define/state — recall of terms and concepts" },
+  AO2: { label: "AO2 — Application", color: "#C9A24B", desc: "describe/explain — applying concepts to the case" },
+  AO3: { label: "AO3 — Evaluation", color: "#B3392C", desc: "discuss/evaluate — balanced judgement, extended response" },
+};
+function AOSummaryBanner({ subunitId }) {
+  const questions = SUBUNIT_REGISTRY[subunitId]?.questions || [];
+  const vocabCount = questions.filter((q) => q.section === "vocab").length;
+  const structuredCount = questions.filter((q) => q.section === "structured").length;
+  const essayCount = questions.filter((q) => q.section === "essay").length;
+  const active = [
+    vocabCount > 0 && { ...AO_INFO.AO1, count: vocabCount, unit: "vocabulary question" },
+    structuredCount > 0 && { ...AO_INFO.AO2, count: structuredCount, unit: "structured question" },
+    essayCount > 0 && { ...AO_INFO.AO3, count: essayCount, unit: "extended response" },
+  ].filter(Boolean);
+  if (active.length === 0) return null;
+  return (
+    <div className="rounded-lg border bg-white p-3.5 mb-5" style={{ borderColor: "#e7e2d8" }}>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-2">Assessment objectives examined in this subunit&apos;s Practice</div>
+      <div className="flex flex-wrap gap-2">
+        {active.map((a) => (
+          <div key={a.label} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5" style={{ backgroundColor: `${a.color}14` }} title={a.desc}>
+            <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+            <span className="text-[11.5px] font-semibold" style={{ color: a.color }}>{a.label}</span>
+            <span className="text-[11px] text-stone-500">· {a.count} {a.unit}{a.count !== 1 ? "s" : ""}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -2855,6 +2987,8 @@ function StudyView({ onBack, subunitId, role }) {
           <p className="text-[13px] text-stone-500 mt-1">A guided walkthrough of the core ideas, with a quick activity in each section.</p>
         </div>
 
+        <AOSummaryBanner subunitId={subunitId} />
+
         {loaded && (
           <>
             <div className="flex items-center justify-between mb-2 text-[12px] text-stone-500">
@@ -2899,7 +3033,7 @@ function StudyView({ onBack, subunitId, role }) {
               </div>
               <SortGame items={SORT_ITEMS} buckets={SORT_BUCKETS_3} onComplete={() => markComplete("business")} />
               <div className="mt-6 pt-5 border-t" style={{ borderColor: "#e7e2d8" }}>
-                <div className="text-[13.5px] font-semibold text-stone-700 mb-3">The business's functional areas:</div>
+                <div className="text-[13.5px] font-semibold text-stone-700 mb-3">The business&apos;s functional areas:</div>
                 <FunctionalAreaExplorer />
               </div>
             </>
@@ -3088,10 +3222,10 @@ function StudyView({ onBack, subunitId, role }) {
   );
 }
 
-function FlashcardsView({ onBack, subunitId, role }) {
+function FlashcardsView({ onBack, subunitId, role, titleOverride }) {
   const subunit = SUBUNIT_REGISTRY[subunitId];
   const FLASHCARD_TERMS = subunit.flashcardTerms;
-  const subunitTitle = `${subunitId} ${subunit.title}`;
+  const subunitTitle = titleOverride || `${subunitId} ${subunit.title}`;
   const [queue, setQueue] = useState(() => shuffleIndices(FLASHCARD_TERMS.length));
   const [mastered, setMastered] = useState(new Set());
   const [flipped, setFlipped] = useState(false);
@@ -3564,7 +3698,7 @@ function ClassMembershipInfo({ classInfo, onJoined }) {
         style={{ borderColor: "#e7e2d8", backgroundColor: "#FBF9F4" }}
       >
         <span className="text-[12.5px] text-stone-600">
-          You're in <span className="font-semibold text-stone-800">{classInfo.className}</span>
+          You&apos;re in <span className="font-semibold text-stone-800">{classInfo.className}</span>
           {classInfo.teacherEmail && <> — taught by <span className="font-medium">{classInfo.teacherEmail}</span></>}
         </span>
         <button
@@ -3589,39 +3723,321 @@ function ClassMembershipInfo({ classInfo, onJoined }) {
 // one-sitting experience, not a resettable practice loop — case study, then Section A
 // (all compulsory), then Section B (choose one), then a final mark total.
 // ============================================================
-function MockExamView({ onBackToMap }) {
+// ============================================================
+// Revision — Paper 1-style mock exam. Follows the same structural pattern as the regular
+// Practice flow: persisted answers (survive a refresh), XP awarded per mark via the same
+// formula, and the same shared ModuleHeader chrome — just organized as Section A / Section
+// B (with a choice) rather than Discover/Build/Apply/Master, since that's what an actual
+// exam paper looks like. A picker screen lets a student choose between three independent
+// variants, each with its own case study and its own saved progress.
+// ============================================================
+// ============================================================
+// Diagnostics + weak-area practice. Reads the student's own real attempt history
+// (question_attempts, same table the teacher dashboard reads) to show where they're
+// actually weak, then builds a short, targeted practice set from real questions in
+// those subunits — genuinely personalized, no new content needed.
+// ============================================================
+const WEAK_MIN_ATTEMPTS = 2; // below this, "accuracy" is too noisy to call a subunit weak
+
+function accuracyColor(pctVal) {
+  if (pctVal === null) return "#b3aca0";
+  if (pctVal >= 75) return "#2E8B84";
+  if (pctVal >= 50) return "#C9A24B";
+  return "#B3392C";
+}
+
+const OFFICIAL_GLOSSARY_UNIT1 = [
+  { term: `Primary sector`, definition: `is a section of an economy that extracts materials (minerals, oil, etc.) or harvests products from the earth, including farming, fishing, forestry and raising livestock.` },
+  { term: `Secondary sector`, definition: `The secondary sector is the economic activity of producing a finished good, that is, the sector of the economy involving manufacturing.` },
+  { term: `Tertiary sector`, definition: `The service sector of the economy. Services include banking, retail, health care, restaurants, hotels, among many other areas of economic activity.` },
+  { term: `Quaternary sector`, definition: `The quaternary sector is that area of economic activity based upon knowledge and the movement of information. This designation is new, and some would argue that quaternary activity is part of the tertiary sector. Users of the term emphasize that quaternary-sector activities are advanced knowledge-based activities, such as information technology services, consultancy, research and development.` },
+  { term: `Private sector`, definition: `The portion of an economy not owned or directed by the government.` },
+  { term: `Public sector`, definition: `This refers to the portion of the economy controlled or owned by the government, such as government services and schools or, in countries with nationalized industries, stateowned entities or corporations.` },
+  { term: `Sole trader`, definition: `A business owned and run by one person. When a business operates as a sole trader, no legal distinction exists between the business and the owner.` },
+  { term: `Partnership`, definition: `This refers to a business owned and run by two or more persons who share the profits, often specified in a partnership agreement. Like a sole trader, no legal distinction exists between the business and the partners, who legally are 100% liable for all debts of the partnership, regardless of any understanding specified in the partnership agreement.` },
+  { term: `Privately held company`, definition: `A corporation that offers limited liability to the owners. Whereas laws governing privately held companies or private limited companies vary according to legal jurisdiction, shareholders of private limited companies cannot sell their shares unless first offering them to existing shareholders, and the shares cannot be traded on a stock exchange. Most jurisdictions limit the number of shareholders in a privately held company.` },
+  { term: `Publicly held company`, definition: `A corporation that offers limited liability to the owners. The shares of the company are traded in some public exchange, and, because of the large number of shareholders, publicly held companies must disclose or make public considerable information about the company, including audited financial information.` },
+  { term: `Cooperatives`, definition: `Businesses owned and operated by their members, who share the profits. Cooperatives are commonplace in agriculture but also exist in other industries.` },
+  { term: `Non-governmental organizations (NGOs)`, definition: `These are organizations independent of government. They are non-profit and often have a humanitarian or social purpose. Though technically independent, NGOs often receive government funding and cooperate with government.` },
+  { term: `Corporate social responsibility (CSR)`, definition: `The view that businesses should govern themselves and act in a way that enhances society and businesses’ stakeholders. Advocates of CSR believe that businesses should be held accountable for any of their actions that affect individuals, communities or the environment.` },
+  { term: `Stakeholder`, definition: `A person or organization that affects, or is affected by, a business. Stakeholders are often classified as internal versus external, market versus non-market, or primary versus secondary.` },
+  { term: `Internal (organic) growth`, definition: `This occurs when a business gets larger by using its own resources, that is, it reinvests its profits in new products, new sales channels or more stores, and so on, in order to increase sales.` },
+  { term: `External growth`, definition: `External growth occurs when a business expands by relying on external resources, typically by acquiring or forming some kind of relationship with another organization.` },
+  { term: `Economy of scale`, definition: `The reduction in per-unit production cost as a business grows.` },
+  { term: `Diseconomy of scale`, definition: `The increase in per-unit production cost as a business grows.` },
+  { term: `Merger and acquisition`, definition: `A merger occurs when two companies legally consolidate into one company; an acquisition occurs when one company purchases the shares of another company. Thus, a legal distinction exists between a merger and an acquisition, though, in practice, the two have very similar aims: the combination of the resources of the two companies.` },
+  { term: `Takeover`, definition: `A takeover is form of acquisition. With an acquisition, both parties agree to the transaction. With a takeover, the transaction is typically “hostile”, meaning that the company being acquired does not want to be taken over by the acquiring company.` },
+  { term: `Joint venture`, definition: `When two business create, own and operate a third organization.` },
+  { term: `Strategic alliance`, definition: `This occurs when one or more businesses agree to some form of operational cooperation that enhances the value for all parties.` },
+  { term: `Franchising`, definition: `A type of business organization whereby a business (the franchisor) develops the product or service and develops its brand, and then sells the right to use the brand and its related product or service to other businesses (franchisees). To operate as a franchise, the franchisee typically pays, in addition to an original fee, some percentage of revenue and agrees to comply with operating and quality specifications set by the franchisor.` },
+  { term: `Offshoring`, definition: `Offshoring occurs when a business moves some, or virtually all, of its business operations to another country.` },
+  { term: `Reshoring`, definition: `Reshoring occurs when a business chooses to have a function or operation that is performed in another country brought back to the company’s home country.` },
+];
+
+function WeakPracticeView({ items, onBack, role }) {
   const [state, setState] = useState({});
-  const [chosenEssayId, setChosenEssayId] = useState(null);
+  const [profile, setProfile] = useState(emptyProfile());
+
+  useEffect(() => {
+    loadProfile().then((p) => setProfile(p || emptyProfile())).catch(() => {});
+  }, []);
 
   const onChangeAnswer = useCallback((id, text) => {
     setState((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), answer: text, status: "idle" } }));
   }, []);
 
   const onSubmit = useCallback(async (question) => {
+    const item = items.find((it) => it.q.id === question.id);
     setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "loading" } }));
     try {
       const prevEntry = state[question.id] || {};
-      const result = await gradeAnswer(question, prevEntry.answer || "", REVISION_CASE_TEXT);
-      setState((prev) => ({
-        ...prev,
-        [question.id]: { answer: prevEntry.answer || "", status: "graded", score: result.score, feedback: result.feedback, tip: result.tip },
-      }));
+      const result = await gradeAnswer(question, prevEntry.answer || "", item.caseText);
+      setState((prev) => ({ ...prev, [question.id]: { answer: prevEntry.answer || "", status: "graded", score: result.score, feedback: result.feedback, tip: result.tip } }));
+      logQuestionAttempt({ subunitId: item.subunitId, questionId: question.id, section: question.section, marksEarned: result.score, marksPossible: question.marks });
+      setProfile((prevProfile) => {
+        const p = { ...prevProfile };
+        p.xp = (p.xp || 0) + result.score * XP_PER_MARK;
+        saveProfile(p);
+        return p;
+      });
     } catch (err) {
       setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "error", errorMsg: err.message || "Marking failed." } }));
     }
-  }, [state]);
+  }, [items, state]);
 
   const onEditAgain = useCallback((id) => {
     setState((prev) => ({ ...prev, [id]: { ...prev[id], status: "idle" } }));
   }, []);
 
-  const chosenEssay = REVISION_SECTION_B.find((q) => q.id === chosenEssayId) || null;
-  const sectionADone = REVISION_SECTION_A.filter((q) => state[q.id]?.status === "graded").length;
-  const essayGraded = chosenEssay && state[chosenEssay.id]?.status === "graded";
-  const examComplete = sectionADone === REVISION_SECTION_A.length && essayGraded;
-  const totalPossible = REVISION_SECTION_A.reduce((s, q) => s + q.marks, 0) + 10;
-  const totalEarned = REVISION_SECTION_A.reduce((s, q) => s + (state[q.id]?.score || 0), 0) + (essayGraded ? state[chosenEssay.id].score : 0);
+  const doneCount = items.filter((it) => state[it.q.id]?.status === "graded").length;
 
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <ModuleHeader
+        themeColor="#15396B"
+        onBack={onBack}
+        ModuleIcon={Target}
+        moduleName="Weak-spot practice"
+        progressLine={`${doneCount}/${items.length} marked`}
+        progressPercent={(doneCount / items.length) * 100}
+        subunitTitle="Unit 1 Diagnostics"
+        role={role}
+      />
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        <p className="text-[12.5px] text-stone-500 mb-5">A short set pulled from the subunits you&apos;re weakest in, prioritizing questions you&apos;ve never answered or scored lowest on. This doesn&apos;t save/resume — it&apos;s a quick, one-off practice round.</p>
+        {items.map(({ q, subunitId }) => (
+          <div key={q.id}>
+            <div className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: "#b3aca0" }}>{SUBUNIT_TITLES[subunitId] ? `${subunitId} ${SUBUNIT_TITLES[subunitId]}` : subunitId}</div>
+            <QuestionCard question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={items.find((it) => it.q.id === q.id).caseText} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Glossary — searchable reference for every term used across Unit 1. Where a term is
+// genuinely in the IB's own official glossary, its definition is quoted verbatim (word
+// for word) from that document — the official glossary is explicitly non-exhaustive, so
+// most of Unit 1's core terms (entrepreneur, stakeholder mapping, SMART objectives, host
+// country, etc.) simply aren't in it at all; those are labeled "Unit 1 guide" instead of
+// being passed off as official glossary text.
+// ============================================================
+function buildUnit1Glossary() {
+  const officialNames = new Set(OFFICIAL_GLOSSARY_UNIT1.map((e) => e.term.toLowerCase()));
+  const allTermsRaw = SUBUNIT_REGISTRY["revision-terms"].flashcardTerms;
+  const official = OFFICIAL_GLOSSARY_UNIT1.map((e) => ({ term: e.term, definition: e.definition, source: "official" }));
+  const seen = new Set(official.map((e) => e.term.toLowerCase()));
+  const fromGuide = [];
+  for (const t of allTermsRaw) {
+    const key = t.term.toLowerCase();
+    if (officialNames.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    fromGuide.push({ term: t.term, definition: t.definition, source: "guide" });
+  }
+  return [...official, ...fromGuide].sort((a, b) => a.term.localeCompare(b.term));
+}
+const UNIT1_GLOSSARY = buildUnit1Glossary();
+
+function GlossaryView({ onBack, role }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? UNIT1_GLOSSARY.filter((e) => e.term.toLowerCase().includes(q) || e.definition.toLowerCase().includes(q))
+    : UNIT1_GLOSSARY;
+
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
+        <div className="mx-auto max-w-3xl">
+          <button
+            onClick={onBack}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 mb-2 text-[11.5px] font-medium text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Revision
+          </button>
+          <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
+            Glossary
+          </div>
+          <div className="text-white/70 text-[13px] mt-1">Every term used across 1.1–1.6, {OFFICIAL_GLOSSARY_UNIT1.length} of them quoted word-for-word from the IB&apos;s own glossary</div>
+        </div>
+      </div>
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        <div className="relative mb-5">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search terms or definitions…"
+            className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-[14px] focus:outline-none focus-visible:ring-2"
+            style={{ borderColor: "#e7e2d8" }}
+          />
+        </div>
+        <p className="text-[11.5px] text-stone-400 mb-4">
+          <span className="inline-flex items-center gap-1 mr-3"><span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#15396B" }} /> Official IB glossary, verbatim</span>
+          <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#8a8478" }} /> Unit 1 guide (not in the official glossary)</span>
+        </p>
+        {filtered.length === 0 ? (
+          <p className="text-[13px] text-stone-500">No terms match &quot;{query}&quot;.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {filtered.map((e) => (
+              <div key={e.term} className="rounded-lg border bg-white p-3.5" style={{ borderColor: "#e7e2d8" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: e.source === "official" ? "#15396B" : "#8a8478" }} />
+                  <div className="text-[13.5px] font-semibold text-stone-800">{e.term}</div>
+                </div>
+                <p className="text-[13px] text-stone-600 leading-relaxed">{e.definition}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DiagnosticsView({ onBack, role }) {
+  const [attempts, setAttempts] = useState(null);
+  const [practiceItems, setPracticeItems] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const a = await loadMyAttempts().catch(() => []);
+      if (!cancelled) setAttempts(a.filter((x) => UNIT_SUBUNITS.some((s) => s.id === x.subunit_id)));
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (practiceItems) {
+    return <WeakPracticeView items={practiceItems} onBack={() => setPracticeItems(null)} role={role} />;
+  }
+
+  if (attempts === null) {
+    return (
+      <div className="min-h-full flex items-center justify-center" style={{ backgroundColor: "#F2EEE4" }}>
+        <Loader2 size={20} className="animate-spin text-stone-400" />
+      </div>
+    );
+  }
+
+  const bySubunit = {};
+  for (const a of attempts) {
+    bySubunit[a.subunit_id] = bySubunit[a.subunit_id] || { earned: 0, possible: 0, count: 0 };
+    bySubunit[a.subunit_id].earned += a.marks_earned || 0;
+    bySubunit[a.subunit_id].possible += a.marks_possible || 0;
+    bySubunit[a.subunit_id].count += 1;
+  }
+  const subunitRows = UNIT_SUBUNITS.map((s) => {
+    const v = bySubunit[s.id];
+    const pctVal = v && v.possible > 0 ? Math.round((v.earned / v.possible) * 100) : null;
+    return { id: s.id, title: s.title, pct: pctVal, count: v ? v.count : 0 };
+  });
+  const enoughData = subunitRows.filter((r) => r.pct !== null && r.count >= WEAK_MIN_ATTEMPTS);
+  const weakest = [...enoughData].sort((a, b) => a.pct - b.pct).slice(0, 2);
+
+  const startWeakPractice = () => {
+    const picked = [];
+    for (const w of weakest) {
+      const subunit = SUBUNIT_REGISTRY[w.id];
+      const scored = subunit.questions.map((q) => {
+        const mine = attempts.filter((a) => a.subunit_id === w.id && a.question_id === q.id);
+        const best = mine.length ? Math.max(...mine.map((a) => a.marks_earned || 0)) : null;
+        const bestFraction = best !== null ? best / q.marks : -1;
+        return { q, subunitId: w.id, caseText: subunit.caseText, priority: bestFraction };
+      });
+      scored.sort((a, b) => a.priority - b.priority);
+      picked.push(...scored.slice(0, 3));
+    }
+    setPracticeItems(picked.slice(0, 6));
+  };
+
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
+        <div className="mx-auto max-w-3xl">
+          <button
+            onClick={onBack}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-3 py-1 mb-2 text-[11.5px] font-medium text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <ArrowLeft size={13} strokeWidth={2.5} className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Back to Revision
+          </button>
+          <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
+            Diagnostics
+          </div>
+          <div className="text-white/70 text-[13px] mt-1">Your own accuracy by subunit, from every question you&apos;ve answered so far</div>
+        </div>
+      </div>
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        <div className="rounded-xl border bg-white p-4 mb-5" style={{ borderColor: "#e7e2d8" }}>
+          {subunitRows.every((r) => r.pct === null) ? (
+            <p className="text-[13px] text-stone-500">You haven&apos;t answered any practice questions yet — come back here once you&apos;ve done some, and we&apos;ll show you exactly where to focus.</p>
+          ) : (
+            <div className="space-y-3">
+              {subunitRows.map((r) => (
+                <div key={r.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12.5px] font-medium text-stone-700">{r.id} {r.title}</span>
+                    <span className="text-[12px] font-semibold" style={{ color: accuracyColor(r.pct) }}>
+                      {r.pct === null ? "No attempts yet" : r.count < WEAK_MIN_ATTEMPTS ? `${r.pct}% (only ${r.count} attempt${r.count !== 1 ? "s" : ""})` : `${r.pct}%`}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${r.pct ?? 0}%`, backgroundColor: accuracyColor(r.pct) }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {weakest.length > 0 ? (
+          <button
+            onClick={startWeakPractice}
+            className="w-full flex items-center gap-3 rounded-xl border-2 bg-white p-4 text-left transition hover:shadow-sm"
+            style={{ borderColor: "#15396B" }}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: "#15396B" }}>
+              <Target size={19} />
+            </div>
+            <div>
+              <div className="text-[14.5px] font-semibold text-stone-800">Practice your weak spots</div>
+              <div className="text-[12px] text-stone-500">A short, targeted set from {weakest.map((w) => w.id).join(" and ")} — your lowest-scoring subunit{weakest.length > 1 ? "s" : ""} so far.</div>
+            </div>
+          </button>
+        ) : (
+          enoughData.length > 0 && (
+            <p className="text-[12.5px] text-stone-500 text-center">Nice and even so far — nothing stands out as a clear weak spot yet.</p>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MockExamPicker({ onBackToMap, onChoose, progressByExam }) {
   return (
     <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
       <div className="px-5 py-5" style={{ backgroundColor: "#15396B" }}>
@@ -3635,65 +4051,352 @@ function MockExamView({ onBackToMap }) {
           <div className="text-white font-bold" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 24, lineHeight: 1.15 }}>
             Unit 1 Mock Exam
           </div>
-          <div className="text-white/70 text-[13px] mt-1">Paper 1 style · 30 marks · Apple case study, cumulative across 1.1–1.6</div>
+          <div className="text-white/70 text-[13px] mt-1">Paper 1 style · 30 marks each · three independent Apple case studies</div>
         </div>
       </div>
-
       <div className="mx-auto max-w-3xl px-5 py-6">
-        <div className="mb-5 rounded-lg border bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800" style={{ borderColor: "#f0dfb8" }}>
-          Instructions: read the case study carefully. Section A: answer all questions. Section B: answer <strong>one</strong> question. Answers are marked by AI using the same rigor as your regular practice questions.
-        </div>
-
-        <div className="mb-6 rounded-lg border bg-white" style={{ borderColor: "#e7e2d8" }}>
-          <ReadingPanel caseText={REVISION_CASE_TEXT} />
-        </div>
-
-        <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section A</h2>
-        <p className="text-[12.5px] text-stone-500 mb-4">Answer all questions from this section. ({sectionADone}/{REVISION_SECTION_A.length} marked)</p>
-        {REVISION_SECTION_A.map((q) => (
-          <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={REVISION_CASE_TEXT} />
-        ))}
-
-        <h2 className="text-[15px] font-bold mb-1 mt-8" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section B</h2>
-        <p className="text-[12.5px] text-stone-500 mb-4">Answer <strong>one</strong> question from this section.</p>
-        {!chosenEssayId ? (
-          <div className="space-y-3">
-            {REVISION_SECTION_B.map((q) => (
+        <p className="text-[13px] text-stone-500 mb-5">Pick a variant. Each is a complete, separate exam with its own case study and its own saved progress — do one now and the others another day.</p>
+        <div className="space-y-3">
+          {REVISION_EXAMS.map((exam, i) => {
+            const prog = progressByExam[exam.id];
+            return (
               <button
-                key={q.id}
-                onClick={() => setChosenEssayId(q.id)}
-                className="w-full text-left rounded-lg border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm"
+                key={exam.id}
+                onClick={() => onChoose(exam.id)}
+                className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm flex items-center gap-4"
                 style={{ borderColor: "#e7e2d8" }}
               >
-                <div className="text-[13px] text-stone-800 leading-snug">{q.num}. {q.prompt}</div>
-                <div className="text-[11.5px] text-stone-400 mt-1">[{q.marks} marks]</div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white font-bold" style={{ backgroundColor: "#15396B", fontFamily: "'Lora', serif" }}>
+                  {String.fromCharCode(65 + i)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14.5px] font-semibold text-stone-800">{exam.title}</div>
+                  <div className="text-[12px] text-stone-500">Section A (20 marks) + Section B, choose 1 of 2 (10 marks)</div>
+                </div>
+                {prog && prog.done > 0 && (
+                  <span className="shrink-0 text-[11px] font-semibold rounded-full px-2.5 py-1" style={{ backgroundColor: prog.done >= prog.total ? "#FBF4E2" : "#EAF1F8", color: prog.done >= prog.total ? "#B8860B" : "#15396B" }}>
+                    {prog.done >= prog.total ? "Complete" : `${prog.done}/${prog.total} marked`}
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
-        ) : (
-          <>
-            {!essayGraded && (
-              <button onClick={() => setChosenEssayId(null)} className="mb-3 text-[12.5px] font-medium hover:underline" style={{ color: "#15396B" }}>
-                ← Choose a different question
-              </button>
-            )}
-            <QuestionCard question={chosenEssay} state={state[chosenEssay.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={REVISION_CASE_TEXT} />
-          </>
-        )}
+            );
+          })}
+        </div>
 
-        {examComplete && (
-          <div className="mt-8 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
-            <Trophy size={32} style={{ color: "#C9A24B" }} className="mx-auto mb-2" />
-            <div className="text-[15px] font-semibold text-stone-600 mb-1">Mock exam complete</div>
-            <div className="text-[28px] font-bold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{totalEarned} / {totalPossible}</div>
-            <p className="text-[12.5px] text-stone-500 mt-2">Review the feedback on each question above — click &quot;Edit again&quot; on any question to revise and resubmit.</p>
-          </div>
-        )}
+        <div className="mt-6 pt-5 border-t space-y-3" style={{ borderColor: "#e7e2d8" }}>
+          <button
+            onClick={() => onChoose("diagnostics")}
+            className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#B3392C] hover:shadow-sm flex items-center gap-4"
+            style={{ borderColor: "#e7e2d8" }}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: "#B3392C" }}>
+              <Target size={19} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14.5px] font-semibold text-stone-800">Diagnostics</div>
+              <div className="text-[12px] text-stone-500">See your accuracy by subunit, and get a short practice set targeting your weak spots.</div>
+            </div>
+          </button>
+          <button
+            onClick={() => onChoose("terms")}
+            className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#2E8B84] hover:shadow-sm flex items-center gap-4"
+            style={{ borderColor: "#e7e2d8" }}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: "#2E8B84" }}>
+              <Layers size={19} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14.5px] font-semibold text-stone-800">All Key Terms</div>
+              <div className="text-[12px] text-stone-500">Every flashcard from 1.1–1.6 in one combined deck — good warm-up before a mock exam.</div>
+            </div>
+          </button>
+          <button
+            onClick={() => onChoose("glossary")}
+            className="w-full text-left rounded-xl border bg-white p-4 transition hover:border-[#6B4C9A] hover:shadow-sm flex items-center gap-4"
+            style={{ borderColor: "#e7e2d8" }}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: "#6B4C9A" }}>
+              <Search size={19} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14.5px] font-semibold text-stone-800">Glossary</div>
+              <div className="text-[12px] text-stone-500">A searchable reference for every term — official IB wording where it exists.</div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+const EXAM_DURATION_SECONDS = 90 * 60; // 1 hour 30 minutes, matching the real Paper 1
+
+function formatCountdown(totalSeconds) {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${String(rem).padStart(2, "0")}`;
+}
+
+// A small gate shown once, before a fresh attempt starts — never shown again once the
+// student has picked a mode, since that choice is saved into the exam's own progress.
+function TimeModeGate({ examTitle, onChoose }) {
+  return (
+    <div className="mx-auto max-w-md mt-10 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
+      <Clock size={28} style={{ color: "#15396B" }} className="mx-auto mb-2" />
+      <h2 className="text-[16px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Start {examTitle}</h2>
+      <p className="text-[13px] text-stone-500 mb-5">Sit this under real exam time pressure, or take it untimed at your own pace. Either way, your answers save automatically.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onClick={() => onChoose(true)} className="rounded-lg border-2 p-4 text-left transition hover:shadow-sm" style={{ borderColor: "#15396B" }}>
+          <div className="text-[13.5px] font-semibold text-stone-800">Timed</div>
+          <div className="text-[11.5px] text-stone-500 mt-0.5">1 hour 30 minutes, matching the real exam. Doesn&apos;t lock you out at zero — just a countdown.</div>
+        </button>
+        <button onClick={() => onChoose(false)} className="rounded-lg border-2 p-4 text-left transition hover:shadow-sm" style={{ borderColor: "#e7e2d8" }}>
+          <div className="text-[13.5px] font-semibold text-stone-800">Untimed</div>
+          <div className="text-[11.5px] text-stone-500 mt-0.5">Work at your own pace, no clock.</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExamTimer({ startedAtMs }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const remaining = EXAM_DURATION_SECONDS - (now - startedAtMs) / 1000;
+  const isLow = remaining <= 15 * 60 && remaining > 0;
+  const isOver = remaining <= 0;
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold"
+      style={{
+        backgroundColor: isOver ? "#FBEFED" : isLow ? "#FBF4E2" : "#EAF1F8",
+        color: isOver ? "#B3392C" : isLow ? "#B8860B" : "#15396B",
+      }}
+    >
+      <Clock size={14} />
+      {isOver ? "Time's up — keep going if you like" : `${formatCountdown(remaining)} remaining`}
+    </div>
+  );
+}
+
+function MockExamRunner({ exam, onBackToMap, onChangeExam, role }) {
+  const [state, setState] = useState({});
+  const [chosenEssayId, setChosenEssayId] = useState(null);
+  const [profile, setProfile] = useState(emptyProfile());
+  const [loaded, setLoaded] = useState(false);
+  const [timeMode, setTimeMode] = useState(null); // null = not decided yet; "timed" | "untimed"
+  const [startedAtMs, setStartedAtMs] = useState(null);
+  const responsesRef = useRef({});
+  const flushTimerRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [responses, p] = await Promise.all([
+        loadResponses(exam.id).catch(() => ({})),
+        loadProfile().catch(() => emptyProfile()),
+      ]);
+      if (cancelled) return;
+      responsesRef.current = responses || {};
+      setState(responses || {});
+      setProfile(p || emptyProfile());
+      const savedEssay = exam.sectionB.find((q) => responses && responses[q.id]);
+      if (savedEssay) setChosenEssayId(savedEssay.id);
+      const meta = responses && responses.__meta;
+      if (meta) {
+        setTimeMode(meta.timed ? "timed" : "untimed");
+        setStartedAtMs(meta.startedAt ? new Date(meta.startedAt).getTime() : Date.now());
+      }
+      setLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [exam.id]);
+
+  const chooseTimeMode = useCallback((timed) => {
+    const startedAt = new Date().toISOString();
+    const meta = { timed, startedAt };
+    setTimeMode(timed ? "timed" : "untimed");
+    setStartedAtMs(new Date(startedAt).getTime());
+    const next = { ...responsesRef.current, __meta: meta };
+    responsesRef.current = next;
+    saveResponses(exam.id, next).catch(() => {});
+  }, [exam.id]);
+
+  const scheduleSave = useCallback(() => {
+    if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+    flushTimerRef.current = setTimeout(() => {
+      saveResponses(exam.id, responsesRef.current).catch(() => {});
+    }, 900);
+  }, [exam.id]);
+
+  const onChangeAnswer = useCallback((id, text) => {
+    setState((prev) => {
+      const next = { ...prev, [id]: { ...(prev[id] || {}), answer: text, status: "idle" } };
+      responsesRef.current = next;
+      return next;
+    });
+    scheduleSave();
+  }, [scheduleSave]);
+
+  const onSubmit = useCallback(async (question) => {
+    setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "loading" } }));
+    try {
+      const prevEntry = responsesRef.current[question.id] || {};
+      const wasPreviouslyGraded = typeof prevEntry.score === "number";
+      const prevScore = wasPreviouslyGraded ? prevEntry.score : 0;
+      const result = await gradeAnswer(question, prevEntry.answer || "", exam.caseText);
+      const newEntry = { answer: prevEntry.answer || "", status: "graded", score: result.score, feedback: result.feedback, tip: result.tip };
+      setState((prev) => {
+        const next = { ...prev, [question.id]: newEntry };
+        responsesRef.current = next;
+        return next;
+      });
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+      await saveResponses(exam.id, responsesRef.current).catch(() => {});
+      // Logged the same way regular practice questions are, so this flows straight into
+      // the teacher dashboard's existing attempt pipeline — exam.id (e.g. "revision-a")
+      // simply becomes another subunit_id there.
+      logQuestionAttempt({ subunitId: exam.id, questionId: question.id, section: question.section, marksEarned: result.score, marksPossible: question.marks });
+      setProfile((prevProfile) => {
+        const p = { ...prevProfile };
+        p.xp = (p.xp || 0) + (result.score - prevScore) * XP_PER_MARK;
+        saveProfile(p);
+        return p;
+      });
+    } catch (err) {
+      setState((prev) => ({ ...prev, [question.id]: { ...prev[question.id], status: "error", errorMsg: err.message || "Marking failed." } }));
+    }
+  }, [exam]);
+
+  const onEditAgain = useCallback((id) => {
+    setState((prev) => ({ ...prev, [id]: { ...prev[id], status: "idle" } }));
+  }, []);
+
+  const chosenEssay = exam.sectionB.find((q) => q.id === chosenEssayId) || null;
+  const sectionADone = exam.sectionA.filter((q) => state[q.id]?.status === "graded").length;
+  const essayGraded = chosenEssay && state[chosenEssay.id]?.status === "graded";
+  const examComplete = sectionADone === exam.sectionA.length && essayGraded;
+  const totalPossible = exam.sectionA.reduce((s, q) => s + q.marks, 0) + 10;
+  const totalEarned = exam.sectionA.reduce((s, q) => s + (state[q.id]?.score || 0), 0) + (essayGraded ? state[chosenEssay.id].score : 0);
+  const progressDone = sectionADone + (essayGraded ? 1 : 0);
+  const progressTotal = exam.sectionA.length + 1;
+
+  return (
+    <div className="min-h-full" style={{ backgroundColor: "#F2EEE4" }}>
+      <ModuleHeader
+        themeColor="#15396B"
+        onBack={onBackToMap}
+        ModuleIcon={Award}
+        moduleName={exam.title}
+        progressLine={loaded ? `${progressDone}/${progressTotal} marked` : ""}
+        progressPercent={loaded ? (progressDone / progressTotal) * 100 : 0}
+        subunitTitle="Unit 1 Mock Exam"
+        role={role}
+      />
+
+      {loaded && !timeMode ? (
+        <TimeModeGate examTitle={exam.title} onChoose={chooseTimeMode} />
+      ) : (
+        <div className="mx-auto max-w-3xl px-5 py-6">
+          <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+            <div className="rounded-lg border bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800 flex-1 min-w-[200px]" style={{ borderColor: "#f0dfb8" }}>
+              Instructions: read the case study carefully. Section A: answer all questions. Section B: answer <strong>one</strong> question. Answers are marked by AI using the same rigor as your regular practice questions.
+            </div>
+            {timeMode === "timed" && startedAtMs && <ExamTimer startedAtMs={startedAtMs} />}
+          </div>
+          <button onClick={onChangeExam} className="mb-4 text-[12px] font-medium hover:underline" style={{ color: "#15396B" }}>← Choose a different mock exam</button>
+
+          <div className="mb-6 rounded-lg border bg-white" style={{ borderColor: "#e7e2d8" }}>
+            <ReadingPanel caseText={exam.caseText} />
+          </div>
+
+          <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section A</h2>
+          <p className="text-[12.5px] text-stone-500 mb-4">Answer all questions from this section. ({sectionADone}/{exam.sectionA.length} marked)</p>
+          {exam.sectionA.map((q) => (
+            <QuestionCard key={q.id} question={q} state={state[q.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
+          ))}
+
+          <h2 className="text-[15px] font-bold mb-1 mt-8" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>Section B</h2>
+          <p className="text-[12.5px] text-stone-500 mb-4">Answer <strong>one</strong> question from this section.</p>
+          {!chosenEssayId ? (
+            <div className="space-y-3">
+              {exam.sectionB.map((q) => (
+                <button
+                  key={q.id}
+                  onClick={() => setChosenEssayId(q.id)}
+                  className="w-full text-left rounded-lg border bg-white p-4 transition hover:border-[#15396B] hover:shadow-sm"
+                  style={{ borderColor: "#e7e2d8" }}
+                >
+                  <div className="text-[13px] text-stone-800 leading-snug">{q.num}. {q.prompt}</div>
+                  <div className="text-[11.5px] text-stone-400 mt-1">[{q.marks} marks]</div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              {!essayGraded && (
+                <button onClick={() => setChosenEssayId(null)} className="mb-3 text-[12.5px] font-medium hover:underline" style={{ color: "#15396B" }}>
+                  ← Choose a different question
+                </button>
+              )}
+              <QuestionCard question={chosenEssay} state={state[chosenEssay.id]} onChangeAnswer={onChangeAnswer} onSubmit={onSubmit} onEditAgain={onEditAgain} caseText={exam.caseText} />
+            </>
+          )}
+
+          {examComplete && (
+            <div className="mt-8 rounded-xl border bg-white p-6 text-center" style={{ borderColor: "#e7e2d8" }}>
+              <Trophy size={32} style={{ color: "#C9A24B" }} className="mx-auto mb-2" />
+              <div className="text-[15px] font-semibold text-stone-600 mb-1">{exam.title} complete</div>
+              <div className="text-[28px] font-bold" style={{ fontFamily: "'Lora', serif", color: "#15396B" }}>{totalEarned} / {totalPossible}</div>
+              <p className="text-[12.5px] text-stone-500 mt-2">Review the feedback on each question above — click &quot;Edit again&quot; on any question to revise and resubmit.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MockExamView({ onBackToMap, role }) {
+  const [examId, setExamId] = useState(null);
+  const [progressByExam, setProgressByExam] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        REVISION_EXAMS.map(async (exam) => {
+          const responses = await loadResponses(exam.id).catch(() => ({}));
+          const total = exam.sectionA.length + 1;
+          const done = exam.sectionA.filter((q) => responses[q.id]?.status === "graded").length
+            + (exam.sectionB.some((q) => responses[q.id]?.status === "graded") ? 1 : 0);
+          return [exam.id, { done, total }];
+        })
+      );
+      if (!cancelled) setProgressByExam(Object.fromEntries(entries));
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const exam = REVISION_EXAMS.find((e) => e.id === examId) || null;
+  if (examId === "terms") {
+    return <FlashcardsView subunitId="revision-terms" onBack={() => setExamId(null)} role={role} titleOverride="Unit 1 — All Key Terms" />;
+  }
+  if (examId === "diagnostics") {
+    return <DiagnosticsView onBack={() => setExamId(null)} role={role} />;
+  }
+  if (examId === "glossary") {
+    return <GlossaryView onBack={() => setExamId(null)} role={role} />;
+  }
+  if (!exam) {
+    return <MockExamPicker onBackToMap={onBackToMap} onChoose={setExamId} progressByExam={progressByExam} />;
+  }
+  return <MockExamRunner exam={exam} onBackToMap={onBackToMap} onChangeExam={() => setExamId(null)} role={role} />;
+}
 
 function UnitMapView({ onSelectSubunit, role, classInfo, onJoinedClass }) {
   const [loaded, setLoaded] = useState(false);
@@ -4486,7 +5189,7 @@ export default function ApplePractice1_1({ initialRole = "student", initialClass
     );
   }
   if (view === "revision") {
-    return <FadeIn key="revision" className="min-h-full"><MockExamView onBackToMap={() => setView("unitmap")} /><FeedbackTile page="Unit 1 mock exam" /></FadeIn>;
+    return <FadeIn key="revision" className="min-h-full"><MockExamView onBackToMap={() => setView("unitmap")} role={roleInfo.role} /><FeedbackTile page="Unit 1 mock exam" /></FadeIn>;
   }
   if (view === "hub") {
     return <FadeIn key="hub" className="min-h-full"><SubunitHub subunitId={currentSubunitId} onSelectView={setView} onBackToMap={() => setView("unitmap")} role={roleInfo.role} /><FeedbackTile page={`Subunit hub — ${currentSubunitId}`} /></FadeIn>;

@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import {
   Loader2, Copy, Check, ChevronRight, ChevronDown, Users, Clock, Target, BookOpen,
-  AlertTriangle, AlertCircle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles, Send, Mail,
+  AlertTriangle, AlertCircle, Flame, Calendar, Search, ArrowUpDown, UserMinus, Download, Printer, X, CheckCircle2, Sparkles, Send, Mail, Award,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -31,7 +31,16 @@ const SUBUNIT_LABELS = {
   "1.4": "1.4 Stakeholders",
   "1.5": "1.5 Growth and evolution",
   "1.6": "1.6 Multinational companies",
+  "revision-a": "Mock Exam A",
+  "revision-b": "Mock Exam B",
+  "revision-c": "Mock Exam C",
 };
+// Mock exam variants are tracked completely separately from the 6 regular subunits (a
+// different marks total — 30, not the per-stage vocab/structured/essay split — so mixing
+// them into the same per-subunit accuracy chart would be misleading). Anything using
+// SUBUNIT_QUESTION_COUNTS' keys to walk "the 6 subunits" should stay unaffected by these.
+const REVISION_EXAM_IDS = ["revision-a", "revision-b", "revision-c"];
+const REVISION_TOTAL_MARKS = 30;
 const SECTION_LABELS = { vocab: "Vocabulary", structured: "Structured", essay: "Extended response" };
 
 // Mirrors the BADGES catalog in components/BizQuest.js (id -> display name), just for
@@ -723,6 +732,86 @@ function NeedsAttentionBanner({ students, onSelect }) {
   );
 }
 
+// Class-wide mock exam analytics — one card per variant (average score, who's finished),
+// plus a list of students who haven't attempted any of the three yet. Teachers previously
+// had zero visibility into mock exam results at all; this is the whole point of that fix.
+function MockExamsPanel({ examSummary, studentsWithNoExamAttempt, onSelectStudent }) {
+  const [expandedExamId, setExpandedExamId] = useState(null);
+  const anyAttempts = examSummary.some((e) => e.attemptedCount > 0);
+
+  return (
+    <div className="rounded-lg border bg-white p-4 mb-5" style={{ borderColor: "#e7e2d8" }}>
+      <div className="flex items-center gap-1.5 text-[13px] font-semibold mb-3" style={{ color: NAVY }}>
+        <Award size={15} /> Mock exams
+      </div>
+
+      {!anyAttempts ? (
+        <p className="text-[12.5px] text-stone-500">No one has attempted a mock exam yet. They unlock for students once all 6 subunits are complete.</p>
+      ) : (
+        <div className="grid sm:grid-cols-3 gap-3 mb-3">
+          {examSummary.map((exam) => (
+            <button
+              key={exam.id}
+              onClick={() => setExpandedExamId((prev) => (prev === exam.id ? null : exam.id))}
+              className="rounded-lg border p-3 text-left transition hover:shadow-sm"
+              style={{ borderColor: expandedExamId === exam.id ? NAVY : "#e7e2d8" }}
+            >
+              <div className="text-[12.5px] font-semibold text-stone-700 mb-1">{exam.label}</div>
+              <div className="text-[22px] font-bold" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
+                {exam.avgPct !== null ? `${exam.avgPct}%` : "—"}
+              </div>
+              <div className="text-[11px] text-stone-500 mt-0.5">
+                {exam.attemptedCount === 0 ? "No attempts yet" : `${exam.completeCount}/${exam.attemptedCount} finished · class avg`}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {expandedExamId && (
+        <div className="rounded-md border overflow-hidden mb-3" style={{ borderColor: "#e7e2d8" }}>
+          <table className="w-full text-[12.5px]">
+            <thead>
+              <tr className="border-b border-stone-200 text-left text-stone-500 bg-stone-50">
+                <th className="px-3 py-1.5 font-medium">Student</th>
+                <th className="px-3 py-1.5 font-medium text-right">Score</th>
+                <th className="px-3 py-1.5 font-medium text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {examSummary.find((e) => e.id === expandedExamId).perStudent.map((p) => (
+                <tr key={p.id} className="border-b border-stone-100 last:border-0">
+                  <td className="px-3 py-1.5">
+                    <button onClick={() => onSelectStudent(p.id)} className="text-stone-700 hover:underline text-left">{p.label}</button>
+                  </td>
+                  <td className="px-3 py-1.5 text-right text-stone-600">{p.earned}/{p.possible}</td>
+                  <td className="px-3 py-1.5 text-right">
+                    {p.complete
+                      ? <span className="inline-flex items-center gap-1" style={{ color: GREEN }}><CheckCircle2 size={12} /> Finished</span>
+                      : <span className="text-stone-400">In progress</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {studentsWithNoExamAttempt.length > 0 && (
+        <div className="text-[11.5px] text-stone-500">
+          <span className="font-medium text-stone-600">{studentsWithNoExamAttempt.length} student{studentsWithNoExamAttempt.length > 1 ? "s" : ""} haven&apos;t started any mock exam:</span>{" "}
+          {studentsWithNoExamAttempt.map((s, i) => (
+            <span key={s.id}>
+              <button onClick={() => onSelectStudent(s.id)} className="hover:underline" style={{ color: NAVY }}>{s.label}</button>
+              {i < studentsWithNoExamAttempt.length - 1 ? ", " : ""}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentDetailPanel({ student, attempts, activity, compAttempts, subunitProgressList, onRemove, persistence, summaryState, onGenerateSummary }) {
   const [expandedSubunit, setExpandedSubunit] = useState(null);
   const myAttempts = useMemo(() => attempts.filter((a) => a.user_id === student.id), [attempts, student.id]);
@@ -1272,6 +1361,7 @@ export default function TeacherDashboard({ initialClasses }) {
     const agg = {};
     for (const s of studentStats) {
       for (const [id, v] of Object.entries(s.bySubunit)) {
+        if (REVISION_EXAM_IDS.includes(id)) continue; // mock exams get their own dedicated panel, not this chart
         agg[id] = agg[id] || { earned: 0, possible: 0 };
         agg[id].earned += v.earned;
         agg[id].possible += v.possible;
@@ -1281,6 +1371,37 @@ export default function TeacherDashboard({ initialClasses }) {
       .map(([id, v]) => ({ label: SUBUNIT_LABELS[id] || id, value: pct(v.earned, v.possible) ?? 0 }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [studentStats]);
+
+  // Per-variant class summary (average score, who's attempted) plus the list of students
+  // who haven't started any of the three variants — both explicitly asked for.
+  const examSummary = useMemo(() => {
+    return REVISION_EXAM_IDS.map((examId) => {
+      const attempters = studentStats.filter((s) => s.bySubunit[examId] && s.bySubunit[examId].possible > 0);
+      const totalEarned = attempters.reduce((sum, s) => sum + s.bySubunit[examId].earned, 0);
+      const totalPossible = attempters.reduce((sum, s) => sum + s.bySubunit[examId].possible, 0);
+      const perStudent = attempters
+        .map((s) => ({
+          id: s.id, label: s.label,
+          earned: s.bySubunit[examId].earned,
+          possible: s.bySubunit[examId].possible,
+          complete: s.bySubunit[examId].possible >= REVISION_TOTAL_MARKS,
+        }))
+        .sort((a, b) => b.earned - a.earned);
+      return {
+        id: examId,
+        label: SUBUNIT_LABELS[examId],
+        attemptedCount: attempters.length,
+        completeCount: perStudent.filter((p) => p.complete).length,
+        avgPct: attempters.length ? pct(totalEarned, totalPossible) : null,
+        perStudent,
+      };
+    });
+  }, [studentStats]);
+
+  const studentsWithNoExamAttempt = useMemo(
+    () => studentStats.filter((s) => !REVISION_EXAM_IDS.some((id) => s.bySubunit[id]?.possible > 0)),
+    [studentStats]
+  );
 
   const classAccuracyBySection = useMemo(() => {
     const agg = {};
@@ -1511,6 +1632,9 @@ export default function TeacherDashboard({ initialClasses }) {
                   <AccuracyBarChart data={classAccuracyBySection} height={Math.max(90, classAccuracyBySection.length * 34)} />
                 </div>
               </div>
+
+              <MockExamsPanel examSummary={examSummary} studentsWithNoExamAttempt={studentsWithNoExamAttempt} onSelectStudent={setExpandedStudentId} />
+
               <div className="grid sm:grid-cols-2 gap-4 mb-5">
                 <div>
                   <div className="text-[12px] font-semibold text-stone-600 mb-1.5">Class accuracy trend — last {TREND_WEEKS} weeks</div>
