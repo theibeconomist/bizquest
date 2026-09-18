@@ -2,11 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Trophy, CheckCircle2, XCircle, Users } from "lucide-react";
 import { joinQuizByCode, submitQuizAnswer, loadQuizGame, loadQuizTeams, subscribeToQuizGame } from "@/lib/db";
-
-const NAVY = "#15396B";
-const GOLD = "#C9A24B";
-const GREEN = "#2E8B84";
-const RED = "#B3392C";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD, QUIZ_GREEN as GREEN, QUIZ_RED as RED } from "@/components/QuizShared";
 
 function JoinForm({ onJoined }) {
   const [code, setCode] = useState("");
@@ -76,6 +72,7 @@ function TeamPlayer({ teamId, gameId }) {
   const [loading, setLoading] = useState(true);
   const [answeredIndex, setAnsweredIndex] = useState(null); // question_index this team last answered
   const [pickedOption, setPickedOption] = useState(null);
+  const [feedback, setFeedback] = useState(null); // { correct, points } while the popup shows
   const unsubRef = useRef(null);
 
   useEffect(() => {
@@ -149,12 +146,14 @@ function TeamPlayer({ teamId, gameId }) {
 
   const choose = async (optIdx) => {
     if (alreadyAnswered || !isMyTurn) return;
+    const correct = optIdx === question.correct;
     setPickedOption(optIdx);
     setAnsweredIndex(game.current_index);
+    setFeedback({ correct, points: question.points });
     try {
       await submitQuizAnswer({
         gameId, teamId, questionIndex: game.current_index,
-        selectedOption: optIdx, isCorrect: optIdx === question.correct,
+        selectedOption: optIdx, isCorrect: correct, points: question.points,
       });
     } catch {
       // best-effort — if this fails the teacher can still see/verify manually
@@ -167,17 +166,24 @@ function TeamPlayer({ teamId, gameId }) {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
         <div className="text-[13px] text-stone-400 mb-2">Question {game.current_index + 1} of {game.questions.length}</div>
         <h2 className="text-[17px] font-semibold text-stone-700 mb-1">{upTeam?.name} is up!</h2>
-        <p className="text-[13px] text-stone-500">Watching — you&apos;ll get your turn on another question.</p>
+        <p className="text-[13px] text-stone-500 mb-4">Watching — you&apos;ll get your turn on another question.</p>
+        <div className="w-full max-w-xs"><Scoreboard teams={teams} currentTeamId={game.current_team_id} /></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen px-4 py-8" style={{ backgroundColor: "#FAF8F5" }}>
+      {feedback && (
+        <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={myTeam?.name} onDismiss={() => setFeedback(null)} />
+      )}
       <div className="max-w-md mx-auto">
-        <div className="text-[12.5px] text-stone-500 mb-1">Question {game.current_index + 1} of {game.questions.length} · {myTeam?.name}</div>
-        <h2 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h2>
-        <div className="space-y-2.5">
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {game.questions.length} · {myTeam?.name}</div>
+          <DifficultyBadge question={question} />
+        </div>
+        <h2 className="text-[17px] font-semibold text-stone-800 mb-4 mt-2">{question.q}</h2>
+        <div className="space-y-2.5 mb-5">
           {question.options.map((opt, i) => {
             let style = { borderColor: "#e7e2d8" };
             const showResult = game.revealed || alreadyAnswered;
@@ -199,7 +205,8 @@ function TeamPlayer({ teamId, gameId }) {
             );
           })}
         </div>
-        {alreadyAnswered && <p className="text-center text-[12.5px] text-stone-400 mt-4">Answer submitted — waiting for your teacher to move on.</p>}
+        {alreadyAnswered && <p className="text-center text-[12.5px] text-stone-400 mb-4">Answer submitted — waiting for your teacher to move on.</p>}
+        <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
       </div>
     </div>
   );

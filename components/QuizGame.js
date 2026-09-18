@@ -1,12 +1,13 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Shuffle, Play, Monitor, Smartphone,
+  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone,
 } from "lucide-react";
-import { getQuizQuestions } from "@/lib/quiz-bank";
+import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -21,12 +22,14 @@ const SUBUNIT_OPTIONS = [
   { id: "1.5", label: "1.5 Growth and evolution" },
   { id: "1.6", label: "1.6 Multinational companies" },
 ];
-const QUESTION_COUNT_OPTIONS = [5, 8, 10, 12, 15];
+const BASE_COUNT_OPTIONS = [5, 8, 10, 12, 15];
+const ALL_UNIT_COUNT_OPTIONS = [10, 15, 20, 30, 40, 50];
 
 function pickRandomTeamId(teams, excludeId) {
-  const pool = teams.length > 1 && excludeId ? teams.filter((t) => t.id !== excludeId) : teams;
+  const pool = teams.length > 1 && excludeId != null ? teams.filter((t) => t.id !== excludeId) : teams;
   const list = pool.length > 0 ? pool : teams;
-  return list[Math.floor(Math.random() * list.length)]?.id || null;
+  const picked = list[Math.floor(Math.random() * list.length)];
+  return picked ? picked.id : null;
 }
 
 // ============================================================
@@ -34,6 +37,7 @@ function pickRandomTeamId(teams, excludeId) {
 // ============================================================
 function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
   const [subunitId, setSubunitId] = useState("1.1");
+  const [allUnit, setAllUnit] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
   const [mode, setMode] = useState("single_screen");
   const [teamNames, setTeamNames] = useState(["Team 1", "Team 2"]);
@@ -54,37 +58,60 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
     return () => { cancelled = true; };
   }, []);
 
+  const countOptions = allUnit ? ALL_UNIT_COUNT_OPTIONS : BASE_COUNT_OPTIONS;
+  const maxAvailable = maxQuestionsFor(subunitId, allUnit);
+
+  // Clamps the selected count to whatever's actually valid for the current pool —
+  // done directly in the handlers below (not as a reactive effect), since this is a
+  // direct response to the user's own action, not a sync with an external system.
+  const clampCount = (isAllUnit, sid) => {
+    const opts = isAllUnit ? ALL_UNIT_COUNT_OPTIONS : BASE_COUNT_OPTIONS;
+    const max = maxQuestionsFor(sid, isAllUnit);
+    const valid = opts.filter((n) => n <= max);
+    setQuestionCount(valid[valid.length - 1] || max);
+  };
+  const onToggleAllUnit = (checked) => { setAllUnit(checked); clampCount(checked, subunitId); };
+  const onChangeSubunit = (id) => { setSubunitId(id); clampCount(allUnit, id); };
+
   const updateTeamName = (i, val) => setTeamNames((prev) => prev.map((t, idx) => (idx === i ? val : t)));
   const addTeam = () => setTeamNames((prev) => [...prev, `Team ${prev.length + 1}`]);
   const removeTeam = (i) => setTeamNames((prev) => prev.filter((_, idx) => idx !== i));
 
   const onStart = () => {
-    const questions = getQuizQuestions(subunitId, questionCount);
+    const questions = getQuizQuestions(subunitId, questionCount, { allUnit });
+    const label = allUnit ? "All of Unit 1" : subunitId;
     if (mode === "single_screen") {
       const names = teamNames.map((t) => t.trim()).filter(Boolean);
       if (names.length < 2) { alert("Add at least 2 teams."); return; }
-      onStartSingleScreen({ subunitId, questions, teamNames: names });
+      onStartSingleScreen({ subunitId: label, questions, teamNames: names });
     } else {
-      onStartMultiDevice({ subunitId, questions, classId: classId || null });
+      onStartMultiDevice({ subunitId: label, questions, classId: classId || null });
     }
   };
 
   return (
     <div className="max-w-xl mx-auto bg-white rounded-xl border border-stone-200 p-6">
       <h2 className="text-[18px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>Set up a quiz game</h2>
-      <p className="text-[13px] text-stone-500 mb-5">A fast-paced review game — each question gets randomly assigned to one team to answer.</p>
+      <p className="text-[13px] text-stone-500 mb-5">
+        Mostly theory, ordered easy → hard as you go, with Apple case-study questions saved as higher-value bonus rounds at the end. Each question gets randomly assigned to one team to answer.
+      </p>
 
       <div className="mb-4">
-        <label className="block text-[12.5px] font-medium text-stone-600 mb-1.5">Subunit</label>
-        <select value={subunitId} onChange={(e) => setSubunitId(e.target.value)} className="w-full rounded-md border border-stone-300 px-3 py-2 text-[14px]">
-          {SUBUNIT_OPTIONS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
+        <label className="flex items-center gap-2 text-[12.5px] font-medium text-stone-600 mb-2">
+          <input type="checkbox" checked={allUnit} onChange={(e) => onToggleAllUnit(e.target.checked)} className="rounded" />
+          Mix questions from all of Unit 1 (1.1–1.6)
+        </label>
+        {!allUnit && (
+          <select value={subunitId} onChange={(e) => onChangeSubunit(e.target.value)} className="w-full rounded-md border border-stone-300 px-3 py-2 text-[14px]">
+            {SUBUNIT_OPTIONS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
+        )}
       </div>
 
       <div className="mb-5">
         <label className="block text-[12.5px] font-medium text-stone-600 mb-1.5">Number of questions</label>
         <div className="flex gap-2 flex-wrap">
-          {QUESTION_COUNT_OPTIONS.map((n) => (
+          {countOptions.filter((n) => n <= maxAvailable).map((n) => (
             <button
               key={n}
               onClick={() => setQuestionCount(n)}
@@ -95,6 +122,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame }) {
             </button>
           ))}
         </div>
+        <p className="mt-1 text-[11px] text-stone-400">{maxAvailable} question{maxAvailable !== 1 ? "s" : ""} available in this pool.</p>
       </div>
 
       <div className="mb-5">
@@ -182,6 +210,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
   const [currentTeamId, setCurrentTeamId] = useState(() => teams[Math.floor(Math.random() * teams.length)].id);
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
+  const [feedback, setFeedback] = useState(null); // { correct, points } while the popup shows
   const [finished, setFinished] = useState(false);
 
   const question = questions[index];
@@ -189,11 +218,13 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
 
   const choose = (optIdx) => {
     if (revealed) return;
+    const correct = optIdx === question.correct;
     setSelected(optIdx);
     setRevealed(true);
-    if (optIdx === question.correct) {
-      setTeams((prev) => prev.map((t) => (t.id === currentTeamId ? { ...t, score: t.score + 1 } : t)));
+    if (correct) {
+      setTeams((prev) => prev.map((t) => (t.id === currentTeamId ? { ...t, score: t.score + question.points } : t)));
     }
+    setFeedback({ correct, points: question.points });
   };
 
   const next = () => {
@@ -215,12 +246,12 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
         <h2 className="text-[20px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
           {isTie ? "It's a tie!" : `${winner.name} wins!`}
         </h2>
-        <p className="text-[13px] text-stone-500 mb-5">{SUBUNIT_OPTIONS.find((s) => s.id === subunitId)?.label}</p>
+        <p className="text-[13px] text-stone-500 mb-5">{SUBUNIT_OPTIONS.find((s) => s.id === subunitId)?.label || subunitId}</p>
         <div className="space-y-2 mb-6">
           {sorted.map((t, i) => (
             <div key={t.id} className="flex items-center justify-between rounded-md px-3 py-2" style={{ backgroundColor: i === 0 ? "#FBF4E2" : "#FAF8F5" }}>
               <span className="text-[14px] font-medium text-stone-700">{i + 1}. {t.name}</span>
-              <span className="text-[14px] font-semibold" style={{ color: NAVY }}>{t.score} / {questions.length}</span>
+              <span className="text-[14px] font-semibold" style={{ color: NAVY }}>{t.score} pts</span>
             </div>
           ))}
         </div>
@@ -233,26 +264,22 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {feedback && (
+        <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} onDismiss={() => setFeedback(null)} />
+      )}
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {index + 1} of {questions.length}</div>
         <button onClick={onExit} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-5">
-        {teams.map((t) => (
-          <div
-            key={t.id}
-            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5"
-            style={t.id === currentTeamId ? { backgroundColor: NAVY, color: "white" } : { backgroundColor: "#f5f2ec", color: "#57534e" }}
-          >
-            {t.id === currentTeamId && <Shuffle size={11} />} {t.name} · {t.score}
-          </div>
-        ))}
-      </div>
+      <Scoreboard teams={teams} currentTeamId={currentTeamId} />
 
       <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <div className="text-[12.5px] font-semibold mb-2" style={{ color: NAVY }}>
-          {currentTeam?.name}&apos;s question
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>
+            {currentTeam?.name}&apos;s question
+          </div>
+          <DifficultyBadge question={question} />
         </div>
         <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
         <div className="space-y-2.5">
@@ -356,11 +383,10 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     return <div className="max-w-md mx-auto text-center text-[13px] text-red-600">{error}</div>;
   }
 
-  // ---- Lobby: waiting for teams to join ----
   if (game.status === "lobby") {
     return (
       <div className="max-w-lg mx-auto bg-white rounded-xl border border-stone-200 p-8 text-center">
-        <div className="text-[12.5px] text-stone-500 mb-1">{SUBUNIT_OPTIONS.find((s) => s.id === subunitId)?.label}</div>
+        <div className="text-[12.5px] text-stone-500 mb-1">{SUBUNIT_OPTIONS.find((s) => s.id === subunitId)?.label || subunitId}</div>
         <div className="text-[13px] text-stone-500 mb-2">Join code</div>
         <button onClick={copyCode} className="inline-flex items-center gap-2 mb-6 rounded-lg border-2 border-dashed px-6 py-3" style={{ borderColor: NAVY }}>
           <span className="text-[32px] font-bold tracking-widest font-mono" style={{ color: NAVY }}>{game.join_code}</span>
@@ -389,7 +415,6 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     );
   }
 
-  // ---- Finished: leaderboard ----
   if (game.status === "finished") {
     const sorted = [...teams].sort((a, b) => b.score - a.score);
     const winner = sorted[0];
@@ -404,7 +429,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
           {sorted.map((t, i) => (
             <div key={t.id} className="flex items-center justify-between rounded-md px-3 py-2" style={{ backgroundColor: i === 0 ? "#FBF4E2" : "#FAF8F5" }}>
               <span className="text-[14px] font-medium text-stone-700">{i + 1}. {t.name}</span>
-              <span className="text-[14px] font-semibold" style={{ color: NAVY }}>{t.score} / {questions.length}</span>
+              <span className="text-[14px] font-semibold" style={{ color: NAVY }}>{t.score} pts</span>
             </div>
           ))}
         </div>
@@ -415,29 +440,22 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     );
   }
 
-  // ---- Active: current question, host view ----
   const question = questions[game.current_index];
   const currentTeam = teams.find((t) => t.id === game.current_team_id);
-  const answeredCurrent = teams.length > 0; // simple presence check is enough for host framing
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {questions.length} · Code {game.join_code}</div>
         <button onClick={exitAndCleanup} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
       </div>
-      <div className="flex flex-wrap gap-2 mb-5">
-        {teams.map((t) => (
-          <div
-            key={t.id}
-            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5"
-            style={t.id === game.current_team_id ? { backgroundColor: NAVY, color: "white" } : { backgroundColor: "#f5f2ec", color: "#57534e" }}
-          >
-            {t.id === game.current_team_id && <Shuffle size={11} />} {t.name} · {t.score}
-          </div>
-        ))}
-      </div>
+
+      <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
+
       <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <div className="text-[12.5px] font-semibold mb-2" style={{ color: NAVY }}>{currentTeam?.name}&apos;s question — on their device now</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{currentTeam?.name}&apos;s question — on their device now</div>
+          <DifficultyBadge question={question} />
+        </div>
         <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
         <div className="space-y-2.5">
           {question.options.map((opt, i) => (
