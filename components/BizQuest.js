@@ -328,15 +328,22 @@ const BADGES = [
 ];
 
 const VIDEO = {
+  id: "UlfMIDb47sY",
+  title: "The Two Steves — from \"Apple at 50: How the iPhone maker revolutionized tech\"",
+  source: "Terms of Service, ABC News",
+  start: 267, // 4:27 — the "The two Steves" chapter begins here
+  end: 516,   // 8:36 — next chapter begins, so the clip ends here
+};
+const VIDEO_OPTIONAL = {
   id: "B7VGag3gtZo",
   title: "The Fascinating Story of Apple: From a Los Altos Garage, Firing Jobs, Near Collapse, and His Return!",
   source: "YouTube",
 };
 const COMPREHENSION_QUESTIONS = [
-  { id: "c1", prompt: "According to the video, in which city — inside Steve Jobs's parents' garage — did Apple begin?",
-    guidance: "Correct answer: Los Altos, California (matches the case study text too). Accept 'Los Altos' alone or 'Los Altos, California'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "According to the video, what happened to Steve Jobs at Apple in the mid-1980s, and how did the company eventually bring him back?",
-    guidance: "Correct answer: Jobs was pushed out of Apple (following a power struggle, commonly with then-CEO John Sculley); Apple brought him back years later by acquiring NeXT, the company he had founded in the meantime. Accept any answer capturing 'he was fired/left' and 'he returned via Apple acquiring his other company'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, where did Steve Wozniak first meet Steve Jobs?",
+    guidance: "Correct answer: on a sidewalk near Cupertino, California (in 1971). Accept any answer capturing 'a sidewalk' or the general location. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, what did Wozniak actually build, and what did Jobs propose doing with it?",
+    guidance: "Correct answer: Wozniak built a simple computer (described as 'little more than a circuit board'); Jobs proposed selling it. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT = `Apple was founded on 1 April 1976 in Los Altos, California, by Steve Jobs, Steve Wozniak and Ronald Wayne, initially to build and sell Wozniak's hand-assembled Apple I computer kit. Two of Apple's three founders, Jobs and Wozniak, are widely regarded as classic examples of entrepreneurs — individuals who identified an opportunity, took on personal financial risk (they raised money for their first production run partly by selling a Volkswagen van and a calculator), and built an organization from nothing. Their creation of Apple from a home-built hobby project into a company is a textbook case of entrepreneurship.
 
@@ -704,6 +711,7 @@ const SUBUNIT_REGISTRY = {
   "1.1": {
     title: "What is a business?",
     video: VIDEO,
+    optionalVideo: VIDEO_OPTIONAL,
     comprehensionQuestions: COMPREHENSION_QUESTIONS,
     caseText: CASE_TEXT,
     questions: QUESTIONS,
@@ -1039,7 +1047,7 @@ function OptionalVideoLink({ video }) {
         <div className="mt-2 rounded-lg border bg-white p-3" style={{ borderColor: "#e7e2d8" }}>
           <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", borderRadius: 8, overflow: "hidden", backgroundColor: "#000" }}>
             <iframe
-              src={`https://www.youtube.com/embed/${video.id}`}
+              src={`https://www.youtube.com/embed/${video.id}${video.start ? `?start=${video.start}${video.end ? `&end=${video.end}` : ""}` : ""}`}
               title={video.title}
               style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1072,7 +1080,7 @@ function VideoSection({ compState, onChangeAnswer, onSubmit, unlocked, savedPuls
         {playing ? (
           <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", borderRadius: 8, overflow: "hidden", backgroundColor: "#000" }}>
             <iframe
-              src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${video.id}?autoplay=1${video.start ? `&start=${video.start}${video.end ? `&end=${video.end}` : ""}` : ""}`}
               title={video.title}
               style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1915,7 +1923,7 @@ function StudyVideoLink({ video }) {
       <div className="rounded-lg border overflow-hidden bg-black" style={{ borderColor: "#e7e2d8" }}>
         <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
           <iframe
-            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1${video.start ? `&start=${video.start}${video.end ? `&end=${video.end}` : ""}` : ""}`}
             title={video.title}
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
