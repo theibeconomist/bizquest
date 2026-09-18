@@ -22,7 +22,7 @@ const SUBUNIT_OPTIONS = [
   { id: "1.5", label: "1.5 Growth and evolution" },
   { id: "1.6", label: "1.6 Multinational companies" },
 ];
-const BASE_COUNT_OPTIONS = [5, 8, 10, 12, 15];
+const BASE_COUNT_OPTIONS = [5, 8, 10, 12, 15, 20];
 const ALL_UNIT_COUNT_OPTIONS = [10, 15, 20, 30, 40, 50];
 
 function pickRandomTeamId(teams, excludeId) {
