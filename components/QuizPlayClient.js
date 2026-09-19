@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Trophy, Users } from "lucide-react";
 import { joinQuizByCode, submitQuizAnswer, loadQuizGame, loadQuizTeams, subscribeToQuizGame } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QuestionTimer, DIFFICULTY_SECONDS, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
 
 function JoinForm({ onJoined }) {
   const [code, setCode] = useState("");
@@ -183,6 +183,11 @@ function TeamPlayer({ teamId, gameId }) {
           <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {game.questions.length} · {myTeam?.name}</div>
           <DifficultyBadge question={question} />
         </div>
+        {game.timer_enabled && !game.revealed && !alreadyAnswered && game.question_started_at && (
+          <div className="mb-2">
+            <QuestionTimer startedAtMs={new Date(game.question_started_at).getTime()} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} />
+          </div>
+        )}
         <h2 className="text-[17px] font-semibold text-stone-800 mb-4 mt-2">{question.q}</h2>
         <div className="space-y-2.5 mb-5">
           {question.options.map((opt, i) => {

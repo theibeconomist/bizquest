@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trophy, Shuffle, Sparkles, CheckCircle2, XCircle } from "lucide-react";
 
 export const QUIZ_NAVY = "#15396B";
@@ -26,6 +26,49 @@ export function DifficultyBadge({ question }) {
 
 // Lightweight CSS confetti burst — no external library, just a handful of animated dots.
 export const OPTION_LETTERS = ["A", "B", "C", "D"];
+export const DIFFICULTY_SECONDS = { easy: 20, medium: 25, hard: 30 };
+
+// A per-question countdown, ticking down from a difficulty-based duration. Purely a
+// pacing/pressure cue — calls onExpire once when it hits zero, but doesn't repeat and
+// doesn't block anything itself; the caller decides what "time's up" actually does
+// (auto-reveal, in every place this is used).
+export function QuestionTimer({ startedAtMs, seconds, onExpire }) {
+  const [now, setNow] = useState(() => Date.now());
+  const firedRef = useRef(false);
+  useEffect(() => { firedRef.current = false; }, [startedAtMs]);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, []);
+  const remaining = Math.max(0, seconds - (now - startedAtMs) / 1000);
+  useEffect(() => {
+    if (remaining <= 0 && !firedRef.current) {
+      firedRef.current = true;
+      onExpire && onExpire();
+    }
+  }, [remaining, onExpire]);
+  const isLow = remaining <= 5;
+  const pct = Math.max(0, Math.min(100, (remaining / seconds) * 100));
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <div className="relative w-6 h-6 shrink-0">
+        <svg viewBox="0 0 24 24" className="w-6 h-6 -rotate-90">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#e7e2d8" strokeWidth="3" />
+          <circle
+            cx="12" cy="12" r="10" fill="none"
+            stroke={isLow ? "#B3392C" : "#15396B"}
+            strokeWidth="3"
+            strokeDasharray={62.8}
+            strokeDashoffset={62.8 * (1 - pct / 100)}
+            style={{ transition: "stroke-dashoffset 0.2s linear" }}
+          />
+        </svg>
+      </div>
+      <span className="text-[13px] font-bold tabular-nums" style={{ color: isLow ? "#B3392C" : "#15396B" }}>{Math.ceil(remaining)}s</span>
+    </div>
+  );
+}
+
 // Classic game-show / Kahoot-style option colors — red, blue, gold, green.
 export const OPTION_COLORS = ["#B3392C", "#2F5FA8", "#C9A24B", "#2E8B84"];
 
@@ -163,7 +206,7 @@ export function Confetti() {
 }
 
 // Celebration / consolation popup shown right after a team answers. Auto-dismisses.
-export function AnswerFeedbackModal({ correct, points, teamName, onDismiss }) {
+export function AnswerFeedbackModal({ correct, points, teamName, timedOut, onDismiss }) {
   useEffect(() => {
     if (correct) playSuccessSound(); else playErrorSound();
     const t = setTimeout(onDismiss, 2200);
@@ -180,6 +223,12 @@ export function AnswerFeedbackModal({ correct, points, teamName, onDismiss }) {
             <div className="text-[42px] mb-1">🎉</div>
             <div className="text-[23px] font-bold text-white mb-1">Correct!</div>
             <div className="text-[15px] text-white/90">{teamName ? `${teamName} ` : ""}+{points} point{points !== 1 ? "s" : ""}</div>
+          </>
+        ) : timedOut ? (
+          <>
+            <div className="text-[36px] mb-1">⏱️</div>
+            <div className="text-[20px] font-bold text-white mb-1">Time&apos;s up!</div>
+            <div className="text-[14px] text-white/80">No answer locked in</div>
           </>
         ) : (
           <>

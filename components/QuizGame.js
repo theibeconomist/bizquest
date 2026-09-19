@@ -7,7 +7,7 @@ import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal, QuestionTimer, DIFFICULTY_SECONDS } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -45,6 +45,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
   const [classId, setClassId] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [error, setError] = useState("");
+  const [timerEnabled, setTimerEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,9 +86,9 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
     if (mode === "single_screen") {
       const names = teamNames.map((t) => t.trim()).filter(Boolean);
       if (names.length < 2) { setError("Add at least 2 teams to start."); return; }
-      onStartSingleScreen({ subunitId: label, questions, teamNames: names });
+      onStartSingleScreen({ subunitId: label, questions, teamNames: names, timerEnabled });
     } else {
-      onStartMultiDevice({ subunitId: label, questions, classId: classId || null });
+      onStartMultiDevice({ subunitId: label, questions, classId: classId || null, timerEnabled });
     }
   };
 
@@ -188,6 +189,18 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
         </div>
       )}
 
+      <div className="mb-5">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={timerEnabled} onChange={(e) => setTimerEnabled(e.target.checked)} className="rounded" style={{ accentColor: NAVY, width: 15, height: 15 }} />
+          <span className="text-[13px] font-medium text-stone-700">Time each question</span>
+        </label>
+        {timerEnabled && (
+          <p className="mt-1.5 text-[11.5px] text-stone-500">
+            <span className="font-semibold" style={{ color: "#2E8B84" }}>20s</span> easy · <span className="font-semibold" style={{ color: "#C9A24B" }}>25s</span> medium · <span className="font-semibold" style={{ color: "#B3392C" }}>30s</span> hard — adds a countdown to every question; running out just auto-reveals the answer.
+          </p>
+        )}
+      </div>
+
       {error && (
         <div className="mb-4 flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
           <AlertCircle size={14} className="shrink-0" /> {error}
@@ -209,15 +222,16 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
 // ============================================================
 // Single-screen mode — pure client state, no backend at all
 // ============================================================
-function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
+function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExit }) {
   const [teams, setTeams] = useState(teamNames.map((name, i) => ({ id: i, name, score: 0 })));
   const [index, setIndex] = useState(0);
   const [currentTeamId, setCurrentTeamId] = useState(() => teams[Math.floor(Math.random() * teams.length)].id);
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
-  const [feedback, setFeedback] = useState(null); // { correct, points } while the popup shows
+  const [feedback, setFeedback] = useState(null); // { correct, points, timedOut } while the popup shows
   const [finished, setFinished] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
+  const [questionStartedAt, setQuestionStartedAt] = useState(() => Date.now());
 
   const question = questions[index];
   const currentTeam = teams.find((t) => t.id === currentTeamId);
@@ -233,12 +247,19 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
     setFeedback({ correct, points: question.points });
   };
 
+  const handleTimeout = () => {
+    if (revealed) return;
+    setRevealed(true);
+    setFeedback({ correct: false, points: 0, timedOut: true });
+  };
+
   const next = () => {
     if (index + 1 >= questions.length) { setFinished(true); return; }
     const prevTeamId = currentTeamId;
     setIndex((i) => i + 1);
     setSelected(null);
     setRevealed(false);
+    setQuestionStartedAt(Date.now());
     setCurrentTeamId(pickRandomTeamId(teams, prevTeamId));
   };
 
@@ -272,7 +293,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
   return (
     <div className="max-w-2xl mx-auto">
       {feedback && (
-        <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} onDismiss={() => setFeedback(null)} />
+        <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} timedOut={feedback.timedOut} onDismiss={() => setFeedback(null)} />
       )}
       {confirmingExit && (
         <ConfirmModal
@@ -285,6 +306,9 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
       )}
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {index + 1} of {questions.length}</div>
+        {timerEnabled && !revealed && (
+          <QuestionTimer startedAtMs={questionStartedAt} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} onExpire={handleTimeout} />
+        )}
         <button
           onClick={() => setConfirmingExit(true)}
           className="text-stone-400 hover:text-stone-600"
@@ -341,7 +365,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, onExit }) {
 // ============================================================
 // Multi-device mode — host screen (real-time via Supabase)
 // ============================================================
-function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
+function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }) {
   const [game, setGame] = useState(null);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -354,7 +378,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
     let cancelled = false;
     (async () => {
       try {
-        const created = await createQuizGame({ subunitId, questions, classId });
+        const created = await createQuizGame({ subunitId, questions, classId, timerEnabled });
         if (cancelled) return;
         setGame(created);
         setLoading(false);
@@ -374,7 +398,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
   const startGame = async () => {
     if (teams.length < 2) return; // guarded by the button's own disabled state below
     const firstTeamId = pickRandomTeamId(teams, null);
-    await updateQuizGame(game.id, { status: "active", current_index: 0, current_team_id: firstTeamId, revealed: false });
+    await updateQuizGame(game.id, { status: "active", current_index: 0, current_team_id: firstTeamId, revealed: false, question_started_at: new Date().toISOString() });
   };
 
   const revealAnswer = async () => {
@@ -388,7 +412,7 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
       return;
     }
     const nextTeamId = pickRandomTeamId(teams, game.current_team_id);
-    await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: nextTeamId, revealed: false });
+    await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: nextTeamId, revealed: false, question_started_at: new Date().toISOString() });
   };
 
   const doExit = async () => {
@@ -494,6 +518,13 @@ function MultiDeviceHost({ subunitId, questions, classId, onExit }) {
       )}
       <div className="flex items-center justify-between mb-4">
         <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {questions.length} · Code {game.join_code}</div>
+        {game.timer_enabled && !game.revealed && game.question_started_at && (
+          <QuestionTimer
+            startedAtMs={new Date(game.question_started_at).getTime()}
+            seconds={DIFFICULTY_SECONDS[question.difficulty] || 25}
+            onExpire={() => { if (!game.revealed) revealAnswer(); }}
+          />
+        )}
         <button onClick={requestExit} className="text-stone-400 hover:text-stone-600" aria-label="End game"><X size={18} /></button>
       </div>
 
