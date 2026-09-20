@@ -158,6 +158,8 @@ const STUDY_VIDEOS = {
 // SUBUNIT 1.2 — Types of business entities (data mirrors the 1.1 shape above)
 // ============================================================
 const STUDY_VIDEO_1_2_LIABILITY = { id: "ksdAC8CYF7A", title: "Why Should I Incorporate", channel: "The Company Corporation", length: "2:12" };
+const STUDY_VIDEO_1_2_IPO = { id: "l4HMCr5roAM", title: "What is an IPO?", channel: "CNBC Explains", length: "2:47" };
+const STUDY_VIDEO_1_2_APPLE_IPO = { id: "ByOMU4_20GU", title: "Apple Computers goes public in 1980", channel: "CNN", length: "2:30" };
 
 const SECTION_THEME = {
   vocab: { color: "#2E8B84", light: "#EAF5F4", label: "Stage 2 · Build", desc: "Master the key terminology of the subunit by defining all of the following terms — no example needed." },
@@ -480,15 +482,15 @@ const QUESTIONS = [
   // subunit's content includes AO3 (or AO3+AO4) — check this before adding one elsewhere.
 ];
 const VIDEO_1_2 = {
-  id: "Sssmh4PDOoE",
-  title: "The Secret Behind the Success of Blue Ribbon Sports: Nike's Humble Beginnings",
+  id: "6kIReB8tYwM",
+  title: "History of Apple Company | Steve Jobs to Tim Cook [1976-2021]",
   source: "YouTube",
 };
 const COMPREHENSION_QUESTIONS_1_2 = [
-  { id: "c1", prompt: "According to the video, how did Phil Knight and Bill Bowerman start their business, and what was it originally called?",
-    guidance: "Correct answer: they agreed to a handshake deal, each putting in $500, and started the business as Blue Ribbon Sports (later renamed Nike). Accept any answer capturing the handshake agreement and/or the original name. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
-  { id: "c2", prompt: "According to the video, what did Blue Ribbon Sports do in its earliest days, before it made its own shoes?",
-    guidance: "Correct answer: it imported and distributed Japanese-made running shoes (Onitsuka Tiger) in the United States. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c1", prompt: "According to the video, what type of business structure did Jobs, Wozniak and Wayne use when they launched Apple in 1976?",
+    guidance: "Correct answer: a partnership. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
+  { id: "c2", prompt: "According to the video, what was Apple's market capitalization as of March 15, 2021?",
+    guidance: "Correct answer: $2.08 trillion. Accept anything close to '$2 trillion' or '$2.08 trillion'. This is a quick comprehension check, not a formal exam question — be encouraging and lenient with a 'partial' verdict for close-but-incomplete answers." },
 ];
 const CASE_TEXT_1_2 = `Apple was founded as a general partnership. Jobs and Wozniak each held a 45% stake; Wayne, the eldest of the three and the only one with meaningful personal assets, took the remaining 10% and drafted the founding partnership agreement. Just twelve days later, Wayne sold his 10% stake back to Jobs and Wozniak for $800. His stated reason illustrates a key disadvantage of the partnership form of business entity: under a general partnership, each partner has unlimited liability for the business's debts, and Wayne — who had already been through one bankruptcy from an earlier venture — feared his house, car and savings could be seized if Apple failed to pay a supplier or a loan.
 
@@ -3256,8 +3258,10 @@ function StudyView({ onBack, subunitId, role }) {
           )}
           {current.key === "companies" && (
             <>
-              <div className="mb-4">
+              <div className="mb-4 grid sm:grid-cols-3 gap-3">
                 <StudyVideoLink video={STUDY_VIDEO_1_2_LIABILITY} />
+                <StudyVideoLink video={STUDY_VIDEO_1_2_IPO} />
+                <StudyVideoLink video={STUDY_VIDEO_1_2_APPLE_IPO} />
               </div>
               <SortGame items={COMPANY_SPLIT_ITEMS} buckets={COMPANY_SPLIT_BUCKETS} onComplete={() => markComplete("companies-sort")} />
               <div className="mt-6 pt-5 border-t" style={{ borderColor: "#e7e2d8" }}>
