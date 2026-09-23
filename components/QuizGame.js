@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone, AlertCircle, ZoomIn,
 } from "lucide-react";
@@ -7,7 +7,7 @@ import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal, QuestionTimer, DIFFICULTY_SECONDS } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal, QuestionTimer, DIFFICULTY_SECONDS, teamColor } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -370,15 +370,17 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
 
       <Scoreboard teams={teams} currentTeamId={currentTeamId} />
 
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>
-            {currentTeam?.name}&apos;s question
+      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div style={{ height: 5, backgroundColor: currentTeam ? teamColor(currentTeam.id) : NAVY }} />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[14px] font-extrabold" style={{ color: currentTeam ? teamColor(currentTeam.id) : NAVY }}>
+              {currentTeam?.name}&apos;s question
+            </div>
+            <DifficultyBadge question={question} />
           </div>
-          <DifficultyBadge question={question} />
-        </div>
-        <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
-        <div className="space-y-2.5">
+          <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
+          <div className="space-y-2.5">
           {question.options.map((opt, i) => {
             const isCorrectOpt = i === question.correct;
             const isChosen = i === selected;
@@ -406,6 +408,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
             </button>
           </div>
         )}
+        </div>
       </div>
       <p className="text-center text-[12px] text-stone-400 mt-3">Read the question aloud, then tap the option {currentTeam?.name} chose.</p>
     </div>
@@ -583,13 +586,15 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
 
       <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
 
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{currentTeam?.name}&apos;s question — on their device now</div>
-          <DifficultyBadge question={question} />
-        </div>
-        <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
-        <div className="space-y-2.5">
+      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div style={{ height: 5, backgroundColor: currentTeam ? teamColor(currentTeam.id) : NAVY }} />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[14px] font-extrabold" style={{ color: currentTeam ? teamColor(currentTeam.id) : NAVY }}>{currentTeam?.name}&apos;s question — on their device now</div>
+            <DifficultyBadge question={question} />
+          </div>
+          <h3 className="text-[17px] font-semibold text-stone-800 mb-5">{question.q}</h3>
+          <div className="space-y-2.5">
           {question.options.map((opt, i) => (
             <OptionButton
               key={i}
@@ -611,6 +616,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
               {game.current_index + 1 >= questions.length ? "See results" : "Next question"} <ChevronRight size={15} />
             </button>
           )}
+        </div>
         </div>
       </div>
     </div>

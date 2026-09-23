@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Trophy, Users } from "lucide-react";
 import { joinQuizByCode, submitQuizAnswer, loadQuizGame, loadQuizTeams, subscribeToQuizGame } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QuestionTimer, DIFFICULTY_SECONDS, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QuestionTimer, DIFFICULTY_SECONDS, teamColor, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
 
 function JoinForm({ onJoined }) {
   const [code, setCode] = useState("");
@@ -166,7 +166,7 @@ function TeamPlayer({ teamId, gameId }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
         <div className="text-[13px] text-stone-400 mb-2">Question {game.current_index + 1} of {game.questions.length}</div>
-        <h2 className="text-[17px] font-semibold text-stone-700 mb-1">{upTeam?.name} is up!</h2>
+        <h2 className="text-[19px] font-extrabold mb-1" style={{ color: upTeam ? teamColor(upTeam.id) : undefined }}>{upTeam?.name} is up!</h2>
         <p className="text-[13px] text-stone-500 mb-4">Watching — you&apos;ll get your turn on another question.</p>
         <div className="w-full max-w-xs"><Scoreboard teams={teams} currentTeamId={game.current_team_id} /></div>
       </div>

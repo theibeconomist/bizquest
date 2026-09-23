@@ -6,6 +6,14 @@ export const QUIZ_NAVY = "#15396B";
 export const QUIZ_GOLD = "#C9A24B";
 export const QUIZ_GREEN = "#2E8B84";
 export const QUIZ_RED = "#B3392C";
+
+// A distinct color per team, cycling if there are more teams than colors — used
+// consistently across the scoreboard, the turn spotlight, and team labels so a team
+// reads as "the purple team" at a glance rather than just a name in a list.
+export const TEAM_COLORS = ["#B3392C", "#15396B", "#2E8B84", "#C9A24B", "#6B4C9A", "#2F5FA8"];
+export function teamColor(index) {
+  return TEAM_COLORS[index % TEAM_COLORS.length];
+}
 const DIFFICULTY_COLOR = { easy: QUIZ_GREEN, medium: QUIZ_GOLD, hard: QUIZ_RED };
 
 // Small badge showing a question's difficulty/points, or BONUS for case-study questions.
@@ -257,28 +265,49 @@ export function AnswerFeedbackModal({ correct, points, teamName, timedOut, onDis
 // A clear, always-visible running scoreboard — sorted by score, leader gets a trophy.
 export function Scoreboard({ teams, currentTeamId }) {
   const sorted = [...teams].sort((a, b) => b.score - a.score);
+  const currentTeam = teams.find((t) => t.id === currentTeamId);
+  const medals = ["🥇", "🥈", "🥉"];
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-3 mb-4">
-      <div className="text-[10.5px] font-semibold text-stone-400 uppercase tracking-wide mb-2 px-1">Scoreboard</div>
-      <div className="space-y-1">
-        {sorted.map((t, i) => (
+      <div className="flex items-center justify-between mb-2 px-1">
+        <div className="text-[10.5px] font-semibold text-stone-400 uppercase tracking-wide">Scoreboard</div>
+        {currentTeam && (
           <div
-            key={t.id}
-            className="flex items-center justify-between rounded-md px-3 py-2"
-            style={{ backgroundColor: t.id === currentTeamId ? "#EAF1F8" : "transparent" }}
+            className="inline-flex items-center gap-1.5 rounded-full pl-1.5 pr-3 py-1 text-[12.5px] font-bold text-white"
+            style={{ backgroundColor: teamColor(currentTeam.id), animation: "quiz-turn-pulse 1.6s ease-in-out infinite" }}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              {i === 0 && t.score > 0 && <Trophy size={13} style={{ color: QUIZ_GOLD }} className="shrink-0" />}
-              <span className="text-[13.5px] font-medium text-stone-700 truncate">{t.name}</span>
-              {t.id === currentTeamId && (
-                <span className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ backgroundColor: QUIZ_NAVY }}>
-                  <Shuffle size={9} /> Up now
-                </span>
-              )}
-            </div>
-            <span className="text-[16px] font-bold shrink-0 ml-2" style={{ color: QUIZ_NAVY }}>{t.score}</span>
+            <span className="flex items-center justify-center rounded-full bg-white/25 w-5 h-5 text-[11px]">▶</span>
+            {currentTeam.name}&apos;s turn
           </div>
-        ))}
+        )}
+      </div>
+      <style>{`@keyframes quiz-turn-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.12); } 50% { box-shadow: 0 0 0 5px rgba(0,0,0,0); } }`}</style>
+      <div className="space-y-1.5">
+        {sorted.map((t, i) => {
+          const isUp = t.id === currentTeamId;
+          const color = teamColor(t.id);
+          return (
+            <div
+              key={t.id}
+              className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-all"
+              style={{
+                backgroundColor: isUp ? `${color}14` : "#FAF8F5",
+                borderLeft: `4px solid ${isUp ? color : "transparent"}`,
+              }}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                {i < 3 && t.score > 0 ? (
+                  <span className="text-[15px] shrink-0">{medals[i]}</span>
+                ) : (
+                  <span className="text-[11px] font-bold text-stone-400 shrink-0 w-[18px] text-center">{i + 1}</span>
+                )}
+                <span className={`text-[13.5px] truncate ${isUp ? "font-bold" : "font-medium"} text-stone-700`}>{t.name}</span>
+              </div>
+              <span className="text-[17px] font-bold shrink-0 ml-2" style={{ color: isUp ? color : QUIZ_NAVY }}>{t.score}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
