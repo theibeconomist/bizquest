@@ -257,7 +257,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
         </label>
         {autoAdvance && (
           <p className="mt-1.5 text-[11.5px] text-stone-500">
-            After revealing an answer, a big 10-second countdown announces which team is up next and moves on automatically — no need to click &quot;Next question&quot; yourself. You can still skip the countdown any time.
+            After revealing an answer, a big 5-second countdown announces which team is up next and moves on automatically — no need to click &quot;Next question&quot; yourself. You can still skip the countdown any time.
           </p>
         )}
       </div>
@@ -399,14 +399,14 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, autoA
   }
 
   return (
-    <div className="max-w-5xl mx-auto" style={{ zoom: scale }}>
+    <div className="max-w-[1440px] mx-auto" style={{ zoom: scale }}>
       {feedback && (
         <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} timedOut={feedback.timedOut} onDismiss={() => setFeedback(null)} />
       )}
       {!feedback && autoAdvanceTeamId != null && (
         <NextTeamCountdown
           team={teams.find((t) => t.id === autoAdvanceTeamId)}
-          seconds={10}
+          seconds={5}
           onDone={() => next(autoAdvanceTeamId)}
           onSkip={() => next(autoAdvanceTeamId)}
         />
@@ -644,7 +644,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, autoAdva
   const question = questions[game.current_index];
   const currentTeam = teams.find((t) => t.id === game.current_team_id);
   return (
-    <div className="max-w-5xl mx-auto" style={{ zoom: scale }}>
+    <div className="max-w-[1440px] mx-auto" style={{ zoom: scale }}>
       {confirmingExit && (
         <ConfirmModal
           title="End this game now?"
@@ -657,7 +657,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, autoAdva
       {autoAdvanceTeamId != null && (
         <NextTeamCountdown
           team={teams.find((t) => t.id === autoAdvanceTeamId)}
-          seconds={10}
+          seconds={5}
           onDone={() => nextQuestion(autoAdvanceTeamId)}
           onSkip={() => nextQuestion(autoAdvanceTeamId)}
         />
