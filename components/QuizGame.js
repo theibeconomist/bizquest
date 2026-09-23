@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import {
-  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone, AlertCircle,
+  Loader2, Users, Trophy, ChevronRight, X, Copy, Check, Trash2, Play, Monitor, Smartphone, AlertCircle, ZoomIn,
 } from "lucide-react";
 import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
@@ -25,11 +25,59 @@ const SUBUNIT_OPTIONS = [
 const BASE_COUNT_OPTIONS = [5, 8, 10, 12, 15, 20];
 const ALL_UNIT_COUNT_OPTIONS = [10, 15, 20, 30, 40, 50];
 
-function pickRandomTeamId(teams, excludeId) {
-  const pool = teams.length > 1 && excludeId != null ? teams.filter((t) => t.id !== excludeId) : teams;
-  const list = pool.length > 0 ? pool : teams;
-  const picked = list[Math.floor(Math.random() * list.length)];
-  return picked ? picked.id : null;
+function shuffledTeamOrder(teamIds) {
+  const arr = [...teamIds];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// A fair "whose turn is it" picker: cycles through every team once (in a fresh shuffled
+// order) before repeating anyone, so over any complete lap every team gets exactly the
+// same number of turns — pure per-question randomness can (and did, in practice) leave
+// one team with substantially fewer questions than the rest over a short game.
+function useTeamTurnOrder() {
+  const queueRef = useRef([]);
+  const lastRef = useRef(null);
+  const nextTeamId = useCallback((teams) => {
+    if (queueRef.current.length === 0) {
+      queueRef.current = shuffledTeamOrder(teams.map((t) => t.id));
+      if (queueRef.current.length > 1 && queueRef.current[0] === lastRef.current) {
+        [queueRef.current[0], queueRef.current[1]] = [queueRef.current[1], queueRef.current[0]];
+      }
+    }
+    const next = queueRef.current.shift();
+    lastRef.current = next;
+    return next;
+  }, []);
+  return nextTeamId;
+}
+
+// A simple "presentation size" control — cycles through a few zoom levels so text is
+// readable when the game is projected on a screen. Uses CSS zoom (scales everything —
+// text, spacing, layout — uniformly, like the browser's own zoom) rather than touching
+// every individual font-size class throughout the game.
+const PRESENTATION_SCALES = [1, 1.25, 1.5];
+function usePresentationScale() {
+  const [scaleIndex, setScaleIndex] = useState(0);
+  const cycle = useCallback(() => setScaleIndex((i) => (i + 1) % PRESENTATION_SCALES.length), []);
+  return { scale: PRESENTATION_SCALES[scaleIndex], cycle };
+}
+function PresentationSizeButton({ scale, onClick }) {
+  const label = scale === 1 ? "Normal" : scale === 1.25 ? "Large" : "X-Large";
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-white shrink-0 transition hover:opacity-90"
+      style={{ backgroundColor: NAVY }}
+      title="Increase on-screen text size for presenting"
+    >
+      <ZoomIn size={14} />
+      Text: {label}
+    </button>
+  );
 }
 
 // ============================================================
@@ -224,8 +272,10 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
 // ============================================================
 function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExit }) {
   const [teams, setTeams] = useState(teamNames.map((name, i) => ({ id: i, name, score: 0 })));
+  const nextTeamId = useTeamTurnOrder();
+  const { scale, cycle: cycleScale } = usePresentationScale();
   const [index, setIndex] = useState(0);
-  const [currentTeamId, setCurrentTeamId] = useState(() => teams[Math.floor(Math.random() * teams.length)].id);
+  const [currentTeamId, setCurrentTeamId] = useState(() => nextTeamId(teamNames.map((name, i) => ({ id: i, name, score: 0 }))));
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [feedback, setFeedback] = useState(null); // { correct, points, timedOut } while the popup shows
@@ -255,12 +305,11 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
 
   const next = () => {
     if (index + 1 >= questions.length) { setFinished(true); return; }
-    const prevTeamId = currentTeamId;
     setIndex((i) => i + 1);
     setSelected(null);
     setRevealed(false);
     setQuestionStartedAt(Date.now());
-    setCurrentTeamId(pickRandomTeamId(teams, prevTeamId));
+    setCurrentTeamId(nextTeamId(teams));
   };
 
   if (finished) {
@@ -291,7 +340,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ zoom: scale }}>
       {feedback && (
         <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} timedOut={feedback.timedOut} onDismiss={() => setFeedback(null)} />
       )}
@@ -304,8 +353,9 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
           onCancel={() => setConfirmingExit(false)}
         />
       )}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2">
         <div className="text-[12.5px] text-stone-500">Question {index + 1} of {questions.length}</div>
+        <PresentationSizeButton scale={scale} onClick={cycleScale} />
         {timerEnabled && !revealed && (
           <QuestionTimer startedAtMs={questionStartedAt} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} onExpire={handleTimeout} />
         )}
@@ -372,6 +422,8 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
+  const nextTeamId = useTeamTurnOrder();
+  const { scale, cycle: cycleScale } = usePresentationScale();
   const unsubRef = useRef(null);
 
   useEffect(() => {
@@ -397,7 +449,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
 
   const startGame = async () => {
     if (teams.length < 2) return; // guarded by the button's own disabled state below
-    const firstTeamId = pickRandomTeamId(teams, null);
+    const firstTeamId = nextTeamId(teams);
     await updateQuizGame(game.id, { status: "active", current_index: 0, current_team_id: firstTeamId, revealed: false, question_started_at: new Date().toISOString() });
   };
 
@@ -411,8 +463,8 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
       await updateQuizGame(game.id, { status: "finished" });
       return;
     }
-    const nextTeamId = pickRandomTeamId(teams, game.current_team_id);
-    await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: nextTeamId, revealed: false, question_started_at: new Date().toISOString() });
+    const chosenTeamId = nextTeamId(teams);
+    await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: chosenTeamId, revealed: false, question_started_at: new Date().toISOString() });
   };
 
   const doExit = async () => {
@@ -506,7 +558,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
   const question = questions[game.current_index];
   const currentTeam = teams.find((t) => t.id === game.current_team_id);
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ zoom: scale }}>
       {confirmingExit && (
         <ConfirmModal
           title="End this game now?"
@@ -516,8 +568,9 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
           onCancel={() => setConfirmingExit(false)}
         />
       )}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2">
         <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {questions.length} · Code {game.join_code}</div>
+        <PresentationSizeButton scale={scale} onClick={cycleScale} />
         {game.timer_enabled && !game.revealed && game.question_started_at && (
           <QuestionTimer
             startedAtMs={new Date(game.question_started_at).getTime()}
