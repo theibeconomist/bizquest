@@ -127,6 +127,47 @@ export function playSuccessSound() {
     // audio unsupported/blocked — the visual feedback still carries the moment
   }
 }
+// Two more short tones for the "up next" countdown — a quiet tick each second, and a
+// brighter rising "go!" cue the moment it finishes, so the countdown feels like a real
+// game-show clock rather than a silent timer.
+export function playTickSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.07, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  } catch {
+    // audio unsupported/blocked — the visual countdown still carries the moment
+  }
+}
+export function playGoSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.32);
+  } catch {
+    // audio unsupported/blocked — the visual countdown still carries the moment
+  }
+}
+
 export function playErrorSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();

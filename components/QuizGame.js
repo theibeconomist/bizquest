@@ -7,7 +7,7 @@ import { getQuizQuestions, maxQuestionsFor } from "@/lib/quiz-bank";
 import {
   createQuizGame, updateQuizGame, deleteQuizGame, loadQuizTeams, subscribeToQuizGame, loadMyClasses,
 } from "@/lib/db";
-import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal, QuestionTimer, DIFFICULTY_SECONDS, teamColor } from "@/components/QuizShared";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, shuffleOptions, Confetti, ConfirmModal, QuestionTimer, DIFFICULTY_SECONDS, teamColor, playTickSound, playGoSound } from "@/components/QuizShared";
 
 const NAVY = "#15396B";
 const GOLD = "#C9A24B";
@@ -291,9 +291,15 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
 function NextTeamCountdown({ team, seconds, onDone, onSkip }) {
   const [remaining, setRemaining] = useState(seconds);
   const firedRef = useRef(false);
+  const isFirstRef = useRef(true);
   useEffect(() => {
+    if (isFirstRef.current) {
+      isFirstRef.current = false;
+    } else if (remaining > 0) {
+      playTickSound();
+    }
     if (remaining <= 0) {
-      if (!firedRef.current) { firedRef.current = true; onDone(); }
+      if (!firedRef.current) { firedRef.current = true; playGoSound(); onDone(); }
       return;
     }
     const t = setTimeout(() => setRemaining((r) => r - 1), 1000);
