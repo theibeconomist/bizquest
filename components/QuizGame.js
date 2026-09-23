@@ -94,6 +94,7 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [error, setError] = useState("");
   const [timerEnabled, setTimerEnabled] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,9 +135,9 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
     if (mode === "single_screen") {
       const names = teamNames.map((t) => t.trim()).filter(Boolean);
       if (names.length < 2) { setError("Add at least 2 teams to start."); return; }
-      onStartSingleScreen({ subunitId: label, questions, teamNames: names, timerEnabled });
+      onStartSingleScreen({ subunitId: label, questions, teamNames: names, timerEnabled, autoAdvance });
     } else {
-      onStartMultiDevice({ subunitId: label, questions, classId: classId || null, timerEnabled });
+      onStartMultiDevice({ subunitId: label, questions, classId: classId || null, timerEnabled, autoAdvance });
     }
   };
 
@@ -249,6 +250,18 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
         )}
       </div>
 
+      <div className="mb-5">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} className="rounded" style={{ accentColor: NAVY, width: 15, height: 15 }} />
+          <span className="text-[13px] font-medium text-stone-700">Auto-advance after each answer</span>
+        </label>
+        {autoAdvance && (
+          <p className="mt-1.5 text-[11.5px] text-stone-500">
+            After revealing an answer, a big 10-second countdown announces which team is up next and moves on automatically — no need to click &quot;Next question&quot; yourself. You can still skip the countdown any time.
+          </p>
+        )}
+      </div>
+
       {error && (
         <div className="mb-4 flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
           <AlertCircle size={14} className="shrink-0" /> {error}
@@ -270,7 +283,42 @@ function QuizSetup({ onStartSingleScreen, onStartMultiDevice, creatingGame, init
 // ============================================================
 // Single-screen mode — pure client state, no backend at all
 // ============================================================
-function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExit }) {
+// A big, dramatic "who's up next" countdown — shown between questions when
+// auto-advance is on. team is the ALREADY-DECIDED next team (computed once, by the
+// caller, at the moment the countdown starts) — this component only displays and
+// counts down, it never picks a team itself, so it can't double-consume a turn from
+// the fair-rotation queue.
+function NextTeamCountdown({ team, seconds, onDone, onSkip }) {
+  const [remaining, setRemaining] = useState(seconds);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (remaining <= 0) {
+      if (!firedRef.current) { firedRef.current = true; onDone(); }
+      return;
+    }
+    const t = setTimeout(() => setRemaining((r) => r - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
+  const color = team ? teamColor(team.id) : NAVY;
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6 text-center" style={{ backgroundColor: color }}>
+      <div className="text-white/70 text-[13px] font-bold uppercase tracking-[0.2em] mb-3">Up next</div>
+      <div className="text-white font-extrabold mb-8" style={{ fontSize: "clamp(28px, 6vw, 56px)", fontFamily: "'Lora', serif" }}>
+        {team?.name}, you&apos;re next!
+      </div>
+      <div className="text-white font-black tabular-nums" style={{ fontSize: "clamp(56px, 14vw, 120px)", lineHeight: 1 }}>{remaining}</div>
+      <button
+        onClick={onSkip}
+        className="mt-10 inline-flex items-center gap-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white px-5 py-2.5 text-[13.5px] font-semibold transition"
+      >
+        Skip <ChevronRight size={15} />
+      </button>
+    </div>
+  );
+}
+
+function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, autoAdvance, onExit }) {
   const [teams, setTeams] = useState(teamNames.map((name, i) => ({ id: i, name, score: 0 })));
   const nextTeamId = useTeamTurnOrder();
   const { scale, cycle: cycleScale } = usePresentationScale();
@@ -282,6 +330,7 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
   const [finished, setFinished] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [questionStartedAt, setQuestionStartedAt] = useState(() => Date.now());
+  const [autoAdvanceTeamId, setAutoAdvanceTeamId] = useState(null);
 
   const question = questions[index];
   const currentTeam = teams.find((t) => t.id === currentTeamId);
@@ -303,14 +352,24 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
     setFeedback({ correct: false, points: 0, timedOut: true });
   };
 
-  const next = () => {
+  const next = (predeterminedTeamId) => {
     if (index + 1 >= questions.length) { setFinished(true); return; }
     setIndex((i) => i + 1);
     setSelected(null);
     setRevealed(false);
     setQuestionStartedAt(Date.now());
-    setCurrentTeamId(nextTeamId(teams));
+    setCurrentTeamId(predeterminedTeamId != null ? predeterminedTeamId : nextTeamId(teams));
+    setAutoAdvanceTeamId(null);
   };
+
+  // When auto-advance is on and an answer is revealed, decide the next team ONCE right
+  // now (reserving their fair-rotation slot) and hold it for the countdown to display —
+  // never re-picked later, so the countdown and the actual advance always agree.
+  useEffect(() => {
+    if (!revealed || !autoAdvance || index + 1 >= questions.length) return;
+    setAutoAdvanceTeamId(nextTeamId(teams));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
 
   if (finished) {
     const sorted = [...teams].sort((a, b) => b.score - a.score);
@@ -340,9 +399,17 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
   }
 
   return (
-    <div className="max-w-2xl mx-auto" style={{ zoom: scale }}>
+    <div className="max-w-5xl mx-auto" style={{ zoom: scale }}>
       {feedback && (
         <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={currentTeam?.name} timedOut={feedback.timedOut} onDismiss={() => setFeedback(null)} />
+      )}
+      {!feedback && autoAdvanceTeamId != null && (
+        <NextTeamCountdown
+          team={teams.find((t) => t.id === autoAdvanceTeamId)}
+          seconds={10}
+          onDone={() => next(autoAdvanceTeamId)}
+          onSkip={() => next(autoAdvanceTeamId)}
+        />
       )}
       {confirmingExit && (
         <ConfirmModal
@@ -355,10 +422,12 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
       )}
       <div className="flex items-center justify-between mb-4 gap-2">
         <div className="text-[12.5px] text-stone-500">Question {index + 1} of {questions.length}</div>
-        <PresentationSizeButton scale={scale} onClick={cycleScale} />
-        {timerEnabled && !revealed && (
-          <QuestionTimer startedAtMs={questionStartedAt} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} onExpire={handleTimeout} />
-        )}
+        <div className="flex items-center gap-2">
+          <PresentationSizeButton scale={scale} onClick={cycleScale} />
+          {timerEnabled && !revealed && (
+            <QuestionTimer startedAtMs={questionStartedAt} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} onExpire={handleTimeout} />
+          )}
+        </div>
         <button
           onClick={() => setConfirmingExit(true)}
           className="text-stone-400 hover:text-stone-600"
@@ -368,9 +437,12 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
         </button>
       </div>
 
-      <Scoreboard teams={teams} currentTeamId={currentTeamId} />
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+        <div className="lg:sticky lg:top-4">
+          <Scoreboard teams={teams} currentTeamId={currentTeamId} />
+        </div>
 
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <div style={{ height: 5, backgroundColor: currentTeam ? teamColor(currentTeam.id) : NAVY }} />
         <div className="p-6">
           <div className="flex items-center justify-between mb-2">
@@ -401,13 +473,14 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
             );
           })}
         </div>
-        {revealed && (
+        {revealed && autoAdvanceTeamId == null && (
           <div className="mt-5 flex justify-end">
-            <button onClick={next} className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
+            <button onClick={() => next()} className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
               {index + 1 >= questions.length ? "See results" : "Next question"} <ChevronRight size={15} />
             </button>
           </div>
         )}
+        </div>
         </div>
       </div>
       <p className="text-center text-[12px] text-stone-400 mt-3">Read the question aloud, then tap the option {currentTeam?.name} chose.</p>
@@ -418,13 +491,14 @@ function SingleScreenGame({ subunitId, questions, teamNames, timerEnabled, onExi
 // ============================================================
 // Multi-device mode — host screen (real-time via Supabase)
 // ============================================================
-function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }) {
+function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, autoAdvance, onExit }) {
   const [game, setGame] = useState(null);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
+  const [autoAdvanceTeamId, setAutoAdvanceTeamId] = useState(null);
   const nextTeamId = useTeamTurnOrder();
   const { scale, cycle: cycleScale } = usePresentationScale();
   const unsubRef = useRef(null);
@@ -460,15 +534,24 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
     await updateQuizGame(game.id, { revealed: true });
   };
 
-  const nextQuestion = async () => {
+  const nextQuestion = async (predeterminedTeamId) => {
     const nextIndex = game.current_index + 1;
     if (nextIndex >= questions.length) {
       await updateQuizGame(game.id, { status: "finished" });
       return;
     }
-    const chosenTeamId = nextTeamId(teams);
+    const chosenTeamId = predeterminedTeamId != null ? predeterminedTeamId : nextTeamId(teams);
+    setAutoAdvanceTeamId(null);
     await updateQuizGame(game.id, { current_index: nextIndex, current_team_id: chosenTeamId, revealed: false, question_started_at: new Date().toISOString() });
   };
+
+  // Same reserve-once pattern as single-screen mode: decide the next team right when
+  // the answer is revealed, hold it for the countdown, never re-pick it later.
+  useEffect(() => {
+    if (!game || !game.revealed || !autoAdvance || game.current_index + 1 >= questions.length) return;
+    setAutoAdvanceTeamId(nextTeamId(teams));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.revealed]);
 
   const doExit = async () => {
     if (game) await deleteQuizGame(game.id);
@@ -561,7 +644,7 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
   const question = questions[game.current_index];
   const currentTeam = teams.find((t) => t.id === game.current_team_id);
   return (
-    <div className="max-w-2xl mx-auto" style={{ zoom: scale }}>
+    <div className="max-w-5xl mx-auto" style={{ zoom: scale }}>
       {confirmingExit && (
         <ConfirmModal
           title="End this game now?"
@@ -571,22 +654,35 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
           onCancel={() => setConfirmingExit(false)}
         />
       )}
+      {autoAdvanceTeamId != null && (
+        <NextTeamCountdown
+          team={teams.find((t) => t.id === autoAdvanceTeamId)}
+          seconds={10}
+          onDone={() => nextQuestion(autoAdvanceTeamId)}
+          onSkip={() => nextQuestion(autoAdvanceTeamId)}
+        />
+      )}
       <div className="flex items-center justify-between mb-4 gap-2">
         <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {questions.length} · Code {game.join_code}</div>
-        <PresentationSizeButton scale={scale} onClick={cycleScale} />
-        {game.timer_enabled && !game.revealed && game.question_started_at && (
-          <QuestionTimer
-            startedAtMs={new Date(game.question_started_at).getTime()}
-            seconds={DIFFICULTY_SECONDS[question.difficulty] || 25}
-            onExpire={() => { if (!game.revealed) revealAnswer(); }}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <PresentationSizeButton scale={scale} onClick={cycleScale} />
+          {game.timer_enabled && !game.revealed && game.question_started_at && (
+            <QuestionTimer
+              startedAtMs={new Date(game.question_started_at).getTime()}
+              seconds={DIFFICULTY_SECONDS[question.difficulty] || 25}
+              onExpire={() => { if (!game.revealed) revealAnswer(); }}
+            />
+          )}
+        </div>
         <button onClick={requestExit} className="text-stone-400 hover:text-stone-600" aria-label="End game"><X size={18} /></button>
       </div>
 
-      <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+        <div className="lg:sticky lg:top-4">
+          <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
+        </div>
 
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <div style={{ height: 5, backgroundColor: currentTeam ? teamColor(currentTeam.id) : NAVY }} />
         <div className="p-6">
           <div className="flex items-center justify-between mb-2">
@@ -611,11 +707,12 @@ function MultiDeviceHost({ subunitId, questions, classId, timerEnabled, onExit }
             <button onClick={revealAnswer} className="rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: GOLD }}>
               Reveal answer
             </button>
-          ) : (
-            <button onClick={nextQuestion} className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
+          ) : autoAdvanceTeamId == null ? (
+            <button onClick={() => nextQuestion()} className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13.5px] font-semibold text-white" style={{ backgroundColor: NAVY }}>
               {game.current_index + 1 >= questions.length ? "See results" : "Next question"} <ChevronRight size={15} />
             </button>
-          )}
+          ) : null}
+        </div>
         </div>
         </div>
       </div>
