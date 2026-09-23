@@ -1,0 +1,224 @@
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, Trophy, Users } from "lucide-react";
+import { joinQuizByCode, submitQuizAnswer, loadQuizGame, loadQuizTeams, subscribeToQuizGame } from "@/lib/db";
+import { DifficultyBadge, AnswerFeedbackModal, Scoreboard, OptionButton, OPTION_LETTERS, OPTION_COLORS, Confetti, QuestionTimer, DIFFICULTY_SECONDS, teamColor, QUIZ_NAVY as NAVY, QUIZ_GOLD as GOLD } from "@/components/QuizShared";
+
+function JoinForm({ onJoined }) {
+  const [code, setCode] = useState("");
+  const [teamName, setTeamName] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!code.trim() || !teamName.trim() || joining) return;
+    setJoining(true);
+    setError("");
+    try {
+      const result = await joinQuizByCode(code.trim(), teamName.trim());
+      onJoined(result);
+    } catch (err) {
+      setError(err.message || "Could not join. Check the code and try again.");
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "#FAF8F5" }}>
+      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl border border-stone-200 shadow-sm p-8">
+        <h1 className="text-[20px] font-semibold mb-1 text-center" style={{ fontFamily: "'Lora', serif", color: NAVY }}>Join the quiz</h1>
+        <p className="text-[13px] text-stone-500 mb-6 text-center">Enter your teacher&apos;s game code and pick a team name.</p>
+        <div className="mb-3">
+          <label className="block text-[12px] font-medium text-stone-600 mb-1">Game code</label>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="e.g. 7F3KQZ"
+            maxLength={8}
+            className="w-full rounded-md border border-stone-300 px-3 py-2.5 text-[18px] font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-2"
+            style={{ "--tw-ring-color": NAVY }}
+            autoFocus
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-[12px] font-medium text-stone-600 mb-1">Team name</label>
+          <input
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            placeholder="e.g. The Overachievers"
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-[14px] focus:outline-none focus:ring-2"
+            style={{ "--tw-ring-color": NAVY }}
+          />
+        </div>
+        {error && <p className="text-[12.5px] text-red-600 mb-3">{error}</p>}
+        <button
+          type="submit"
+          disabled={joining}
+          className="w-full rounded-md py-2.5 text-[14px] font-semibold text-white disabled:opacity-60"
+          style={{ backgroundColor: NAVY }}
+        >
+          {joining ? <Loader2 size={16} className="animate-spin inline" /> : "Join"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function TeamPlayer({ teamId, gameId }) {
+  const [game, setGame] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [answeredIndex, setAnsweredIndex] = useState(null); // question_index this team last answered
+  const [pickedOption, setPickedOption] = useState(null);
+  const [feedback, setFeedback] = useState(null); // { correct, points } while the popup shows
+  const unsubRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [g, t] = await Promise.all([loadQuizGame(gameId), loadQuizTeams(gameId)]);
+      if (cancelled) return;
+      setGame(g);
+      setTeams(t);
+      setLoading(false);
+      unsubRef.current = subscribeToQuizGame(gameId, {
+        onGame: (updated) => {
+          setGame((prev) => {
+            // Reset local "already answered" tracking whenever the question changes.
+            if (prev && prev.current_index !== updated.current_index) {
+              setAnsweredIndex(null);
+              setPickedOption(null);
+            }
+            return updated;
+          });
+        },
+        onTeams: (updated) => setTeams(updated),
+      });
+    })();
+    return () => { if (unsubRef.current) unsubRef.current(); };
+  }, [gameId]);
+
+  if (loading || !game) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 size={20} className="animate-spin text-stone-400" /></div>;
+  }
+
+  const myTeam = teams.find((t) => t.id === teamId);
+
+  if (game.status === "lobby") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
+        <Users size={28} className="text-stone-400 mb-3" />
+        <h2 className="text-[17px] font-semibold text-stone-700 mb-1">You&apos;re in as {myTeam?.name}</h2>
+        <p className="text-[13px] text-stone-500">Waiting for your teacher to start the game…</p>
+      </div>
+    );
+  }
+
+  if (game.status === "finished") {
+    const sorted = [...teams].sort((a, b) => b.score - a.score);
+    const myRank = sorted.findIndex((t) => t.id === teamId) + 1;
+    const winner = sorted[0];
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
+        {winner?.id === teamId && <Confetti />}
+        <Trophy size={36} style={{ color: GOLD }} className="mb-3" />
+        <h2 className="text-[19px] font-semibold mb-1" style={{ fontFamily: "'Lora', serif", color: NAVY }}>
+          {winner?.id === teamId ? "You won! 🎉" : `${winner?.name} wins!`}
+        </h2>
+        <p className="text-[13px] text-stone-500 mb-5">{myTeam?.name} finished #{myRank} with {myTeam?.score} point{myTeam?.score !== 1 ? "s" : ""}</p>
+        <div className="space-y-1.5 w-full max-w-xs">
+          {sorted.map((t, i) => (
+            <div key={t.id} className="flex items-center justify-between rounded-md px-3 py-1.5 text-[13px]" style={{ backgroundColor: t.id === teamId ? "#EAF1F8" : "#fff" }}>
+              <span className="text-stone-600">{i + 1}. {t.name}</span>
+              <span className="font-semibold text-stone-700">{t.score}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Active game
+  const question = game.questions[game.current_index];
+  const isMyTurn = game.current_team_id === teamId;
+  const alreadyAnswered = answeredIndex === game.current_index;
+
+  const choose = async (optIdx) => {
+    if (alreadyAnswered || !isMyTurn) return;
+    const correct = optIdx === question.correct;
+    setPickedOption(optIdx);
+    setAnsweredIndex(game.current_index);
+    setFeedback({ correct, points: question.points });
+    try {
+      await submitQuizAnswer({
+        gameId, teamId, questionIndex: game.current_index,
+        selectedOption: optIdx, isCorrect: correct, points: question.points,
+      });
+    } catch {
+      // best-effort — if this fails the teacher can still see/verify manually
+    }
+  };
+
+  if (!isMyTurn) {
+    const upTeam = teams.find((t) => t.id === game.current_team_id);
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: "#FAF8F5" }}>
+        <div className="text-[13px] text-stone-400 mb-2">Question {game.current_index + 1} of {game.questions.length}</div>
+        <h2 className="text-[19px] font-extrabold mb-1" style={{ color: upTeam ? teamColor(upTeam.id) : undefined }}>{upTeam?.name} is up!</h2>
+        <p className="text-[13px] text-stone-500 mb-4">Watching — you&apos;ll get your turn on another question.</p>
+        <div className="w-full max-w-xs"><Scoreboard teams={teams} currentTeamId={game.current_team_id} /></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen px-4 py-8" style={{ backgroundColor: "#FAF8F5" }}>
+      {feedback && (
+        <AnswerFeedbackModal correct={feedback.correct} points={feedback.points} teamName={myTeam?.name} onDismiss={() => setFeedback(null)} />
+      )}
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-[12.5px] text-stone-500">Question {game.current_index + 1} of {game.questions.length} · {myTeam?.name}</div>
+          <DifficultyBadge question={question} />
+        </div>
+        {game.timer_enabled && !game.revealed && !alreadyAnswered && game.question_started_at && (
+          <div className="mb-2">
+            <QuestionTimer startedAtMs={new Date(game.question_started_at).getTime()} seconds={DIFFICULTY_SECONDS[question.difficulty] || 25} />
+          </div>
+        )}
+        <h2 className="text-[17px] font-semibold text-stone-800 mb-4 mt-2">{question.q}</h2>
+        <div className="space-y-2.5 mb-5">
+          {question.options.map((opt, i) => {
+            const showResult = game.revealed || alreadyAnswered;
+            let state = "idle";
+            if (showResult && i === question.correct) state = "correct";
+            else if (alreadyAnswered && i === pickedOption && i !== question.correct) state = "incorrect";
+            else if (showResult) state = "muted";
+            return (
+              <OptionButton
+                key={i}
+                letter={OPTION_LETTERS[i]}
+                color={OPTION_COLORS[i]}
+                text={opt}
+                onClick={() => choose(i)}
+                disabled={alreadyAnswered}
+                state={state}
+              />
+            );
+          })}
+        </div>
+        {alreadyAnswered && <p className="text-center text-[12.5px] text-stone-400 mb-4">Answer submitted — waiting for your teacher to move on.</p>}
+        <Scoreboard teams={teams} currentTeamId={game.current_team_id} />
+      </div>
+    </div>
+  );
+}
+
+export default function QuizPlayClient() {
+  const [joined, setJoined] = useState(null); // { teamId, gameId }
+
+  if (!joined) return <JoinForm onJoined={setJoined} />;
+  return <TeamPlayer teamId={joined.teamId} gameId={joined.gameId} />;
+}
